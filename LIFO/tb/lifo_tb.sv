@@ -72,11 +72,13 @@ typedef logic [DWIDTH-1:0] rd_data_queue [$];
 rd_data_queue rd_data;
 logic [AWIDTH:0] lifo_ptr = {(AWIDTH+1){1'b1}};
 
-task gen_data( mailbox #( logic [DWIDTH-1:0] ) _data_gen );
+task gen_data( mailbox #( logic [DWIDTH-1:0] ) _data_gen,
+              input int _data_num 
+             );
 
 logic [DWIDTH-1:0] new_data;
 
-for( int i = 0; i < 10; i++ )
+for( int i = 0; i < _data_num; i++ )
   begin
     new_data = $urandom_range( 2**DWIDTH-1, 0 );
     _data_gen.put( new_data );
@@ -84,8 +86,8 @@ for( int i = 0; i < 10; i++ )
   
 endtask
 
-task write_until_full ( mailbox #( logic [DWIDTH-1:0] ) _data_gen,
-                        mailbox #( logic [DWIDTH-1:0] ) _wr_data
+task write_only ( mailbox #( logic [DWIDTH-1:0] ) _data_gen,
+                  mailbox #( logic [DWIDTH-1:0] ) _wr_data
                       );
 
 logic [DWIDTH-1:0] new_data;
@@ -104,7 +106,6 @@ while( _data_gen.num() != 0 )
         cnt_wr_data++;
       end
     @( posedge clk_i_tb );
-    // #0;
   end
 wrreq_i_tb = 0;
 wr_done = 1;
@@ -133,6 +134,72 @@ rdreq_i_tb = 0;
 
 endtask
 
+task wr_request ( input int _lower_wr,
+                        int _upper_wr, 
+                  mailbox #( logic [DWIDTH-1:0] ) _data_gen,
+                  mailbox #( logic [DWIDTH-1:0] ) _wr_data
+                );
+
+logic [DWIDTH-1:0] data_wr;
+int pause_wr;
+int cnt_wr;
+
+while( _data_gen.num() != 0 )
+  begin
+    if( pause_wr == 0 )
+      begin
+        cnt_wr_data++;
+        _data_gen.get( data_wr );
+        //Change _upper_wr,_lower_wr to change write frequency
+        pause_wr   = $urandom_range( _upper_wr,_lower_wr );
+        wrreq_i_tb = 0;
+      end
+    else
+      wrreq_i_tb = 1;
+
+    if( full_o_tb == 1'b0 && wrreq_i_tb == 1'b1 )
+      begin
+        _wr_data.put( data_wr );
+        data_i_tb = data_wr;
+      end
+    pause_wr--;
+    ##1;
+  end
+
+wrreq_i_tb = 0;
+
+endtask
+
+task rd_request ( input int cnt_data_rd,
+                     int _lower_rd,
+                     int _upper_rd
+                );
+
+int pause_rd;
+int i;
+i = 0;
+while( cnt_wr_data < cnt_data_rd )
+  begin
+    if( pause_rd == 0 )
+      begin
+        //Change _upper_rd,_lower_rd to change read frequency
+        pause_rd   = $urandom_range( _upper_rd,_lower_rd );
+        rdreq_i_tb = 0;
+      end
+    else
+      rdreq_i_tb = 1;
+   
+    if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 )
+      begin
+        rd_data.push_front( q_o_tb );
+      end
+    pause_rd--;
+    ##1;
+  end
+
+rdreq_i_tb = 0;
+
+endtask
 
 task testing( mailbox #( logic [DWIDTH-1:0] ) _wr_data );
 
@@ -245,43 +312,111 @@ almost_empty_error = 0;
 
 endtask
 
-task rd_request( mailbox #( logic [DWIDTH-1:0] ) _data_gen );
-
-
-endtask
 
 initial
   begin
-    srst_i_tb <= 1;
+    srst_i_tb = 1;
     ##1;
-    srst_i_tb <= 0;
+    srst_i_tb = 0;
 
-    $display("Test: Write until full");
-    gen_data( data_gen );
+    //////////////////Test 1 //////////////
+    $display("###Test: Write only");
+    //Write only to lifo (Don't make lifo full)
+    gen_data( data_gen, 10 );
 
     fork
-      write_until_full( data_gen, wr_data );
-      test_output_signal();
+      write_only( data_gen, wr_data );
+      // test_output_signal();
     join
-    cnt_error();
-
-    // srst_i_tb <= 1;
-    // @( posedge clk_i_tb );
-    // srst_i_tb <= 0;
-    // ##5;
+    // cnt_error();
 
     wr_done = 0;
     rd_done = 0;
-    $display("Test: Read until empty");
+    $display("###Test: Read until empty");
     fork
       read_until_empty();
-      test_output_signal();
+      // test_output_signal();
     join
-    cnt_error();
+    // cnt_error();
 
-    // testing( wr_data );
+    /////////////////Reset//////////////////
+    srst_i_tb = 1;
+    @( posedge clk_i_tb );
+    srst_i_tb = 0;
+    ##4;
 
-    // rd_data = {};
+    wr_done = 0;
+    rd_done = 0;
+    data_gen = new();
+    wr_data = new();
+    rd_data = {};
+    
+    //////////Test 2/////////////////////
+    $display("###Test: Write until full");
+    //Write to lifo until full
+    gen_data( data_gen, 2**AWIDTH+5 );
+
+    fork
+      write_only( data_gen, wr_data );
+      // test_output_signal();
+    join
+    // cnt_error();
+
+    wr_done = 0;
+    rd_done = 0;
+    $display("###Test: Read until empty");
+    fork
+      read_until_empty();
+      // test_output_signal();
+    join
+    // cnt_error();
+
+    ///////////Reset//////////////////
+    srst_i_tb = 1;
+    @( posedge clk_i_tb );
+    srst_i_tb = 0;
+    ##4;
+
+    wr_done = 0;
+    rd_done = 0;
+    data_gen = new();
+    wr_data = new();
+    rd_data = {};
+    cnt_wr_data = 0;
+    
+
+    //////////////////Test 3///////////////
+    $display(" Write request more than read request ");
+    gen_data( data_gen, 2**AWIDTH+5 );
+
+    fork
+      wr_request( 4,6, data_gen, wr_data );
+      rd_request( 2**AWIDTH + 5, 1,2 );
+    join
+
+    ///////////Reset//////////////////
+    srst_i_tb = 1;
+    @( posedge clk_i_tb );
+    srst_i_tb = 0;
+    ##4;
+
+    wr_done = 0;
+    rd_done = 0;
+    data_gen = new();
+    wr_data = new();
+    rd_data = {};
+    cnt_wr_data = 0;
+    
+
+    //////////////////Test 4///////////////
+    $display(" Read request more than write request ");
+    gen_data( data_gen, 2**AWIDTH+5 );
+
+    fork
+      wr_request( 1,2, data_gen, wr_data );
+      rd_request( 2**AWIDTH + 5, 4,6 );
+    join
+
     $display( "Test done!" );
     $stop();
 
