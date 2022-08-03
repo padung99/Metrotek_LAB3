@@ -251,6 +251,7 @@ while( _data_gen.num() != 0 )
     ##1;
   end
 
+wr_done = 1;
 wrreq_i_tb = 0;
 
 endtask
