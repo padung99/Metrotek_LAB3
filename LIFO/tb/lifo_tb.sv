@@ -119,81 +119,10 @@ while( _data_gen.num() != 0 )
         _wr_data.put( data_i_tb );
         cnt_wr_data++;
       end
-    // if( !_wr_only )
-    //   delay--;
-    // if( delay == 0 )
-    //   rd_begin = 1'b1;
     @( posedge clk_i_tb );
   end
 wrreq_i_tb <= 0;
 wr_done = 1;
-
-endtask
-
-task non_synthesys_signal();
-
-forever
-  begin
-    // @( posedge clk_i_tb )
-    if( lifo_ptr == 2**AWIDTH )
-      full_tb = 1'b1;
-    else
-      full_tb = 1'b0;
-
-    if( lifo_ptr >= ALMOST_FULL_VALUE )
-      almost_full_tb = 1'b1;
-    else
-      almost_full_tb = 1'b0;
-
-    if( lifo_ptr == 0 )
-      empty_tb = 1'b1;
-    else
-      empty_tb = 1'b0;
-
-    if( lifo_ptr <= ALMOST_EMPTY_VALUE )
-      almost_empty_tb = 1'b1;
-    else
-      almost_empty_tb = 1'b0;
-
-    if( wr_done || rd_done )
-      break;
-    ##1;
-    // @( posedge clk_i_tb );
-  end
-
-endtask
-
-assign valid_wr = wrreq_i_tb && !full_tb;
-assign valid_rd = rdreq_i_tb && !empty_tb;
-
-////Control pointer
-task inr_ptr();
-
-forever
-  begin
-    @( posedge clk_i_tb );
-    if( valid_wr && !valid_rd )
-      begin
-        lifo_ptr <= lifo_ptr+1;
-      end
-    if( wr_done )
-      break;
-  end
-
-endtask
-
-task decr_ptr();
-
-forever
-  begin
-    @( posedge clk_i_tb );
-    if( valid_rd && !valid_wr )
-      begin
-        lifo_ptr <= lifo_ptr-1;
-      end
-    if( rd_done )
-      break;
-  end
 
 endtask
 
@@ -239,8 +168,78 @@ rdreq_i_tb <= 0;
 
 endtask
 
+task non_synthesys_signal( input bit _wr_only,
+                                 bit _rd_only,
+                                 bit _rd_and_wr
+                         );
+forever
+  begin
+    // @( posedge clk_i_tb )
+    if( lifo_ptr == 2**AWIDTH )
+      full_tb = 1'b1;
+    else
+      full_tb = 1'b0;
+
+    if( lifo_ptr >= ALMOST_FULL_VALUE )
+      almost_full_tb = 1'b1;
+    else
+      almost_full_tb = 1'b0;
+
+    if( lifo_ptr == 0 )
+      empty_tb = 1'b1;
+    else
+      empty_tb = 1'b0;
+
+    if( lifo_ptr <= ALMOST_EMPTY_VALUE )
+      almost_empty_tb = 1'b1;
+    else
+      almost_empty_tb = 1'b0;
+
+    if( _wr_only && wr_done )
+      break;
+    if( ( _rd_only || _rd_and_wr ) && rd_done )
+      break;
+    ##1;
+    // @( posedge clk_i_tb );
+  end
+
+endtask
+
+assign valid_wr = wrreq_i_tb && !full_tb;
+assign valid_rd = rdreq_i_tb && !empty_tb;
+
+////Control pointer
+task inr_ptr();
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( valid_wr && !valid_rd )
+      begin
+        lifo_ptr <= lifo_ptr+1;
+      end
+    if( wr_done )
+      break;
+  end
+
+endtask
+
+task decr_ptr();
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( valid_rd && !valid_wr )
+      begin
+        lifo_ptr <= lifo_ptr-1;
+      end
+    if( rd_done )
+      break;
+  end
+endtask
+
 task wr_request ( input int _lower_wr,
-                        int _upper_wr, 
+                        int _upper_wr,
                   mailbox #( logic [DWIDTH-1:0] ) _data_gen,
                   mailbox #( logic [DWIDTH-1:0] ) _wr_data
                 );
@@ -340,7 +339,10 @@ else
 
 endtask
 
-task test_output_signal( );
+task test_output_signal( input bit _wr_only,
+                               bit _rd_only,
+                               bit _rd_and_wr
+                       );
 
 forever
   begin
@@ -350,35 +352,28 @@ forever
       usew_error++;
 
 //TEST: full_o   
-    // if( lifo_ptr == 2**AWIDTH )
-      begin
         if( full_o_tb != full_tb )
           full_error++;
-      end
 
 //TEST: almost_full_o 
-    // if( lifo_ptr >= ALMOST_FULL_VALUE )
-      begin
         if( almost_full_o_tb != almost_full_tb )
           almost_full_error++;
-      end
+
 
 //TEST: almost_empty_o    
-    // if( lifo_ptr <= ALMOST_EMPTY_VALUE )
-      begin
         if( almost_empty_o_tb != almost_empty_tb )
-          almost_full_error++;
-      end
+          almost_empty_error++;
+
 
 //TEST: empty_o
-    // if( lifo_ptr == 0 )
-      begin
         if( empty_o_tb != empty_tb )
           empty_error++;
-      end
 
-    if( wr_done || rd_done )
+    if( _wr_only && wr_done )
       break;
+    if( ( _rd_only || _rd_and_wr ) && rd_done )
+      break;
+    
     // ##1;
   end
 endtask
@@ -426,41 +421,31 @@ initial
     ##1;
     srst_i_tb = 0;
 
-    //////////////////Test 1 //////////////
-    $display("###Test: Write only");
-    //Write only to lifo (Don't make lifo full)
-    gen_data( data_gen, 10 );
-    rdreq_i_tb = 0;
-    fork
-      write_rq( data_gen, wr_data );
-      inr_ptr();
-      // test_output_signal();
-      non_synthesys_signal();
-    join
+    // //////////////////Test 1 //////////////
+    // //Write only to lifo (Don't make lifo full)
+    // $display("###Test: Write only");
+    // gen_data( data_gen, 10 );
+    // rdreq_i_tb = 0;
+    // fork
+    //   write_rq( data_gen, wr_data );
+    //   inr_ptr();
+    //   test_output_signal(1,0, 0);
+    //   non_synthesys_signal(1,0,0);
+    // join
     // cnt_error();
 
-    wr_done = 0;
-    rd_done = 0;
-    $display("###Test: Read until empty");
-    fork
-      read_until_empty(1, cnt_wr_data);
-      decr_ptr();
-      // test_output_signal();
-      non_synthesys_signal();
-    join
-    cnt_error();
-
-    // /////////////////Reset//////////////////
-    // srst_i_tb = 1;
-    // @( posedge clk_i_tb );
-    // srst_i_tb = 0;
-    // ##4;
-
+    // $display("\n");
     // wr_done = 0;
     // rd_done = 0;
-    // data_gen = new();
-    // wr_data = new();
-    // rd_data = {};
+    // $display("###Test: Read until empty");
+    // fork
+    //   read_until_empty(1, cnt_wr_data);
+    //   decr_ptr();
+    //   test_output_signal(0,1, 0);
+    //   non_synthesys_signal(0,1,0);
+    // join
+    // cnt_error();
+
     
     // //////////Test 2/////////////////////
     // $display("###Test: Write until full");
@@ -469,48 +454,63 @@ initial
     // rdreq_i_tb = 0;
     // fork
     //   write_rq( data_gen, wr_data );
-    //   // test_output_signal();
+    //   test_output_signal(1,0,0);
     //   inr_ptr();
-    //   non_synthesys_signal();
+    //   non_synthesys_signal(1,0,0);
     // join
-    // // cnt_error();
+    // cnt_error();
 
+    // $display("\n");
     // wr_done = 0;
     // rd_done = 0;
     // $display("###Test: Read until empty");
     // fork
     //   read_until_empty(1, cnt_wr_data);
-    //   // test_output_signal();
+    //   test_output_signal(0,1,0);
     //   decr_ptr();
-    //   non_synthesys_signal();
+    //   non_synthesys_signal(0,1,0);
     // join
-    // // cnt_error();
+    // cnt_error();
 
-    // ///////////////Read and write///////////
-    // $display("###Read and write");
-    // gen_data( data_gen, 2**AWIDTH+5 );
-    
+
+    // //////////Test 2.1/////////////////////
+    // $display("###Test: Write until full");
+    // //Write to lifo until full
+    // gen_data( data_gen, 2**AWIDTH);
+    // rdreq_i_tb = 0;
     // fork
-    //   write_rq( data_gen, wr_data);
+    //   write_rq( data_gen, wr_data );
+    //   test_output_signal(1,0,0);
     //   inr_ptr();
-    //   read_until_empty(0, 2**AWIDTH+5);
-    //   decr_ptr();
-    //   non_synthesys_signal();
+    //   non_synthesys_signal(1,0,0);
     // join
+    // cnt_error();
 
-    // ///////////Reset//////////////////
-    // srst_i_tb = 1;
-    // @( posedge clk_i_tb );
-    // srst_i_tb = 0;
-    // ##4;
-
+    // $display("\n");
     // wr_done = 0;
     // rd_done = 0;
-    // data_gen = new();
-    // wr_data = new();
-    // rd_data = {};
-    // cnt_wr_data = 0;
+    // $display("###Test: Read until empty");
+    // fork
+    //   read_until_empty(1, cnt_wr_data);
+    //   test_output_signal(0,1,0);
+    //   decr_ptr();
+    //   non_synthesys_signal(0,1,0;
+    // join
+    // cnt_error();
+
+    ///////////////Read and write///////////
+    $display("###Read and write");
+    gen_data( data_gen, 2**AWIDTH+5 );
     
+    fork
+      write_rq( data_gen, wr_data);
+      inr_ptr();
+      read_until_empty(0, 2**AWIDTH+5);
+      decr_ptr();
+      test_output_signal(0,0,1);
+      non_synthesys_signal(0,0,1);
+    join
+    cnt_error();
 
     // //////////////////Test 3///////////////
     // $display(" Write request more than read request ");
@@ -524,19 +524,6 @@ initial
     //   rd_request( 2**AWIDTH + 5, 1,2 );
     // join
 
-    // ///////////Reset//////////////////
-    // srst_i_tb = 1;
-    // @( posedge clk_i_tb );
-    // srst_i_tb = 0;
-    // ##4;
-
-    // wr_done = 0;
-    // rd_done = 0;
-    // data_gen = new();
-    // wr_data = new();
-    // rd_data = {};
-    // cnt_wr_data = 0;
-    
 
     // // //////////////////Test 4///////////////
     // $display(" Read request more than write request ");
