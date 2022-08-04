@@ -243,9 +243,7 @@ forever
   begin
     @( posedge clk_i_tb );
     if( valid_wr && !valid_rd )
-      begin
-        lifo_ptr <= lifo_ptr+1;
-      end
+      lifo_ptr <= lifo_ptr+1;
     if( wr_done )
       break;
   end
@@ -258,9 +256,7 @@ forever
   begin
     @( posedge clk_i_tb );
     if( valid_rd && !valid_wr )
-      begin
-        lifo_ptr <= lifo_ptr-1;
-      end
+      lifo_ptr <= lifo_ptr-1;
     if( rd_done )
       break;
   end
@@ -457,7 +453,7 @@ initial
     ##1;
     srst_i_tb = 0;
 
-    // //////////////////Test 1 //////////////
+    // //////////////////Test 1 //////////////////
     // //Write only to lifo (Don't make lifo full)
     // $display("###Test: Write only");
     // gen_data( data_gen, 10 );
@@ -484,7 +480,7 @@ initial
     // cnt_error();
     // testing( wr_data );
     
-    // //////////Test 2/////////////////////
+    // ///////////////Test 2////////////////
     // $display("###Test: Write until full");
     // //Write to lifo until full
     // gen_data( data_gen, 2**AWIDTH+5 );
@@ -511,7 +507,7 @@ initial
     // cnt_error();
     // testing( wr_data );
 
-    // //////////Test 2.1/////////////////////
+    // ///////////////Test 3////////////////
     // $display("###Test: Write until full");
     // //Write to lifo until full
     // gen_data( data_gen, 2**AWIDTH);
@@ -538,7 +534,7 @@ initial
     // cnt_error();
     // testing( wr_data );
 
-    ///////////////Read and write///////////
+    /////////////////Test 4 ///////////////
     $display("###Read and write");
     gen_data( data_gen, 2**AWIDTH+5 );
     
@@ -552,7 +548,7 @@ initial
     join
     cnt_error();
 
-    // //////////////////Test 3///////////////
+    // //////////////////Test 4///////////////
     // $display(" Write request more than read request ");
     // gen_data( data_gen, 2**AWIDTH+5 );
 
@@ -565,7 +561,7 @@ initial
     // join
 
 
-    // // //////////////////Test 4///////////////
+    // // //////////////////Test 5///////////////
     // $display(" Read request more than write request ");
     // gen_data( data_gen, 2**AWIDTH+5 );
 
