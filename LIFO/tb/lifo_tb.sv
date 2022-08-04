@@ -106,7 +106,7 @@ task write_rq ( mailbox #( logic [DWIDTH-1:0] ) _data_gen,
               );
 
 logic [DWIDTH-1:0] new_data;
-
+logic [DWIDTH-1:0] dump_data;
 while( _data_gen.num() != 0 )
   begin
     _data_gen.get( new_data );
@@ -116,11 +116,15 @@ while( _data_gen.num() != 0 )
     if( wrreq_i_tb && !full_o_tb )
       begin
         data_i_tb = new_data;
-        _wr_data.put( data_i_tb );
-        cnt_wr_data++;
+        if( lifo_ptr != 2**AWIDTH -1 )
+          begin
+            _wr_data.put( data_i_tb );
+            cnt_wr_data++;
+          end
       end
     @( posedge clk_i_tb );
   end
+
 wrreq_i_tb <= 0;
 wr_done = 1;
 
@@ -131,6 +135,8 @@ task read_until_empty( input bit _rd_only,
                      );
 int delay;
 bit repeat_done;
+
+logic [DWIDTH-1:0] new_data;
 
 if( !_rd_only )
   delay = 5;
@@ -149,22 +155,45 @@ forever
       repeat( _cnt_repeat )
         begin
           rdreq_i_tb = 1;
-
-          if( rdreq_i_tb && !empty_o_tb )
-            begin
-              rd_data.push_front( q_o_tb );
-            end
           @( posedge clk_i_tb );
+          // if( rdreq_i_tb && !empty_o_tb )
+          //   begin
+          //     rd_data.push_front( q_o_tb );
+          //     $display( "q_o: %x", q_o_tb );
+          //   end
+
         repeat_done = 1'b1;
         end
-    if( repeat_done )
-      break;
+  if( repeat_done )
+    break;
   end
+//Add 1 more last data in to queue
+// rd_data.push_front( q_o_tb );
+// $display( "q_o: %x", q_o_tb );
+
 repeat(10)
 @( posedge clk_i_tb );
 rd_done = 1;
 rdreq_i_tb <= 0;
+endtask
 
+task rd_output_data();
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( rdreq_i_tb && !empty_o_tb )
+      begin
+        rd_data.push_front( q_o_tb );
+        $display( "q_o: %x", q_o_tb );
+      end
+
+    if( rd_done )
+      break;
+  end
+rd_data.pop_back();
+rd_data.push_front( q_o_tb );
+$display( "q_o: %x", q_o_tb );
 
 endtask
 
@@ -194,7 +223,7 @@ forever
       almost_empty_tb = 1'b1;
     else
       almost_empty_tb = 1'b0;
-
+ 
     if( _wr_only && wr_done )
       break;
     if( ( _rd_only || _rd_and_wr ) && rd_done )
@@ -210,7 +239,6 @@ assign valid_rd = rdreq_i_tb && !empty_tb;
 
 ////Control pointer
 task inr_ptr();
-
 forever
   begin
     @( posedge clk_i_tb );
@@ -238,74 +266,74 @@ forever
   end
 endtask
 
-task wr_request ( input int _lower_wr,
-                        int _upper_wr,
-                  mailbox #( logic [DWIDTH-1:0] ) _data_gen,
-                  mailbox #( logic [DWIDTH-1:0] ) _wr_data
-                );
+// task wr_request ( input int _lower_wr,
+//                         int _upper_wr,
+//                   mailbox #( logic [DWIDTH-1:0] ) _data_gen,
+//                   mailbox #( logic [DWIDTH-1:0] ) _wr_data
+//                 );
 
-logic [DWIDTH-1:0] data_wr;
-int pause_wr;
-int cnt_wr;
+// logic [DWIDTH-1:0] data_wr;
+// int pause_wr;
+// int cnt_wr;
 
-while( _data_gen.num() != 0 )
-  begin
-    if( pause_wr == 0 )
-      begin
-        cnt_wr_data++;
-        _data_gen.get( data_wr );
-        //Change _upper_wr,_lower_wr to change write frequency
-        pause_wr   = $urandom_range( _upper_wr,_lower_wr );
-        wrreq_i_tb = 0;
-      end
-    else
-      wrreq_i_tb = 1;
+// while( _data_gen.num() != 0 )
+//   begin
+//     if( pause_wr == 0 )
+//       begin
+//         cnt_wr_data++;
+//         _data_gen.get( data_wr );
+//         //Change _upper_wr,_lower_wr to change write frequency
+//         pause_wr   = $urandom_range( _upper_wr,_lower_wr );
+//         wrreq_i_tb = 0;
+//       end
+//     else
+//       wrreq_i_tb = 1;
 
-    if( full_o_tb == 1'b0 && wrreq_i_tb == 1'b1 )
-      begin
-        _wr_data.put( data_wr );
-        data_i_tb = data_wr;
-      end
-    pause_wr--;
-    ##1;
-  end
+//     if( full_o_tb == 1'b0 && wrreq_i_tb == 1'b1 )
+//       begin
+//         _wr_data.put( data_wr );
+//         data_i_tb = data_wr;
+//       end
+//     pause_wr--;
+//     ##1;
+//   end
 
-wr_done = 1;
-wrreq_i_tb = 0;
+// wr_done = 1;
+// wrreq_i_tb = 0;
 
-endtask
+// endtask
 
-task rd_request ( input int cnt_data_rd,
-                     int _lower_rd,
-                     int _upper_rd
-                );
+// task rd_request ( input int cnt_data_rd,
+//                      int _lower_rd,
+//                      int _upper_rd
+//                 );
 
-int pause_rd;
-int i;
-i = 0;
-while( cnt_wr_data < cnt_data_rd )
-  begin
-    if( pause_rd == 0 )
-      begin
-        //Change _upper_rd,_lower_rd to change read frequency
-        pause_rd   = $urandom_range( _upper_rd,_lower_rd );
-        rdreq_i_tb = 0;
-      end
-    else
-      rdreq_i_tb = 1;
+// int pause_rd;
+// int i;
+// i = 0;
+// while( cnt_wr_data < cnt_data_rd )
+//   begin
+//     if( pause_rd == 0 )
+//       begin
+//         //Change _upper_rd,_lower_rd to change read frequency
+//         pause_rd   = $urandom_range( _upper_rd,_lower_rd );
+//         rdreq_i_tb = 0;
+//       end
+//     else
+//       rdreq_i_tb = 1;
    
-    if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 )
-      begin
-        rd_data.push_front( q_o_tb );
-      end
-    pause_rd--;
-    ##1;
-  end
+//     if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 )
+//       begin
+//         rd_data.push_front( q_o_tb );
+//       end
+//     pause_rd--;
+//     ##1;
+//   end
 
-rd_done = 1'b1;
-rdreq_i_tb = 0;
+// rd_done = 1'b1;
+// rdreq_i_tb = 0;
 
-endtask
+// endtask
 
 task testing( mailbox #( logic [DWIDTH-1:0] ) _wr_data );
 
@@ -314,22 +342,30 @@ logic [DWIDTH-1:0] new_data_rd;
 
 bit q_o_error;
 
-while( _wr_data.num() != 0 )
+if( _wr_data.num() != rd_data.size() )
   begin
-    _wr_data.get( new_data_wr );
-    new_data_rd = rd_data.pop_front();
-    $display("data write in: %x, data read out: %x", new_data_wr, new_data_rd );
-    if( new_data_wr != new_data_rd )
+    $error("Number of input and output data mismatch --- input: %0d, output: %0d", _wr_data.num(), rd_data.size() );
+    q_o_error = 1;
+  end
+else
+  begin
+    while( _wr_data.num() != 0 )
       begin
-        // $error("q_o error: data write in: %x, data read out: %x", new_data_wr, new_data_rd );
-        q_o_error = 1;
+        _wr_data.get( new_data_wr );
+        new_data_rd = rd_data.pop_front();
+        $display("data write in: %x, data read out: %x", new_data_wr, new_data_rd );
+        if( new_data_wr != new_data_rd )
+          begin
+            // $error("q_o error: data write in: %x, data read out: %x", new_data_wr, new_data_rd );
+            q_o_error = 1;
+          end
       end
   end
 
-while( rd_data.size() != 0 )
+while( _wr_data.num() != 0 )
   begin
-    new_data_rd = rd_data.pop_front();
-    $display("rd data: %x",new_data_rd );
+    _wr_data.get( new_data_wr );
+    $display("wr data: %x",new_data_wr );
   end
 
 if( q_o_error )
@@ -433,7 +469,7 @@ initial
     //   non_synthesys_signal(1,0,0);
     // join
     // cnt_error();
-
+    // ##4;
     // $display("\n");
     // wr_done = 0;
     // rd_done = 0;
@@ -443,9 +479,10 @@ initial
     //   decr_ptr();
     //   test_output_signal(0,1, 0);
     //   non_synthesys_signal(0,1,0);
+    //   rd_output_data();
     // join
     // cnt_error();
-
+    // testing( wr_data );
     
     // //////////Test 2/////////////////////
     // $display("###Test: Write until full");
@@ -469,9 +506,10 @@ initial
     //   test_output_signal(0,1,0);
     //   decr_ptr();
     //   non_synthesys_signal(0,1,0);
+    //   rd_output_data();
     // join
     // cnt_error();
-
+    // testing( wr_data );
 
     // //////////Test 2.1/////////////////////
     // $display("###Test: Write until full");
@@ -494,9 +532,11 @@ initial
     //   read_until_empty(1, cnt_wr_data);
     //   test_output_signal(0,1,0);
     //   decr_ptr();
-    //   non_synthesys_signal(0,1,0;
+    //   non_synthesys_signal(0,1,0);
+    //   rd_output_data();
     // join
     // cnt_error();
+    // testing( wr_data );
 
     ///////////////Read and write///////////
     $display("###Read and write");
