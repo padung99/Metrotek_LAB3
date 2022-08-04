@@ -5,7 +5,6 @@ parameter AWIDTH             = 8;
 parameter ALMOST_FULL_VALUE  = 2;
 parameter ALMOST_EMPTY_VALUE = 2;
 
-parameter MAX_DATA           = 100;
 
 bit                 clk_i_tb;
 logic               srst_i_tb;
@@ -22,14 +21,11 @@ logic               almost_full_o_tb;
 logic               full_o_tb;
 logic [AWIDTH:0]    usedw_o_tb;
 
-//non-synthesys output
-logic [DWIDTH-1:0]  q_tb;
 
 logic               almost_empty_tb;
 logic               empty_tb;
 logic               almost_full_tb;
 logic               full_tb;
-logic [AWIDTH:0]    usedw_tb;
 
 logic valid_rd;
 logic valid_wr;
@@ -43,8 +39,6 @@ int full_error;
 int empty_error;
 int almost_full_error;
 int almost_empty_error;
-
-
 
 bit wr_done;
 bit rd_done;
@@ -111,7 +105,6 @@ while( _data_gen.num() != 0 )
   begin
     _data_gen.get( new_data );
     wrreq_i_tb = 1;
-    // rdreq_i_tb = 0;
 
     if( wrreq_i_tb && !full_o_tb )
       begin
@@ -156,20 +149,11 @@ forever
         begin
           rdreq_i_tb = 1;
           @( posedge clk_i_tb );
-          // if( rdreq_i_tb && !empty_o_tb )
-          //   begin
-          //     rd_data.push_front( q_o_tb );
-          //     $display( "q_o: %x", q_o_tb );
-          //   end
-
-        repeat_done = 1'b1;
+          repeat_done = 1'b1;
         end
   if( repeat_done )
     break;
   end
-//Add 1 more last data in to queue
-// rd_data.push_front( q_o_tb );
-// $display( "q_o: %x", q_o_tb );
 
 repeat(10)
 @( posedge clk_i_tb );
@@ -183,17 +167,13 @@ forever
   begin
     @( posedge clk_i_tb );
     if( rdreq_i_tb && !empty_o_tb )
-      begin
-        rd_data.push_front( q_o_tb );
-        $display( "q_o: %x", q_o_tb );
-      end
+      rd_data.push_front( q_o_tb );
 
     if( rd_done )
       break;
   end
 rd_data.pop_back();
 rd_data.push_front( q_o_tb );
-$display( "q_o: %x", q_o_tb );
 
 endtask
 
@@ -203,7 +183,6 @@ task non_synthesys_signal( input bit _wr_only,
                          );
 forever
   begin
-    // @( posedge clk_i_tb )
     if( lifo_ptr == 2**AWIDTH )
       full_tb = 1'b1;
     else
@@ -229,7 +208,6 @@ forever
     if( ( _rd_only || _rd_and_wr ) && rd_done )
       break;
     ##1;
-    // @( posedge clk_i_tb );
   end
 
 endtask
@@ -262,74 +240,6 @@ forever
   end
 endtask
 
-// task wr_request ( input int _lower_wr,
-//                         int _upper_wr,
-//                   mailbox #( logic [DWIDTH-1:0] ) _data_gen,
-//                   mailbox #( logic [DWIDTH-1:0] ) _wr_data
-//                 );
-
-// logic [DWIDTH-1:0] data_wr;
-// int pause_wr;
-// int cnt_wr;
-
-// while( _data_gen.num() != 0 )
-//   begin
-//     if( pause_wr == 0 )
-//       begin
-//         cnt_wr_data++;
-//         _data_gen.get( data_wr );
-//         //Change _upper_wr,_lower_wr to change write frequency
-//         pause_wr   = $urandom_range( _upper_wr,_lower_wr );
-//         wrreq_i_tb = 0;
-//       end
-//     else
-//       wrreq_i_tb = 1;
-
-//     if( full_o_tb == 1'b0 && wrreq_i_tb == 1'b1 )
-//       begin
-//         _wr_data.put( data_wr );
-//         data_i_tb = data_wr;
-//       end
-//     pause_wr--;
-//     ##1;
-//   end
-
-// wr_done = 1;
-// wrreq_i_tb = 0;
-
-// endtask
-
-// task rd_request ( input int cnt_data_rd,
-//                      int _lower_rd,
-//                      int _upper_rd
-//                 );
-
-// int pause_rd;
-// int i;
-// i = 0;
-// while( cnt_wr_data < cnt_data_rd )
-//   begin
-//     if( pause_rd == 0 )
-//       begin
-//         //Change _upper_rd,_lower_rd to change read frequency
-//         pause_rd   = $urandom_range( _upper_rd,_lower_rd );
-//         rdreq_i_tb = 0;
-//       end
-//     else
-//       rdreq_i_tb = 1;
-   
-//     if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 )
-//       begin
-//         rd_data.push_front( q_o_tb );
-//       end
-//     pause_rd--;
-//     ##1;
-//   end
-
-// rd_done = 1'b1;
-// rdreq_i_tb = 0;
-
-// endtask
 
 task testing( mailbox #( logic [DWIDTH-1:0] ) _wr_data );
 
@@ -349,19 +259,10 @@ else
       begin
         _wr_data.get( new_data_wr );
         new_data_rd = rd_data.pop_front();
-        $display("data write in: %x, data read out: %x", new_data_wr, new_data_rd );
-        if( new_data_wr != new_data_rd )
-          begin
-            // $error("q_o error: data write in: %x, data read out: %x", new_data_wr, new_data_rd );
-            q_o_error = 1;
-          end
-      end
-  end
 
-while( _wr_data.num() != 0 )
-  begin
-    _wr_data.get( new_data_wr );
-    $display("wr data: %x",new_data_wr );
+        if( new_data_wr != new_data_rd )
+          q_o_error = 1;
+      end
   end
 
 if( q_o_error )
@@ -405,8 +306,6 @@ forever
       break;
     if( ( _rd_only || _rd_and_wr ) && rd_done )
       break;
-    
-    // ##1;
   end
 endtask
 
@@ -453,37 +352,43 @@ initial
     ##1;
     srst_i_tb = 0;
 
-    // //////////////////Test 1 //////////////////
-    // //Write only to lifo (Don't make lifo full)
-    // $display("###Test: Write only");
-    // gen_data( data_gen, 10 );
-    // rdreq_i_tb = 0;
-    // fork
-    //   write_rq( data_gen, wr_data );
-    //   inr_ptr();
-    //   test_output_signal(1,0, 0);
-    //   non_synthesys_signal(1,0,0);
-    // join
-    // cnt_error();
-    // ##4;
-    // $display("\n");
-    // wr_done = 0;
-    // rd_done = 0;
-    // $display("###Test: Read until empty");
-    // fork
-    //   read_until_empty(1, cnt_wr_data);
-    //   decr_ptr();
-    //   test_output_signal(0,1, 0);
-    //   non_synthesys_signal(0,1,0);
-    //   rd_output_data();
-    // join
-    // cnt_error();
-    // testing( wr_data );
-    
-    // ///////////////Test 2////////////////
+    //////////////////////////////TEST 1//////////////////////////////
+    // WRITE ONLY
+    // Write to lifo (Don't make lifo full)
+
+    $display("###Test: Write only");
+    gen_data( data_gen, 10 );
+    rdreq_i_tb = 0;
+    fork
+      write_rq( data_gen, wr_data );
+      inr_ptr();
+      test_output_signal(1,0, 0);
+      non_synthesys_signal(1,0,0);
+    join
+    cnt_error();
+    ##4;
+    $display("\n");
+    wr_done = 0;
+    rd_done = 0;
+
+    // READ ONLY
+    $display("###Test: Read until empty");
+    fork
+      read_until_empty(1, cnt_wr_data);
+      decr_ptr();
+      test_output_signal(0,1, 0);
+      non_synthesys_signal(0,1,0);
+      rd_output_data();
+    join
+    cnt_error();
+    testing( wr_data );
+
+    // //////////////////////////////TEST 2//////////////////////////////
+    // // WRITE ONLY
+    // // Write to lifo until full
+    // // Write some extra values (5 value ) after lifo is full
     // $display("###Test: Write until full");
-    // //Write to lifo until full
-    // gen_data( data_gen, 2**AWIDTH+5 );
+    // gen_data( data_gen, 2**AWIDTH+5 ); // 5 extra values after lifo is full
     // rdreq_i_tb = 0;
     // fork
     //   write_rq( data_gen, wr_data );
@@ -496,6 +401,8 @@ initial
     // $display("\n");
     // wr_done = 0;
     // rd_done = 0;
+
+    // // READ ONLY
     // $display("###Test: Read until empty");
     // fork
     //   read_until_empty(1, cnt_wr_data);
@@ -507,9 +414,11 @@ initial
     // cnt_error();
     // testing( wr_data );
 
-    // ///////////////Test 3////////////////
+    // //////////////////////////////TEST 3//////////////////////////////
+    // // Write to lifo until full
+    // // No extra values written to lifo, read process will begin immediately after lifo is full
     // $display("###Test: Write until full");
-    // //Write to lifo until full
+ 
     // gen_data( data_gen, 2**AWIDTH);
     // rdreq_i_tb = 0;
     // fork
@@ -523,6 +432,8 @@ initial
     // $display("\n");
     // wr_done = 0;
     // rd_done = 0;
+
+    // // READ ONLY
     // $display("###Test: Read until empty");
     // fork
     //   read_until_empty(1, cnt_wr_data);
@@ -534,44 +445,20 @@ initial
     // cnt_error();
     // testing( wr_data );
 
-    /////////////////Test 4 ///////////////
-    $display("###Read and write");
-    gen_data( data_gen, 2**AWIDTH+5 );
+    // ////////////////////////////////TEST 4//////////////////////////////
+    // // // Read and write at the same time
+    // $display("###Read and write");
+    // gen_data( data_gen, 2**AWIDTH+5 );
     
-    fork
-      write_rq( data_gen, wr_data);
-      inr_ptr();
-      read_until_empty(0, 2**AWIDTH+5);
-      decr_ptr();
-      test_output_signal(0,0,1);
-      non_synthesys_signal(0,0,1);
-    join
-    cnt_error();
-
-    // //////////////////Test 4///////////////
-    // $display(" Write request more than read request ");
-    // gen_data( data_gen, 2**AWIDTH+5 );
-
     // fork
-    //   wr_request( 4,6, data_gen, wr_data );
+    //   write_rq( data_gen, wr_data);
     //   inr_ptr();
+    //   read_until_empty(0, 2**AWIDTH+5);
     //   decr_ptr();
-    //   non_synthesys_signal();
-    //   rd_request( 2**AWIDTH + 5, 1,2 );
+    //   test_output_signal(0,0,1);
+    //   non_synthesys_signal(0,0,1);
     // join
-
-
-    // // //////////////////Test 5///////////////
-    // $display(" Read request more than write request ");
-    // gen_data( data_gen, 2**AWIDTH+5 );
-
-    // fork
-    //   wr_request( 1,2, data_gen, wr_data );
-    //   inr_ptr();
-    //   decr_ptr();
-    //   non_synthesys_signal();
-    //   rd_request( 2**AWIDTH + 5, 4,6 );
-    // join
+    // cnt_error();
 
     $display( "Test done!" );
     $stop();
