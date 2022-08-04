@@ -352,7 +352,7 @@ initial
     ##1;
     srst_i_tb = 0;
     
-    //////////////////Uncomment to run each test case/////////////////
+    //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
     //////////////////////////////TEST 1//////////////////////////////
     // WRITE ONLY
