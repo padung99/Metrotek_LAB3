@@ -26,6 +26,7 @@ logic               almost_empty_tb;
 logic               empty_tb;
 logic               almost_full_tb;
 logic               full_tb;
+logic [DWIDTH-1:0]  q_tb;
 
 logic valid_rd;
 logic valid_wr;
@@ -289,33 +290,36 @@ forever
   begin
   @( posedge clk_i_tb );
 //TEST: usew_o 
-    if( ptr != usedw_o_tb )
-      usew_error++;
+  if( q_tb != q_o_tb )
+    q_error++;
+
+  if( ptr != usedw_o_tb )
+    usew_error++;
 
 //TEST: full_o   
-    if( full_o_tb != full_tb )
-      full_error++;
+  if( full_o_tb != full_tb )
+    full_error++;
 
 //TEST: almost_full_o 
-    if( almost_full_o_tb != almost_full_tb )
-      almost_full_error++;
+  if( almost_full_o_tb != almost_full_tb )
+    almost_full_error++;
 
 
 //TEST: almost_empty_o    
-    if( almost_empty_o_tb != almost_empty_tb )
-      almost_empty_error++;
+  if( almost_empty_o_tb != almost_empty_tb )
+    almost_empty_error++;
 
 
 //TEST: empty_o
-    if( empty_o_tb != empty_tb )
-      empty_error++;
+  if( empty_o_tb != empty_tb )
+    empty_error++;
 
-    if( _read && done_rd )
-      break;
-    if( _write && done_wr )
-      break;
-    if( _rd_and_wr && done_rd_wr )
-      break;
+  if( _read && done_rd )
+    break;
+  if( _write && done_wr )
+    break;
+  if( _rd_and_wr && done_rd_wr )
+    break;
   end
 endtask
 
@@ -345,6 +349,11 @@ if( almost_full_error == 0 )
   $display("No error on almost_full_o!!");
 else
   $display("almost_full_o: %0d errors", almost_full_error);
+
+if( q_error == 0 )
+  $display("No error on q_o!!");
+else
+  $display("q_o: %0d errors", q_error);
 
 q_error = 0;
 usew_error = 0;
@@ -379,15 +388,18 @@ task control_ptr( input bit _read,
                             _write,
                             _rd_and_wr
                 );
-
+// logic [DWIDTH-1:0] data_output;
 forever
   begin
     @( posedge clk_i_tb )
-    if( valid_wr && !valid_rd )
+    if( valid_wr  )
       lifo_queue.push_back( data_i_tb );
-    if( valid_rd && !valid_wr)
-      lifo_queue.pop_back();
-    
+    if( valid_rd )
+      q_tb <= lifo_queue.pop_back();
+
+    // if( valid_rd )
+    //   q_tb <= data_output;
+
     ptr <= lifo_queue.size();
     if( _read && done_rd )
       break;
@@ -455,23 +467,23 @@ initial
     //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
     // // Test: Reading process begins immediately after full
-    // fork
-    //   wr_only( 2**AWIDTH );
-    //   control_ptr(0,1,0);
-    //   non_synthesys_signal(0,1,0);
-    //   test_output_signal(0,1,0);
-    // join 
-    // cnt_error();
+    fork
+      wr_only( 2**AWIDTH );
+      control_ptr(0,1,0);
+      non_synthesys_signal(0,1,0);
+      test_output_signal(0,1,0);
+    join 
+    cnt_error();
 
-    // fork
-    //   rd_only( 2**AWIDTH + 2 );
-    //   control_ptr(1,0,0);
-    //   non_synthesys_signal(1,0,0);
-    //   test_output_signal(1,0,0);
-    // join
-    // cnt_error();
+    fork
+      rd_only( 2**AWIDTH + 2 );
+      control_ptr(1,0,0);
+      non_synthesys_signal(1,0,0);
+      test_output_signal(1,0,0);
+    join
+    cnt_error();
 
-    // // Test: Write to full
+    // Test: Write to full
     // fork
     //   wr_only( 2**AWIDTH + 5 );
     //   control_ptr(0,1,0);
@@ -525,14 +537,14 @@ initial
     // cnt_error();
 
     // // Test: Alternating read and write processes
-    fork
-      wr_only( 2**AWIDTH );
-      rd_only( 2**AWIDTH + 2 );
-      control_ptr(1,0,0);
-      non_synthesys_signal(1,0,0);
-      test_output_signal(1,0,0);
-    join
-    cnt_error();
+    // fork
+    //   wr_only( 2**AWIDTH );
+    //   rd_only( 2**AWIDTH + 2 );
+    //   control_ptr(1,0,0);
+    //   non_synthesys_signal(1,0,0);
+    //   test_output_signal(1,0,0);
+    // join
+    // cnt_error();
 
 
     // //////////////////////////////TEST 1//////////////////////////////
