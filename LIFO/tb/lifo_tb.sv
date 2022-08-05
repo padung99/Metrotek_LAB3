@@ -383,9 +383,9 @@ task control_ptr( input bit _read,
 forever
   begin
     @( posedge clk_i_tb )
-    if( valid_wr )
+    if( valid_wr && !valid_rd )
       lifo_queue.push_back( data_i_tb );
-    if( valid_rd )
+    if( valid_rd && !valid_wr)
       lifo_queue.pop_back();
     
     ptr <= lifo_queue.size();
@@ -455,44 +455,84 @@ initial
     //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
     // // Test: Reading process begins immediately after full
+    // fork
+    //   wr_only( 2**AWIDTH );
+    //   control_ptr(0,1,0);
+    //   non_synthesys_signal(0,1,0);
+    //   test_output_signal(0,1,0);
+    // join 
+    // cnt_error();
+
+    // fork
+    //   rd_only( 2**AWIDTH + 2 );
+    //   control_ptr(1,0,0);
+    //   non_synthesys_signal(1,0,0);
+    //   test_output_signal(1,0,0);
+    // join
+    // cnt_error();
+
+    // // Test: Write to full
+    // fork
+    //   wr_only( 2**AWIDTH + 5 );
+    //   control_ptr(0,1,0);
+    //   non_synthesys_signal(0,1,0);
+    //   test_output_signal(0,1,0);
+    // join
+    // cnt_error();
+
+    // // Test: read from empty
+    // fork
+    //   rd_only( 32 );
+    //   control_ptr(1,0,0);
+    //   non_synthesys_signal(1,0,0);
+    //   test_output_signal(1,0,0);
+    // join
+    // cnt_error();
+
+    // // Test: Write to full and read until empty
+    // fork
+    //   wr_only( 2**AWIDTH +5 );
+    //   control_ptr(0,1,0);
+    //   non_synthesys_signal(0,1,0);
+    //   test_output_signal(0,1,0);
+    // join 
+    // cnt_error();
+
+    // fork
+    //   rd_only( 2**AWIDTH + 2 );
+    //   control_ptr(1,0,0);
+    //   non_synthesys_signal(1,0,0);
+    //   test_output_signal(1,0,0);
+    // join
+    // cnt_error();
+
+    // // Test: Read and write at the same time with delay at the begining
+    // fork
+    //   rd_and_wr( 5 );
+    //   control_ptr(0,0,1);
+    //   non_synthesys_signal(0,0,1);
+    //   test_output_signal(0,0,1);
+    // join
+    // cnt_error();
+
+    // // Test: Read and write at the same time without delaying at the begining
+    // fork
+    //   rd_and_wr( 0 );
+    //   control_ptr(0,0,1);
+    //   non_synthesys_signal(0,0,1);
+    //   test_output_signal(0,0,1);
+    // join
+    // cnt_error();
+
+    // // Test: Alternating read and write processes
     fork
       wr_only( 2**AWIDTH );
-      control_ptr(0,1,0);
-      non_synthesys_signal(0,1,0);
-      test_output_signal(0,1,0);
-    join 
-    cnt_error();
-
-    fork
       rd_only( 2**AWIDTH + 2 );
       control_ptr(1,0,0);
       non_synthesys_signal(1,0,0);
       test_output_signal(1,0,0);
     join
     cnt_error();
-
-    // // Test: Write to full
-    // wr_only( 2**AWIDTH + 5 );
-
-    // // Test: read from empty
-    // rd_only( 32 );
-
-    // // Test: Write to full and read until empty
-    // wr_only( 2**AWIDTH + 5 );
-    // rd_only( 2**AWIDTH + 2 );
-
-    // // Test: Read and write at the same time with delay at the begining
-    // rd_and_wr( 5 );
-    
-    // // Test: Read and write at the same time without delaying at the begining
-    // rd_and_wr( 0 );
-
-    // // Test: Alternating read and write processes
-    // fork
-    //   wr_only( 2**AWIDTH );
-    //   rd_only( 2**AWIDTH + 2 );
-    // join
-
 
 
     // //////////////////////////////TEST 1//////////////////////////////
