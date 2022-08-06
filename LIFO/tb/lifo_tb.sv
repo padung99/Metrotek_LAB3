@@ -42,6 +42,7 @@ int empty_error;
 int almost_full_error;
 int almost_empty_error;
 
+int cnt_testing;
 
 initial
   forever 
@@ -152,6 +153,14 @@ idle();
 done_wr = 1'b1;
 endtask
 
+task wr_only_non_idle( input int _repeat );
+$display("Start writing until full");
+repeat( _repeat )
+  wr_1clk();
+
+$display("Finish!!!");
+done_wr = 1'b1;
+endtask
 
 task rd_only( input int _repeat );
 $display("Start reading until empty");
@@ -197,6 +206,7 @@ forever
       almost_empty_tb = 1'b1;
     else
       almost_empty_tb = 1'b0;
+
     if( _read && done_rd )
       break;
     if( _write && done_wr )
@@ -205,6 +215,18 @@ forever
       break;
     ##1;
   end
+
+endtask
+
+task reset_signal();
+
+full_tb         = 1'b0;
+almost_full_tb  = 1'b0;
+empty_tb        = 1'b0;
+almost_empty_tb = 1'b0;
+done_rd         = 1'b0;
+done_wr         = 1'b0;
+done_rd_wr      = 1'b0;
 
 endtask
 
@@ -285,6 +307,7 @@ if( q_error == 0 )
 else
   $display("q_o: %0d errors", q_error);
 
+$display("\n");
 q_error = 0;
 usew_error = 0;
 full_error = 0;
@@ -305,84 +328,159 @@ initial
     //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
     // // Test 1: Reading process begins immediately after full
-    fork
-      wr_only( 2**AWIDTH );
-      control_ptr(0,1,0);
-      non_synthesys_signal(0,1,0);
-      test_output_signal(0,1,0);
-    join 
-    cnt_error();
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       wr_only( 2**AWIDTH );
+    //       control_ptr(0,1,0);
+    //       non_synthesys_signal(0,1,0);
+    //       test_output_signal(0,1,0);
+    //     join 
+    //     cnt_error();
 
-    fork
-      rd_only( 2**AWIDTH + 2 );
-      control_ptr(1,0,0);
-      non_synthesys_signal(1,0,0);
-      test_output_signal(1,0,0);
-    join
-    cnt_error();
+    //     fork
+    //       rd_only( 2**AWIDTH + 2 );
+    //       control_ptr(1,0,0);
+    //       non_synthesys_signal(1,0,0);
+    //       test_output_signal(1,0,0);
+    //     join
+    //     cnt_error();
+    //     reset_signal();
+    //     cnt_testing++;
+    //   end
+
 
     // Test 2: Write to full
-    // fork
-    //   wr_only( 2**AWIDTH + 5 );
-    //   control_ptr(0,1,0);
-    //   non_synthesys_signal(0,1,0);
-    //   test_output_signal(0,1,0);
-    // join
-    // cnt_error();
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       wr_only( 2**AWIDTH + 5 );
+    //       control_ptr(0,1,0);
+    //       non_synthesys_signal(0,1,0);
+    //       test_output_signal(0,1,0);
+    //     join
+    //     cnt_error();
+    //     reset_signal();
+    //     cnt_testing++;
+    //   end
 
     // // Test 3: read from empty
-    // fork
-    //   rd_only( 32 );
-    //   control_ptr(1,0,0);
-    //   non_synthesys_signal(1,0,0);
-    //   test_output_signal(1,0,0);
-    // join
-    // cnt_error();
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       rd_only( 32 );
+    //       control_ptr(1,0,0);
+    //       non_synthesys_signal(1,0,0);
+    //       test_output_signal(1,0,0);
+    //     join
+    //     cnt_error();
+    //     reset_signal();
+    //     cnt_testing++;
+    //   end
 
-    // // Test 4: Write to full and read until empty
-    // fork
-    //   wr_only( 2**AWIDTH +5 );
-    //   control_ptr(0,1,0);
-    //   non_synthesys_signal(0,1,0);
-    //   test_output_signal(0,1,0);
-    // join 
-    // cnt_error();
 
-    // fork
-    //   rd_only( 2**AWIDTH + 2 );
-    //   control_ptr(1,0,0);
-    //   non_synthesys_signal(1,0,0);
-    //   test_output_signal(1,0,0);
-    // join
-    // cnt_error();
+    // // Test 4: Write to full and read from empty
+    // cnt_testing = 0;
+    // repeat(5)
+    // begin
+    //   $display("TEST %0x", cnt_testing);
+    //   fork
+    //     wr_only( 2**AWIDTH +5 );
+    //     control_ptr(0,1,0);
+    //     non_synthesys_signal(0,1,0);
+    //     test_output_signal(0,1,0);
+    //   join 
+    //   cnt_error();
+
+    //   fork
+    //     rd_only( 2**AWIDTH + 7 );
+    //     control_ptr(1,0,0);
+    //     non_synthesys_signal(1,0,0);
+    //     test_output_signal(1,0,0);
+    //   join
+    //   cnt_error();
+    //   reset_signal();
+    //   cnt_testing++;
+    // end
 
     // // Test 5: Read and write at the same time with delay at the beginning
-    // fork
-    //   rd_and_wr( 5 );
-    //   control_ptr(0,0,1);
-    //   non_synthesys_signal(0,0,1);
-    //   test_output_signal(0,0,1);
-    // join
-    // cnt_error();
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       rd_and_wr( 5 );
+    //       control_ptr(0,0,1);
+    //       non_synthesys_signal(0,0,1);
+    //       test_output_signal(0,0,1);
+    //     join
+    //     cnt_error();
+    //     reset_signal();
+    //     cnt_testing++;
+    //   end
 
     // // Test 6: Read and write at the same time without delaying at the beginning
-    // fork
-    //   rd_and_wr( 0 );
-    //   control_ptr(0,0,1);
-    //   non_synthesys_signal(0,0,1);
-    //   test_output_signal(0,0,1);
-    // join
-    // cnt_error();
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       rd_and_wr( 0 );
+    //       control_ptr(0,0,1);
+    //       non_synthesys_signal(0,0,1);
+    //       test_output_signal(0,0,1);
+    //     join
+    //     cnt_error();
+    //     reset_signal();
+    //     cnt_testing++;
+    //   end
 
     // // Test 7: Alternating read and write processes
-    // fork
-    //   wr_only( 2**AWIDTH );
-    //   rd_only( 2**AWIDTH + 2 );
-    //   control_ptr(1,0,0);
-    //   non_synthesys_signal(1,0,0);
-    //   test_output_signal(1,0,0);
-    // join
-    // cnt_error();
+    cnt_testing = 0;
+    repeat(5)
+      begin
+        $display("TEST %0x", cnt_testing);
+        fork
+          wr_only( 2**AWIDTH );
+          rd_only( 2**AWIDTH + 2 );
+          control_ptr(1,0,0);
+          non_synthesys_signal(1,0,0);
+          test_output_signal(1,0,0);
+        join
+        cnt_error();
+        reset_signal();
+        cnt_testing++;
+      end
+
+    // // Test 8:
+    // cnt_testing = 0;
+    // repeat(5)
+    // begin
+    //   $display("TEST %0x", cnt_testing);
+    //   fork
+    //     wr_only_non_idle( 2**AWIDTH +5 );
+    //     control_ptr(0,1,0);
+    //     non_synthesys_signal(0,1,0);
+    //     test_output_signal(0,1,0);
+    //   join 
+    //   cnt_error();
+
+    //   fork
+    //     rd_only( 5 );
+    //     control_ptr(1,0,0);
+    //     non_synthesys_signal(1,0,0);
+    //     test_output_signal(1,0,0);
+    //   join
+    //   cnt_error();
+    //   reset_signal();
+    //   cnt_testing++;
+    // end
 
     $display( "Test done!" );
     $stop();
