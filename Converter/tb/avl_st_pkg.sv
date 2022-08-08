@@ -74,7 +74,7 @@ while( tx_fifo.num() != 0 )
                 ast_if.data = (DATA_W)'(0);
                 ast_if.valid   = 1'b1;
                 ast_if.sop     = 1'b1;
-
+                ast_if.empty = 0;
                 ast_if.channel = new_channel;
 
                 //first word
@@ -97,6 +97,7 @@ while( tx_fifo.num() != 0 )
                 ast_if.valid = $urandom_range(1,0);
                 ast_if.eop = 1'b0;
                 ast_if.sop = 1'b0;
+                ast_if.empty = 0;
                 if( ast_if.valid == 1'b1 )
                   begin
                     ast_if.channel = new_channel;
@@ -128,7 +129,7 @@ while( tx_fifo.num() != 0 )
         ast_if.valid = 1'b1;
         ast_if.eop = 1'b1;
         ast_if.empty = 8-byte_last_word;
-        ast_if.channel = new_channel;
+        ast_if.channel = 0;
 
         ast_if.data[7:0] = new_pk[k];
         if( k != last_word_ind )
@@ -137,6 +138,7 @@ while( tx_fifo.num() != 0 )
         k--;
       end
       `cb;
+      ast_if.empty = 0;
       ast_if.valid = 1'b0;
       ast_if.eop   = 1'b0;
 
