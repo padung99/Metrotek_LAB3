@@ -241,7 +241,7 @@ task test_output_signal( input bit _read,
 forever
   begin
   @( posedge clk_i_tb );
-//TEST: usew_o 
+//TEST: q_o 
   if( q_tb != q_o_tb )
     q_error++;
 
