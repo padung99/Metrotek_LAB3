@@ -352,21 +352,21 @@ initial
     //   end
 
 
-    // Test 2: Write to full
-    // cnt_testing = 0;
-    // repeat(5)
-    //   begin
-    //     $display("TEST %0x", cnt_testing);
-    //     fork
-    //       wr_only( 2**AWIDTH + 5 );
-    //       control_ptr(0,1,0);
-    //       non_synthesys_signal(0,1,0);
-    //       test_output_signal(0,1,0);
-    //     join
-    //     cnt_error();
-    //     reset_signal();
-    //     cnt_testing++;
-    //   end
+    // // Test 2: Write to full
+    cnt_testing = 0;
+    repeat(5)
+      begin
+        $display("TEST %0x", cnt_testing);
+        fork
+          wr_only( 2**AWIDTH + 5 );
+          control_ptr(0,1,0);
+          non_synthesys_signal(0,1,0);
+          test_output_signal(0,1,0);
+        join
+        cnt_error();
+        reset_signal();
+        cnt_testing++;
+      end
 
     // // Test 3: read from empty
     // cnt_testing = 0;
@@ -442,21 +442,21 @@ initial
     //   end
 
     // // Test 7: Alternating read and write processes
-    cnt_testing = 0;
-    repeat(5)
-      begin
-        $display("TEST %0x", cnt_testing);
-        fork
-          wr_only( 2**AWIDTH );
-          rd_only( 2**AWIDTH + 2 );
-          control_ptr(1,0,0);
-          non_synthesys_signal(1,0,0);
-          test_output_signal(1,0,0);
-        join
-        cnt_error();
-        reset_signal();
-        cnt_testing++;
-      end
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       wr_only( 2**AWIDTH );
+    //       rd_only( 2**AWIDTH + 2 );
+    //       control_ptr(1,0,0);
+    //       non_synthesys_signal(1,0,0);
+    //       test_output_signal(1,0,0);
+    //     join
+    //     cnt_error();
+    //     reset_signal();
+    //     cnt_testing++;
+    //   end
 
     // // Test 8:
     // cnt_testing = 0;
@@ -481,6 +481,15 @@ initial
     //   reset_signal();
     //   cnt_testing++;
     // end
+
+    // // Test 
+    // repeat(5)
+    //   begin
+    //     wr_only_non_idle(5);
+    //     rd_only(5);
+    //     repeat(2)
+    //       idle();
+    //   end
 
     $display( "Test done!" );
     $stop();
