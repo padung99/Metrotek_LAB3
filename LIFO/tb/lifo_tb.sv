@@ -327,7 +327,7 @@ initial
     
     //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
-    // // Test 1: Reading process begins immediately after full
+    // // Test case 1: Reading process begins immediately after full
     cnt_testing = 0;
     repeat(5)
       begin
@@ -352,7 +352,7 @@ initial
       end
 
 
-    // // Test 2: Write to full
+    // // Test case 2: Write to full
     // cnt_testing = 0;
     // repeat(5)
     //   begin
@@ -368,7 +368,7 @@ initial
     //     cnt_testing++;
     //   end
 
-    // // Test 3: read from empty
+    // // Test case 3: read from empty
     // cnt_testing = 0;
     // repeat(5)
     //   begin
@@ -385,7 +385,7 @@ initial
     //   end
 
 
-    // // Test 4: Write to full and read from empty
+    // // Test case 4: Write to full and read from empty
     // cnt_testing = 0;
     // repeat(5)
     // begin
@@ -409,7 +409,7 @@ initial
     //   cnt_testing++;
     // end
 
-    // // Test 5: Read and write at the same time with delay at the beginning
+    // // Test case 5: Read and write at the same time with delay at the beginning
     // cnt_testing = 0;
     // repeat(5)
     //   begin
@@ -425,7 +425,7 @@ initial
     //     cnt_testing++;
     //   end
 
-    // // Test 6: Read and write at the same time without delaying at the beginning
+    // // Test case 6: Read and write at the same time without delaying at the beginning
     // cnt_testing = 0;
     // repeat(5)
     //   begin
@@ -441,7 +441,7 @@ initial
     //     cnt_testing++;
     //   end
 
-    // // Test 7: Alternating read and write processes
+    // // Test case 7: Alternating read and write processes
     // cnt_testing = 0;
     // repeat(5)
     //   begin
@@ -458,7 +458,7 @@ initial
     //     cnt_testing++;
     //   end
 
-    // // Test 8:
+    // // Test case 8:
     // cnt_testing = 0;
     // repeat(5)
     // begin
