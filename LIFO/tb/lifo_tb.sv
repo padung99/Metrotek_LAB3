@@ -482,15 +482,6 @@ initial
     //   cnt_testing++;
     // end
 
-    // // Test 
-    // repeat(5)
-    //   begin
-    //     wr_only_non_idle(5);
-    //     rd_only(5);
-    //     repeat(2)
-    //       idle();
-    //   end
-
     $display( "Test done!" );
     $stop();
 
