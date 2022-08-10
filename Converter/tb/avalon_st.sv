@@ -3,7 +3,7 @@ interface avalon_st #(
   parameter CHANNEL_W      = 10
 ) ( input clk );
 
-localparam EMPTY_W = $clog2(DATA_W/8);
+localparam EMPTY_W = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1;
 
 logic [DATA_W-1:0]    data;
 logic [CHANNEL_W-1:0] channel;
