@@ -17,10 +17,9 @@ virtual avalon_st #(
   .CHANNEL_W ( CHANNEL_W )
 ) ast_if;
 
-
 mailbox #( pkt_t ) tx_fifo;
 mailbox #( pkt_receive_t ) rx_fifo;
-bit send_done;
+
 
 mailbox #( logic [CHANNEL_W-1:0] ) channel_input;
 mailbox #( logic [CHANNEL_W-1:0] ) channel_output;
@@ -42,6 +41,7 @@ this.rx_fifo = _rx_fifo;
 this.channel_input = _channel_input;
 this.channel_output = _channel_output;
 this.empty_output = _empty_output;
+
 endfunction
 
 `define cb @( posedge ast_if.clk );
@@ -60,7 +60,7 @@ int int_part, mod_part;
 int last_word_ind;
 
 while( tx_fifo.num() != 0 )
-  begin
+  begin    
     tx_fifo.get( new_pk );
     new_channel = $urandom_range( 2**CHANNEL_W,0 );
     channel_input.put( new_channel );
@@ -77,7 +77,7 @@ while( tx_fifo.num() != 0 )
     else
       number_of_word = int_part + 1;
 
-    if( pkt_size < WORD_IN )
+    if( pkt_size <= WORD_IN )
       begin
         if( ast_if.ready )
           begin
@@ -179,12 +179,19 @@ while( tx_fifo.num() != 0 )
           ast_if.valid = 1'b0;
           ast_if.eop   = 1'b0;
 
+        // force_stop = 1'b1;
         k = 0;
         i = 0;
       end
+  
   repeat(10)
   `cb;
   end
+
+
+
+
+
 endtask
 
 task reveive_pk();
@@ -194,11 +201,9 @@ int j;
 forever
   begin
     `cb;
-    // if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
-    //   begin
-    //     new_pk_receive = {};
-    //     new_pk_receive.push_back( ast_if.data );
-    //   end
+
+    if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
+      j++;
     // else
     if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
       begin
@@ -213,21 +218,25 @@ forever
         rx_fifo.put( new_pk_receive );
         new_pk_receive = {};
       end
-    if( rx_fifo.num() >= MAX_PK )
+
+    if( rx_fifo.num() >= MAX_PK || j >=  MAX_PK )
      break;
   end
 
-j = 0;
+// j = 0;
 endtask
 
 task channel_out();
+int j;
 forever
   begin
   `cb;
+
     if( ast_if.sop == 1'b1 && ast_if.valid == 1'b1 )
       channel_output.put( ast_if.channel );
-
-    if( channel_output.num() >= MAX_PK )
+    if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
+      j++;
+    if( channel_output.num() >= MAX_PK || j >=  MAX_PK  )
      break;
   end
 
@@ -235,16 +244,22 @@ endtask
 
 task empty_out();
 
+int j;
+
 forever
   begin
   `cb;
+
+    if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
+      j++;
+
     if( ast_if.eop == 1'b1 && ast_if.valid == 1'b1 )
       begin
         empty_output.put( ast_if.empty );
         // $display("empty_o_class: %0d", ast_if.empty);
       end
 
-    if( empty_output.num() >= MAX_PK )
+    if( empty_output.num() >= MAX_PK || j >=  MAX_PK  )
      break;
   end
 
