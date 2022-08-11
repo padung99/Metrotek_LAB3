@@ -14,11 +14,8 @@
   + Test case 3
   + Test case 6
 
-4) sop_o ошибки:
-- sop_o неопределен (всегда = 0)
-  + Test case 3
-   
-5) eop_o ошибки:
+ 
+4) eop_o ошибки:
 - eop_o неопределен (всегда = 0)
   + Test case 3
   + Test case 6 

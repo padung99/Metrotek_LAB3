@@ -17,23 +17,6 @@ parameter MAX_PK = 5;
 bit                          clk_i_tb;
 logic                        srst_i_tb;
 
-// logic [DATA_IN_W_TB-1:0]     ast_data_i_tb;
-// logic                        ast_startofpacket_i_tb;
-// logic                        ast_endofpacket_i_tb;
-// logic                        ast_valid_i_tb;
-// logic [EMPTY_IN_W_TB-1:0]    ast_empty_i_tb;
-// logic [CHANNEL_W_TB-1:0]     ast_channel_i_tb;
-// logic                        ast_ready_o_tb;
-
-// logic [DATA_OUT_W_TB-1:0]    ast_data_o_tb;
-// logic                        ast_startofpacket_o_tb;
-// logic                        ast_endofpacket_o_tb;
-// logic                        ast_valid_o_tb;
-// logic [EMPTY_OUT_W_TB-1:0]   ast_empty_o_tb;
-// logic [CHANNEL_W_TB-1:0]     ast_channel_o_tb;
-// logic                        ast_ready_i_tb;
-
-bit force_stop;
 int k;
 
 initial
@@ -87,17 +70,17 @@ ast_width_extender #(
 
 //Declare object
 ast_class # (
-  .DATA_W    ( DATA_IN_W_TB ),
-  .CHANNEL_W ( CHANNEL_W_TB ),
-  .EMPTY_OUT_W   ( EMPTY_OUT_W_TB ),
-  .MAX_PK    ( MAX_PK       )
+  .DATA_W      ( DATA_IN_W_TB   ),
+  .CHANNEL_W   ( CHANNEL_W_TB   ),
+  .EMPTY_OUT_W ( EMPTY_OUT_W_TB ),
+  .MAX_PK      ( MAX_PK         )
 ) ast_send_pk;
 
 ast_class # (
-  .DATA_W    ( DATA_OUT_W_TB ),
-  .CHANNEL_W ( CHANNEL_W_TB  ),
-  .EMPTY_OUT_W   ( EMPTY_OUT_W_TB ),
-  .MAX_PK    ( MAX_PK        )
+  .DATA_W      ( DATA_OUT_W_TB  ),
+  .CHANNEL_W   ( CHANNEL_W_TB   ),
+  .EMPTY_OUT_W ( EMPTY_OUT_W_TB ),
+  .MAX_PK      ( MAX_PK         )
 ) ast_receive_pk;
 
 mailbox #( pkt_t ) send_packet = new();
@@ -124,17 +107,14 @@ int word_number;
 
 for( int i = 0; i < MAX_PK; i++ )
   begin
-    // random_byte = $urandom_range( 8*_min_word+1,8*_max_word+7 ); //Send 1 word and some bytes
     random_byte = $urandom_range( _min_byte,_max_byte );
     for( int j = 0; j < random_byte; j++ )
       begin
         new_data = $urandom_range( 2**8,0 );
         new_pk.push_back( new_data );
-        // $display("byte: %x", new_data);
       end
     _send_packet.put( new_pk );
     _copy_send_packet.put( new_pk );
-    // $display("\n");
     new_pk = {};
   end
 
@@ -216,7 +196,7 @@ while( _send_packet.num() != 0 )
               new_output_data = new_output_data << 8;
           end  
         new_pk_receive.insert( j, new_output_data );
-        // $display("output: %x", new_pk_receive[j]);///////////
+        // $display("output: %x", new_pk_receive[j]);
       end
 
       //last word
@@ -228,7 +208,7 @@ while( _send_packet.num() != 0 )
             new_output_data = new_output_data << 8;
         end
       new_pk_receive.insert( word_number-1, new_output_data );
-      // $display("output: %x", new_pk_receive[word_number-1]); ////////
+      // $display("output: %x", new_pk_receive[word_number-1]); 
   k = 0;
   _test_receive_pk.put( new_pk_receive );
   new_pk_receive = {};
@@ -272,8 +252,6 @@ else
                     $display("data_o [%0d][%0d] mismatch: receive: %0x, correct: %x", packet_size -_receive_packet.num(), i, new_pk_receive[i], new_test_pk_receive[i] );
                     data_error = 1'b1;
                   end
-                // else
-                //   $display("data_o [%0d][%0d] match", packet_size -_receive_packet.num(), i);
               end
           end
         if( !data_error )
@@ -351,28 +329,28 @@ initial
     
     /////////////UNCOMMENT TO RUN EACH TEST CASE (RUN 1 TEST AT THE TIME)/////////////////
 
-    // // TEST CASE 1: Number of bytes = [WORD_OUT*k] = 32 * 4 = 128
-    // gen_pk( send_packet, copy_send_packet, WORD_OUT*4, WORD_OUT*4 );
-    // ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
-    // ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
+    // //// TEST CASE 1: Number of bytes = [WORD_OUT*k] = 32 * 4 = 128
+    gen_pk( send_packet, copy_send_packet, WORD_OUT*4, WORD_OUT*4 );
+    ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
+    ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
 
-    // fork
-    //   ast_send_pk.send_pk();
-    //   ast_receive_pk.reveive_pk();
-    //   ast_receive_pk.empty_out();
-    //   ast_receive_pk.channel_out();
-    //   assert_ready();
-    // join
+    fork
+      ast_send_pk.send_pk();
+      ast_receive_pk.reveive_pk();
+      ast_receive_pk.empty_out();
+      ast_receive_pk.channel_out();
+      assert_ready();
+    join
 
-    // output_word( copy_send_packet, test_receive_pk, empty_input );
-    // test_data( receive_packet, test_receive_pk );
-    // $display("\n");
-    // test_empty( empty_input, empty_output );
-    // $display("\n");
-    // test_channel( channel_input, channel_output );
-    // $display("\n");
+    output_word( copy_send_packet, test_receive_pk, empty_input );
+    test_data( receive_packet, test_receive_pk );
+    $display("\n");
+    test_empty( empty_input, empty_output );
+    $display("\n");
+    test_channel( channel_input, channel_output );
+    $display("\n");
 
-    // // TEST CASE 2: Number of bytes = [WORD_OUT*k + N] = 32*4 + 4 = 132
+    // //// TEST CASE 2: Number of bytes = [WORD_OUT*k + N] = 32*4 + 4 = 132
     // gen_pk( send_packet, copy_send_packet, 132, 132 );
     // ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
     // ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
@@ -393,28 +371,28 @@ initial
     // test_channel( channel_input, channel_output );
     // $display("\n");
 
-    // // TEST CASE 3: Number of bytes = [WORD_IN] = 8 
-    gen_pk( send_packet, copy_send_packet, WORD_IN, WORD_IN );
-    ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
-    ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
+    // //// TEST CASE 3: Number of bytes = [WORD_IN] = 8 
+    // gen_pk( send_packet, copy_send_packet, WORD_IN, WORD_IN );
+    // ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
+    // ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
 
-    fork
-      ast_send_pk.send_pk();
-      ast_receive_pk.reveive_pk();
-      ast_receive_pk.empty_out();
-      ast_receive_pk.channel_out();
-      assert_ready();
-    join
+    // fork
+    //   ast_send_pk.send_pk();
+    //   ast_receive_pk.reveive_pk();
+    //   ast_receive_pk.empty_out();
+    //   ast_receive_pk.channel_out();
+    //   assert_ready();
+    // join
 
-    output_word( copy_send_packet, test_receive_pk, empty_input );
-    test_data( receive_packet, test_receive_pk );
-    $display("\n");
-    test_empty( empty_input, empty_output );
-    $display("\n");
-    test_channel( channel_input, channel_output );
-    $display("\n");
+    // output_word( copy_send_packet, test_receive_pk, empty_input );
+    // test_data( receive_packet, test_receive_pk );
+    // $display("\n");
+    // test_empty( empty_input, empty_output );
+    // $display("\n");
+    // test_channel( channel_input, channel_output );
+    // $display("\n");
 
-    // // TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 14
+    // //// TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 14
     // gen_pk( send_packet, copy_send_packet, WORD_IN*1+5, WORD_IN*1+5 );
     // ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
     // ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
@@ -435,7 +413,7 @@ initial
     // test_channel( channel_input, channel_output );
     // $display("\n");
 
-    // // TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32
+    // //// TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32
     // gen_pk( send_packet, copy_send_packet, WORD_OUT*1, WORD_OUT*1 );
     // ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
     // ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
@@ -456,7 +434,7 @@ initial
     // test_channel( channel_input, channel_output );
     // $display("\n");
 
-    // // TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2
+    // //// TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2
     // gen_pk( send_packet, copy_send_packet, WORD_IN - 6, WORD_IN - 6  );
     // ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
     // ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
@@ -477,7 +455,7 @@ initial
     // test_channel( channel_input, channel_output );
     // $display("\n");
 
-    // // TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3 
+    // //// TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3 
     // gen_pk( send_packet, copy_send_packet, WORD_IN*3 , WORD_IN*3 );
     // ast_send_pk    = new( ast_snk_if, send_packet, receive_packet, channel_input, channel_output, empty_output );
     // ast_receive_pk = new( ast_src_if, send_packet, receive_packet, channel_input, channel_output, empty_output );

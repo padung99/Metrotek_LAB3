@@ -50,7 +50,7 @@ task send_pk();
 
 pkt_t new_pk;
 
-// int empty_new;
+
 int pkt_size;
 int i, k;
 logic [CHANNEL_W-1:0] new_channel;
@@ -64,7 +64,7 @@ while( tx_fifo.num() != 0 )
     tx_fifo.get( new_pk );
     new_channel = $urandom_range( 2**CHANNEL_W,0 );
     channel_input.put( new_channel );
-    // $display("channel: %0x",new_channel );
+
     pkt_size = new_pk.size();
 
 
@@ -89,7 +89,6 @@ while( tx_fifo.num() != 0 )
             for( int j = pkt_size-1; j >= 0; j-- )
               begin
                 ast_if.data[7:0] = new_pk[j];
-                // $display("data send: %x", new_pk[j]);
                 if( j != 0 )
                   ast_if.data = ast_if.data << 8;
               end
@@ -117,18 +116,16 @@ while( tx_fifo.num() != 0 )
                     for( int j = WORD_IN-1; j >= 0; j-- )
                       begin
                         ast_if.data[7:0] = new_pk[j];
-                        // $display("data send: %x", new_pk[j]);
                         if( j != 0 )
                           ast_if.data = ast_if.data << 8;
                       end
 
-                    // $display("\n");
                     `cb;
                     ast_if.valid = 1'b0;
                     ast_if.sop   = 1'b0;
                     i++;
                   end
-                else if( i != 0 )
+                else
                   begin
                     ast_if.data = (DATA_W)'(0);
                     ast_if.valid = $urandom_range(1,0);
@@ -179,7 +176,6 @@ while( tx_fifo.num() != 0 )
           ast_if.valid = 1'b0;
           ast_if.eop   = 1'b0;
 
-        // force_stop = 1'b1;
         k = 0;
         i = 0;
       end
@@ -188,55 +184,45 @@ while( tx_fifo.num() != 0 )
   `cb;
   end
 
-
-
-
-
 endtask
 
 task reveive_pk();
 
 pkt_receive_t new_pk_receive;
-int j;
 forever
   begin
     `cb;
 
-    if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
-      j++;
-    // else
+
     if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
       begin
         new_pk_receive.push_back( ast_if.data );
-      //  $display( "receive: %x", ast_if.data ); /////////////
+      //  $display( "receive: %x", ast_if.data ); 
       end
     else if( ast_if.valid == 1'b1 && ast_if.eop == 1'b1 )
       begin
         new_pk_receive.push_back( ast_if.data );
-        // $display( "receive: %x", ast_if.data ); //////////////
-        // $display("size: %0d", rx_fifo.num());
+        // $display( "receive: %x", ast_if.data );
         rx_fifo.put( new_pk_receive );
         new_pk_receive = {};
       end
 
-    if( rx_fifo.num() >= MAX_PK || j >=  MAX_PK )
+    if( rx_fifo.num() >= MAX_PK  )
      break;
   end
 
-// j = 0;
 endtask
 
 task channel_out();
-int j;
+
 forever
   begin
   `cb;
 
     if( ast_if.sop == 1'b1 && ast_if.valid == 1'b1 )
       channel_output.put( ast_if.channel );
-    if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
-      j++;
-    if( channel_output.num() >= MAX_PK || j >=  MAX_PK  )
+
+    if( channel_output.num() >= MAX_PK   )
      break;
   end
 
@@ -244,22 +230,13 @@ endtask
 
 task empty_out();
 
-int j;
-
 forever
   begin
   `cb;
-
-    if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
-      j++;
-
     if( ast_if.eop == 1'b1 && ast_if.valid == 1'b1 )
-      begin
-        empty_output.put( ast_if.empty );
-        // $display("empty_o_class: %0d", ast_if.empty);
-      end
+      empty_output.put( ast_if.empty );
 
-    if( empty_output.num() >= MAX_PK || j >=  MAX_PK  )
+    if( empty_output.num() >= MAX_PK )
      break;
   end
 
