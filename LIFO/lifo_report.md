@@ -18,10 +18,13 @@
   + Test case 2: 2575 ps, Transcript: : usew_o: ... errors
   + Test case 4: 2585 ps, Transcript: : usew_o: ... errors
 
-5) q_o ошибки:
+5) q_o ошибки ( Transcript: q_o: ... errors )
 - 1 значение было опущено в начале процесса чтения
-  + Test case 5: 75 ps, Transcript: q_o: ... errors
+  + Test case 5: 75 ps
 - В начале процесса чтения есть лишное значение
-  + Test case 8: 2655 ps, Transcript: q_o: ... errors
+  + Test case 8: 2655 ps, 
 - Данные не могут быть считаны из-за ошибки в сигнале empty_o после сброса
-  + Test case 6: 35 ps, Transcript: q_o: ... errors
+  + Test case 6: 35 ps
+- Выходное значение не определено
+  + Test case 9: 955 ps
+

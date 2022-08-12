@@ -90,11 +90,29 @@ task wr_1clk();
 
 endtask
 
+task wr_1clk_random();
+
+@( posedge clk_i_tb );
+  wrreq_i_tb <= $urandom_range(1,0);
+  rdreq_i_tb <= 1'b0;
+  data_i_tb <= $urandom_range(2**DWIDTH,0);
+
+endtask
+
 task rd_1clk();
 
 @( posedge clk_i_tb );
 wrreq_i_tb <= 1'b0;
 rdreq_i_tb <= 1'b1;
+
+
+endtask
+
+task rd_1clk_random();
+
+@( posedge clk_i_tb );
+wrreq_i_tb <= 1'b0;
+rdreq_i_tb <= $urandom_range(1,0);
 
 
 endtask
@@ -153,6 +171,16 @@ idle();
 done_wr = 1'b1;
 endtask
 
+task wr_only_random( input int _repeat );
+$display("Start writing until full");
+repeat( _repeat )
+  wr_1clk_random();
+
+$display("Finish!!!");
+idle();
+done_wr = 1'b1;
+endtask
+
 task wr_only_non_idle( input int _repeat );
 $display("Start writing until full");
 repeat( _repeat )
@@ -170,8 +198,15 @@ done_rd = 1'b1;
 $display("Finish!!!");
 endtask
 
-task rd_and_wr( input int _delay );
+task rd_only_random( input int _repeat );
+$display("Start reading until empty");
+repeat( _repeat )
+  rd_1clk_random();
+done_rd = 1'b1;
+$display("Finish!!!");
+endtask
 
+task rd_and_wr( input int _delay );
 repeat( _delay )
   wr_1clk();
 repeat( 2**AWIDTH-_delay )
@@ -328,28 +363,28 @@ initial
     //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
     // // Test case 1: Reading process begins immediately after full
-    cnt_testing = 0;
-    repeat(5)
-      begin
-        $display("TEST %0x", cnt_testing);
-        fork
-          wr_only( 2**AWIDTH );
-          control_ptr(0,1,0);
-          non_synthesys_signal(0,1,0);
-          test_output_signal(0,1,0);
-        join 
-        cnt_error();
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       wr_only( 2**AWIDTH );
+    //       control_ptr(0,1,0);
+    //       non_synthesys_signal(0,1,0);
+    //       test_output_signal(0,1,0);
+    //     join 
+    //     cnt_error();
 
-        fork
-          rd_only( 2**AWIDTH + 7 );
-          control_ptr(1,0,0);
-          non_synthesys_signal(1,0,0);
-          test_output_signal(1,0,0);
-        join
-        cnt_error();
-        reset_signal();
-        cnt_testing++;
-      end
+    //     fork
+    //       rd_only( 2**AWIDTH + 7 );
+    //       control_ptr(1,0,0);
+    //       non_synthesys_signal(1,0,0);
+    //       test_output_signal(1,0,0);
+    //     join
+    //     cnt_error();
+    //     reset_signal();
+    //     cnt_testing++;
+    //   end
 
 
     // // Test case 2: Write to full
@@ -481,6 +516,17 @@ initial
     //   reset_signal();
     //   cnt_testing++;
     // end
+
+
+    // // Test case 9: Random rdreq and wrreq
+    fork
+      wr_only_random( 100000 );
+      rd_only_random( 100000 );
+      control_ptr(0,1,0);
+      non_synthesys_signal(0,1,0);
+      test_output_signal(0,1,0);
+    join
+    cnt_error();
 
     $display( "Test done!" );
     $stop();
