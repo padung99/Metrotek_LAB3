@@ -461,20 +461,20 @@ initial
     //   end
 
     // // Test case 6: Read and write at the same time without delaying at the beginning
-    // cnt_testing = 0;
-    // repeat(5)
-    //   begin
-    //     $display("TEST %0x", cnt_testing);
-    //     fork
-    //       rd_and_wr( 0 );
-    //       control_ptr(0,0,1);
-    //       non_synthesys_signal(0,0,1);
-    //       test_output_signal(0,0,1);
-    //     join
-    //     cnt_error();
-    //     reset_signal();
-    //     cnt_testing++;
-    //   end
+    cnt_testing = 0;
+    repeat(5)
+      begin
+        $display("TEST %0x", cnt_testing);
+        fork
+          rd_and_wr( 0 );
+          control_ptr(0,0,1);
+          non_synthesys_signal(0,0,1);
+          test_output_signal(0,0,1);
+        join
+        cnt_error();
+        reset_signal();
+        cnt_testing++;
+      end
 
     // // Test case 7: Alternating read and write processes
     // cnt_testing = 0;
@@ -519,14 +519,14 @@ initial
 
 
     // // Test case 9: Random rdreq and wrreq
-    fork
-      wr_only_random( 100000 );
-      rd_only_random( 100000 );
-      control_ptr(0,1,0);
-      non_synthesys_signal(0,1,0);
-      test_output_signal(0,1,0);
-    join
-    cnt_error();
+    // fork
+    //   wr_only_random( 100000 );
+    //   rd_only_random( 100000 );
+    //   control_ptr(0,1,0);
+    //   non_synthesys_signal(0,1,0);
+    //   test_output_signal(0,1,0);
+    // join
+    // cnt_error();
 
     $display( "Test done!" );
     $stop();
