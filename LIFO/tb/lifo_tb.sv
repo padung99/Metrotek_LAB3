@@ -121,17 +121,15 @@ task control_ptr( input bit _read,
                             _write,
                             _rd_and_wr
                 );
-// logic [DWIDTH-1:0] data_output;
+
 forever
   begin
     @( posedge clk_i_tb )
-    if( valid_wr  )
+    if( valid_wr )
       lifo_queue.push_back( data_i_tb );
     if( valid_rd )
       q_tb <= lifo_queue.pop_back();
 
-    // if( valid_rd )
-    //   q_tb <= data_output;
 
     ptr <= lifo_queue.size();
     if( _read && done_rd )
@@ -159,6 +157,27 @@ task idle();
 wrreq_i_tb <= 1'b0;
 rdreq_i_tb <= 1'b0;
 
+endtask
+
+task rd_wr_idle( input int _repeat );
+
+repeat( 5 )
+  begin
+    wr_1clk();
+    idle();
+  end
+
+repeat( _repeat )
+  begin
+    rd_and_wr_1clk();
+    idle();
+  end
+
+repeat( 5 )
+  begin
+    rd_1clk();
+    idle();
+  end
 endtask
 
 task wr_only( input int _repeat );
@@ -216,6 +235,15 @@ repeat( _delay )
 done_rd_wr = 1'b1;
 endtask
 
+task reset();
+
+// @( posedge clk_i_tb );
+srst_i_tb <= 1;
+@( posedge clk_i_tb );
+srst_i_tb = 0;
+
+endtask
+
 task non_synthesys_signal( input bit _read,
                                      _write,
                                      _rd_and_wr
@@ -255,13 +283,13 @@ endtask
 
 task reset_signal();
 
-full_tb         = 1'b0;
-almost_full_tb  = 1'b0;
-empty_tb        = 1'b0;
-almost_empty_tb = 1'b0;
-done_rd         = 1'b0;
-done_wr         = 1'b0;
-done_rd_wr      = 1'b0;
+    full_tb         = 1'b0;
+    almost_full_tb  = 1'b0;
+    empty_tb        = 1'b1;
+    almost_empty_tb = 1'b1;
+    done_rd         = 1'b0;
+    done_wr         = 1'b0;
+    done_rd_wr      = 1'b0;
 
 endtask
 
@@ -283,7 +311,7 @@ forever
   if( ptr != usedw_o_tb )
     usew_error++;
 
-//TEST: full_o   
+//TEST: full_o
   if( full_o_tb != full_tb )
     full_error++;
 
@@ -309,6 +337,7 @@ forever
     break;
   end
 endtask
+
 
 task cnt_error();
 
@@ -353,12 +382,11 @@ almost_empty_error = 0;
 endtask
 
 
-
 initial
   begin
-    srst_i_tb = 1;
-    ##1;
-    srst_i_tb = 0;
+    srst_i_tb <= 1;
+    @( posedge clk_i_tb );
+    srst_i_tb <= 0;
     
     //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
@@ -376,13 +404,15 @@ initial
     //     cnt_error();
 
     //     fork
-    //       rd_only( 2**AWIDTH + 7 );
+    //       rd_only( 2**AWIDTH );
     //       control_ptr(1,0,0);
     //       non_synthesys_signal(1,0,0);
     //       test_output_signal(1,0,0);
     //     join
     //     cnt_error();
-    //     reset_signal();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
 
@@ -399,7 +429,10 @@ initial
     //       test_output_signal(0,1,0);
     //     join
     //     cnt_error();
-    //     reset_signal();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
+    //     reset();
     //     cnt_testing++;
     //   end
 
@@ -415,7 +448,9 @@ initial
     //       test_output_signal(1,0,0);
     //     join
     //     cnt_error();
-    //     reset_signal();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
 
@@ -440,41 +475,47 @@ initial
     //     test_output_signal(1,0,0);
     //   join
     //   cnt_error();
-    //   reset_signal();
+    //   done_rd         = 1'b0;
+    //   done_wr         = 1'b0;
+    //   done_rd_wr      = 1'b0;
     //   cnt_testing++;
     // end
 
-    // // Test case 5: Read and write at the same time with delay at the beginning
+    // // Test case 5: write to half-full and after that, read and write at the same time
     // cnt_testing = 0;
     // repeat(5)
     //   begin
     //     $display("TEST %0x", cnt_testing);
     //     fork
-    //       rd_and_wr( 5 );
+    //       rd_and_wr( 2**AWIDTH/2 );
     //       control_ptr(0,0,1);
     //       non_synthesys_signal(0,0,1);
     //       test_output_signal(0,0,1);
     //     join
     //     cnt_error();
-    //     reset_signal();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
 
-    // // Test case 6: Read and write at the same time without delaying at the beginning
-    cnt_testing = 0;
-    repeat(5)
-      begin
-        $display("TEST %0x", cnt_testing);
-        fork
-          rd_and_wr( 0 );
-          control_ptr(0,0,1);
-          non_synthesys_signal(0,0,1);
-          test_output_signal(0,0,1);
-        join
-        cnt_error();
-        reset_signal();
-        cnt_testing++;
-      end
+    // // Test case 6: Read and write at the same time without delaying at the beginning of reading process
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       rd_and_wr( 0 );
+    //       control_ptr(0,0,1);
+    //       non_synthesys_signal(0,0,1);
+    //       test_output_signal(0,0,1);
+    //     join
+    //     cnt_error();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
+    //     cnt_testing++;
+    //   end
 
     // // Test case 7: Alternating read and write processes
     // cnt_testing = 0;
@@ -489,11 +530,13 @@ initial
     //       test_output_signal(1,0,0);
     //     join
     //     cnt_error();
-    //     reset_signal();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
 
-    // // Test case 8:
+    // // Test case 8: Write to full lifo, and read process (rdreq) begins immediately after wrreq has been deasserted.
     // cnt_testing = 0;
     // repeat(5)
     // begin
@@ -513,20 +556,138 @@ initial
     //     test_output_signal(1,0,0);
     //   join
     //   cnt_error();
-    //   reset_signal();
+    //   done_rd         = 1'b0;
+    //   done_wr         = 1'b0;
+    //   done_rd_wr      = 1'b0;
     //   cnt_testing++;
     // end
 
 
     // // Test case 9: Random rdreq and wrreq
     // fork
-    //   wr_only_random( 100000 );
-    //   rd_only_random( 100000 );
+    //   wr_only_random( 1000 );
+    //   rd_only_random( 1000 );
     //   control_ptr(0,1,0);
     //   non_synthesys_signal(0,1,0);
     //   test_output_signal(0,1,0);
     // join
     // cnt_error();
+
+    // // Test case 10: Reading process begins immediately after full, repeat 5 times with reset ( non idle after empty )
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       wr_only( 20 );
+    //       control_ptr(0,1,0);
+    //       non_synthesys_signal(0,1,0);
+    //       test_output_signal(0,1,0);
+    //     join 
+    //     cnt_error();
+
+    //     fork
+    //       rd_only( 10 );
+    //       control_ptr(1,0,0);
+    //       non_synthesys_signal(1,0,0);
+    //       test_output_signal(1,0,0);
+    //     join
+    //     cnt_error();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
+    //     // idle();
+    //     reset();
+    //     cnt_testing++;
+    //   end
+
+    // // Test case 11: Reading process begins immediately after full, repeat 5 times with reset ( idle after empty )
+    // cnt_testing = 0;
+    // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+
+    //     wr_only( 20 );
+    //     rd_only( 10 );
+        
+    //     idle();
+    //     reset();
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
+
+    //     cnt_testing++;
+    //   end
+
+    // // Test case 12: Write to lifo full twice and read out once (Test write until full )
+    // cnt_testing = 0;
+    // // repeat(5)
+    // begin
+    //   $display("TEST %0x", cnt_testing);
+
+    //   fork
+    //     wr_only( 2**AWIDTH );
+    //     control_ptr(0,1,0);
+    //     non_synthesys_signal(0,1,0);
+    //     test_output_signal(0,1,0);
+    //   join
+
+    //   idle();
+
+    //   fork
+    //     wr_only( 2**AWIDTH );
+    //     control_ptr(0,1,0);
+    //     non_synthesys_signal(0,1,0);
+    //     test_output_signal(0,1,0);
+    //   join
+
+    //   fork
+    //     rd_only( 2**AWIDTH +2);
+    //     control_ptr(1,0,0);
+    //     non_synthesys_signal(1,0,0);
+    //     test_output_signal(1,0,0);
+    //   join
+    //   cnt_error();
+    //   done_rd         = 1'b0;
+    //   done_wr         = 1'b0;
+    //   done_rd_wr      = 1'b0;
+    //   cnt_testing++;
+    // end
+
+    // // Test case 13:  Write to lifo full once and read out twice (Test read from empty)
+    cnt_testing = 0;
+    // repeat(5)
+    begin
+      $display("TEST %0x", cnt_testing);
+
+      fork
+        wr_only( 2**AWIDTH );
+        control_ptr(0,1,0);
+        non_synthesys_signal(0,1,0);
+        test_output_signal(0,1,0);
+      join
+
+      fork
+        rd_only( 2**AWIDTH +2 );
+        control_ptr(1,0,0);
+        non_synthesys_signal(1,0,0);
+        test_output_signal(1,0,0);
+      join
+      cnt_error();
+      idle();
+
+      fork
+        rd_only( 2**AWIDTH +2);
+        control_ptr(1,0,0);
+        non_synthesys_signal(1,0,0);
+        test_output_signal(1,0,0);
+      join
+      cnt_error();
+      done_rd         = 1'b0;
+      done_wr         = 1'b0;
+      done_rd_wr      = 1'b0;
+      cnt_testing++;
+    end
 
     $display( "Test done!" );
     $stop();

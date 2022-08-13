@@ -11,22 +11,28 @@
   + Все Test case: 35 ps, Transcript: almost_full_o: ... errors
 
 4) usew_o ошибки:
-- Чтение из пустой очереди ( usew_o уменьшается хотя пустая очередь)
+- usew_o уменьшается хотя пустая очередь
   + Test case 3: 25 ps, Transcript: usew_o: ... errors
-  + Test case 1: 5165 ps, Transcript: usew_o: ... errors
-- Запись в полную очередь ( usew_o увеличивается хотя очередь полна )
+  + Test case 4: 5255 ps, Transcript: usew_o: ... errors
+- usew_o увеличивается хотя очередь полна
   + Test case 2: 2575 ps, Transcript: : usew_o: ... errors
   + Test case 4: 2585 ps, Transcript: : usew_o: ... errors
 
-5) q_o ошибки ( Transcript: q_o: ... errors )
+1) q_o ошибки ( Transcript: q_o: ... errors )
 - 1 значение было опущено в начале процесса чтения
   + Test case 5: 75 ps
+- Последнее выходное значение не определено
+  + Test case 5: 7695 ps
 - В начале процесса чтения есть лишное значение
-  + Test case 8: 2655 ps, 
+  + Test case 8: 2655 ps,
 - Данные не могут быть считаны из-за ошибки в сигнале empty_o после сброса
   + Test case 6: 35 ps
 - Выходное значение не определено
   + Test case 9: 955 ps
-Выходное значение не определено
-  + Test case 6: 35 ps 
+- Последнее выходное значение неправильное
+  + Test case 1: 10295 ps
 
+6) reset error:
+- Если srst_i = 1 когда rdreq = 1, у srst_i будет ошибка. Если после чтения будет idle(rdreq = 0 и wrreq = 0), результат сигнала "reset" будет как в Test case 11 ( 325 ps )
+  + Test case 10: 355 ps
+ 
