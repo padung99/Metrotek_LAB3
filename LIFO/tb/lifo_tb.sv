@@ -619,7 +619,7 @@ initial
     //     cnt_testing++;
     //   end
 
-    // // Test case 12: Write to lifo full twice and read out once (Test write until full )
+    // // Test case 12: Write to lifo full twice and read out once (Test write to full )
     // cnt_testing = 0;
     // // repeat(5)
     // begin
@@ -655,39 +655,57 @@ initial
     // end
 
     // // Test case 13:  Write to lifo full once and read out twice (Test read from empty)
-    cnt_testing = 0;
-    // repeat(5)
-    begin
-      $display("TEST %0x", cnt_testing);
+    // cnt_testing = 0;
+    // // repeat(5)
+    // begin
+    //   $display("TEST %0x", cnt_testing);
 
-      fork
-        wr_only( 2**AWIDTH );
-        control_ptr(0,1,0);
-        non_synthesys_signal(0,1,0);
-        test_output_signal(0,1,0);
-      join
+    //   fork
+    //     wr_only( 2**AWIDTH );
+    //     control_ptr(0,1,0);
+    //     non_synthesys_signal(0,1,0);
+    //     test_output_signal(0,1,0);
+    //   join
 
-      fork
-        rd_only( 2**AWIDTH +2 );
-        control_ptr(1,0,0);
-        non_synthesys_signal(1,0,0);
-        test_output_signal(1,0,0);
-      join
-      cnt_error();
-      idle();
+    //   fork
+    //     rd_only( 2**AWIDTH +2 );
+    //     control_ptr(1,0,0);
+    //     non_synthesys_signal(1,0,0);
+    //     test_output_signal(1,0,0);
+    //   join
+    //   cnt_error();
+    //   idle();
 
-      fork
-        rd_only( 2**AWIDTH +2);
-        control_ptr(1,0,0);
-        non_synthesys_signal(1,0,0);
-        test_output_signal(1,0,0);
-      join
-      cnt_error();
-      done_rd         = 1'b0;
-      done_wr         = 1'b0;
-      done_rd_wr      = 1'b0;
-      cnt_testing++;
-    end
+    //   fork
+    //     rd_only( 2**AWIDTH +2);
+    //     control_ptr(1,0,0);
+    //     non_synthesys_signal(1,0,0);
+    //     test_output_signal(1,0,0);
+    //   join
+    //   cnt_error();
+    //   done_rd         = 1'b0;
+    //   done_wr         = 1'b0;
+    //   done_rd_wr      = 1'b0;
+    //   cnt_testing++;
+    // end
+
+    // // Test case 14: Write to lifo full and after that read/write at the same time
+
+    fork
+      wr_only( 2**AWIDTH );
+      control_ptr(0,1,0);
+      non_synthesys_signal(0,1,0);
+      test_output_signal(0,1,0);
+    join
+
+
+    fork
+      rd_and_wr( 0 );
+      control_ptr(0,0,1);
+      non_synthesys_signal(0,0,1);
+      test_output_signal(0,0,1);
+    join
+    cnt_error();
 
     $display( "Test done!" );
     $stop();
