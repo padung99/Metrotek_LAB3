@@ -415,7 +415,7 @@ initial
     //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
-
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
     // // Test case 2: Write to full
     // cnt_testing = 0;
@@ -435,6 +435,8 @@ initial
     //     reset();
     //     cnt_testing++;
     //   end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // // Test case 3: read from empty
     // cnt_testing = 0;
@@ -453,9 +455,9 @@ initial
     //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
+    //////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    // // Test case 4: Write to full and read from empty
+    // // Test case 4: Write some value after full and read out all data
     // cnt_testing = 0;
     // repeat(5)
     // begin
@@ -469,7 +471,7 @@ initial
     //   cnt_error();
 
     //   fork
-    //     rd_only( 2**AWIDTH + 7 );
+    //     rd_only( 2**AWIDTH + 5 );
     //     control_ptr(1,0,0);
     //     non_synthesys_signal(1,0,0);
     //     test_output_signal(1,0,0);
@@ -480,6 +482,8 @@ initial
     //   done_rd_wr      = 1'b0;
     //   cnt_testing++;
     // end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // // Test case 5: write to half-full and after that, read and write at the same time
     // cnt_testing = 0;
@@ -498,6 +502,8 @@ initial
     //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // // Test case 6: Read and write at the same time without delaying at the beginning of reading process
     // cnt_testing = 0;
@@ -516,6 +522,8 @@ initial
     //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // // Test case 7: Alternating read and write processes
     // cnt_testing = 0;
@@ -535,6 +543,8 @@ initial
     //     done_rd_wr      = 1'b0;
     //     cnt_testing++;
     //   end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // // Test case 8: Write to full lifo, and read process (rdreq) begins immediately after wrreq has been deasserted.
     // cnt_testing = 0;
@@ -561,7 +571,7 @@ initial
     //   done_rd_wr      = 1'b0;
     //   cnt_testing++;
     // end
-
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // // Test case 9: Random rdreq and wrreq
     // fork
@@ -572,8 +582,10 @@ initial
     //   test_output_signal(0,1,0);
     // join
     // cnt_error();
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    // // Test case 10: Reading process begins immediately after full, repeat 5 times with reset ( non idle after empty )
+
+    // // Test case 10: Reading process begins immediately after full, repeat 5 times with reset ( non idle before reset )
     // cnt_testing = 0;
     // repeat(5)
     //   begin
@@ -600,8 +612,10 @@ initial
     //     reset();
     //     cnt_testing++;
     //   end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    // // Test case 11: Reading process begins immediately after full, repeat 5 times with reset ( idle after empty )
+
+    // // Test case 11: Reading process begins immediately after full, repeat 5 times with reset ( idle before reset )
     // cnt_testing = 0;
     // repeat(5)
     //   begin
@@ -618,6 +632,8 @@ initial
 
     //     cnt_testing++;
     //   end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // // Test case 12: Write to lifo full twice and read out once (Test write to full )
     // cnt_testing = 0;
@@ -653,6 +669,9 @@ initial
     //   done_rd_wr      = 1'b0;
     //   cnt_testing++;
     // end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
     // // Test case 13:  Write to lifo full once and read out twice (Test read from empty)
     // cnt_testing = 0;
@@ -688,9 +707,10 @@ initial
     //   done_rd_wr      = 1'b0;
     //   cnt_testing++;
     // end
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // // Test case 14: Write to lifo full and after that read/write at the same time
-
     fork
       wr_only( 2**AWIDTH );
       control_ptr(0,1,0);
@@ -706,9 +726,11 @@ initial
       test_output_signal(0,0,1);
     join
     cnt_error();
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     $display( "Test done!" );
     $stop();
+    
 
   end
 
