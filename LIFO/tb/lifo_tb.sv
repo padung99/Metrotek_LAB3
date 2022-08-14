@@ -388,7 +388,7 @@ initial
     @( posedge clk_i_tb );
     srst_i_tb <= 0;
     
-    //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
+    //////////////////UNCOMMENT TO RUN EACH TEST CASE (RUN 1 TEST AT THE TIME)/////////////////
 
     // // Test case 1: Reading process begins immediately after full
     cnt_testing = 0;
