@@ -90,6 +90,7 @@ task wr_1clk();
 
 endtask
 
+
 task wr_1clk_random();
 
 @( posedge clk_i_tb );
@@ -237,7 +238,6 @@ endtask
 
 task reset();
 
-// @( posedge clk_i_tb );
 srst_i_tb <= 1;
 @( posedge clk_i_tb );
 srst_i_tb = 0;
@@ -391,30 +391,30 @@ initial
     //////////////////Uncomment to run each test case (Run 1 test at the time)/////////////////
 
     // // Test case 1: Reading process begins immediately after full
-    // cnt_testing = 0;
-    // repeat(5)
-    //   begin
-    //     $display("TEST %0x", cnt_testing);
-    //     fork
-    //       wr_only( 2**AWIDTH );
-    //       control_ptr(0,1,0);
-    //       non_synthesys_signal(0,1,0);
-    //       test_output_signal(0,1,0);
-    //     join 
-    //     cnt_error();
+    cnt_testing = 0;
+    repeat(5)
+      begin
+        $display("TEST %0x", cnt_testing);
+        fork
+          wr_only( 2**AWIDTH );
+          control_ptr(0,1,0);
+          non_synthesys_signal(0,1,0);
+          test_output_signal(0,1,0);
+        join 
+        cnt_error();
 
-    //     fork
-    //       rd_only( 2**AWIDTH );
-    //       control_ptr(1,0,0);
-    //       non_synthesys_signal(1,0,0);
-    //       test_output_signal(1,0,0);
-    //     join
-    //     cnt_error();
-    //     done_rd         = 1'b0;
-    //     done_wr         = 1'b0;
-    //     done_rd_wr      = 1'b0;
-    //     cnt_testing++;
-    //   end
+        fork
+          rd_only( 2**AWIDTH );
+          control_ptr(1,0,0);
+          non_synthesys_signal(1,0,0);
+          test_output_signal(1,0,0);
+        join
+        cnt_error();
+        done_rd         = 1'b0;
+        done_wr         = 1'b0;
+        done_rd_wr      = 1'b0;
+        cnt_testing++;
+      end
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     // // Test case 2: Write to full
@@ -619,8 +619,6 @@ initial
     // cnt_testing = 0;
     // repeat(5)
     //   begin
-    //     $display("TEST %0x", cnt_testing);
-
     //     wr_only( 20 );
     //     rd_only( 10 );
         
@@ -629,8 +627,6 @@ initial
     //     done_rd         = 1'b0;
     //     done_wr         = 1'b0;
     //     done_rd_wr      = 1'b0;
-
-    //     cnt_testing++;
     //   end
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -711,22 +707,59 @@ initial
 
 
     // // Test case 14: Write to lifo full and after that read/write at the same time
-    fork
-      wr_only( 2**AWIDTH );
-      control_ptr(0,1,0);
-      non_synthesys_signal(0,1,0);
-      test_output_signal(0,1,0);
-    join
+    // fork
+    //   wr_only( 2**AWIDTH );
+    //   control_ptr(0,1,0);
+    //   non_synthesys_signal(0,1,0);
+    //   test_output_signal(0,1,0);
+    // join
 
 
-    fork
-      rd_and_wr( 0 );
-      control_ptr(0,0,1);
-      non_synthesys_signal(0,0,1);
-      test_output_signal(0,0,1);
-    join
-    cnt_error();
+    // fork
+    //   rd_and_wr( 0 );
+    //   control_ptr(0,0,1);
+    //   non_synthesys_signal(0,0,1);
+    //   test_output_signal(0,0,1);
+    // join
+    // cnt_error();
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    // // Test case 15: Write some value, read until empty, and after that, write/read at the same time
+    // cnt_testing = 0;
+    // // repeat(5)
+    //   begin
+    //     $display("TEST %0x", cnt_testing);
+    //     fork
+    //       wr_only( 10 );
+    //       control_ptr(0,1,0);
+    //       non_synthesys_signal(0,1,0);
+    //       test_output_signal(0,1,0);
+    //     join 
+    //     cnt_error();
+
+    //     fork
+    //       rd_only( 10 + 2);
+    //       control_ptr(1,0,0);
+    //       non_synthesys_signal(1,0,0);
+    //       test_output_signal(1,0,0);
+    //     join
+    //     cnt_error();
+    //     repeat(2)
+    //       idle();
+    //     fork
+    //       rd_and_wr( 0 );
+    //       control_ptr(0,0,1);
+    //       non_synthesys_signal(0,0,1);
+    //       test_output_signal(0,0,1);
+    //     join
+
+    //     done_rd         = 1'b0;
+    //     done_wr         = 1'b0;
+    //     done_rd_wr      = 1'b0;
+    //     cnt_testing++;
+    //   end
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
 
     $display( "Test done!" );
     $stop();

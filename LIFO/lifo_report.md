@@ -1,22 +1,23 @@
-1) empty_o ошибки:
+1) empty_o ошибки ( Transcript: empty_o: ... errors )
 - После “reset”, empty_o должен быть = 1
-  + Все Test case:  5 ps, Transcript: empty_o: ... errors
+  + Все Test case:  5 ps
 
-2) almost_empty_o ошибки:
+2) almost_empty_o ошибки ( Transcript: almost_empty_o: ... errors )
 - Сигнал определен неправильно, сигнал задержан на 1 такт
-  + Test case 1: 5149 ps, Transcript: almost_empty_o: ... errors
+  + Test case 1: 5149 ps
 
-3) almost_full_o ошибки:
+3) almost_full_o ошибки ( Transcript: almost_full_o: ... errors )
 - Сигнал определен неправильно
-  + Все Test case: 35 ps, Transcript: almost_full_o: ... errors
+  + Все Test case: 35 ps
+  + Test case 15: 255 ps
 
-4) usew_o ошибки:
+4) usew_o ошибки ( Transcript: usew_o: ... errors )
 - usew_o уменьшается хотя пустая очередь
-  + Test case 3: 25 ps, Transcript: usew_o: ... errors
-  + Test case 4: 5255 ps, Transcript: usew_o: ... errors
+  + Test case 3: 25 ps
+  + Test case 4: 5255 ps
 - usew_o увеличивается хотя очередь полна
-  + Test case 2: 2575 ps, Transcript: : usew_o: ... errors
-  + Test case 4: 2585 ps, Transcript: : usew_o: ... errors
+  + Test case 2: 2575 ps
+  + Test case 4: 2585 ps
 - usew_o неправильно определен
   + Test case 14: 2605 ps
 
@@ -27,16 +28,18 @@
   + Test case 5: 7695 ps
 - В начале процесса чтения есть лишное значение
   + Test case 8: 2655 ps
-- Данные не могут быть считаны из-за ошибки в сигнале empty_o после сброса
+- Данные не могут быть считаны
   + Test case 6: 35 ps
 - Выходное значение не определено
   + Test case 9: 955 ps
-- Последнее выходное значение неправильное
+- Последнее выходное значение было неправильно
   + Test case 1: 10295 ps
 - Выходные данные неправильно определен
   + Test case 14: 2615 ps
-- Чтение из пустого lifo (Данные все еще выводятся, пока lifo пуст)
-  Test case 4: 5205 ps
+- Чтение из пустого lifo (Данные еще выводятся, пока lifo пуст)
+  + Test case 4: 5205 ps
+- Первое выходное значение после пустого состояния было неправильно
+  + Test case 15: 295 ps
 
 6) reset error:
 - Если srst_i = 1 когда rdreq = 1, у srst_i будет ошибка. Если после чтения будет idle(rdreq = 0 и wrreq = 0), результат сигнала "reset" будет нормальным как в Test case 11 ( 325 ps )
