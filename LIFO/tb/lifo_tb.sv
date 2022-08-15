@@ -407,7 +407,7 @@ initial
     //////////////////UNCOMMENT TO RUN EACH TEST CASE (RUN 1 TEST AT THE TIME)/////////////////
 
     // // Test case 1: Reading process begins immediately after full
-    cnt_testing = 0;
+
     repeat(5)
       begin
         $display("TEST %0x", cnt_testing);
@@ -428,7 +428,7 @@ initial
         idle();
         cnt_error();
         reset_signal();
-        // cnt_testing++;
+
       end
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -437,7 +437,7 @@ initial
     reset();
 
     // // Test case 2: Write to full
-    cnt_testing = 0;
+
     // repeat(5)
       begin
         $display("TEST %0x", cnt_testing);
@@ -451,7 +451,7 @@ initial
         done_rd         = 1'b0;
         done_wr         = 1'b0;
         done_rd_wr      = 1'b0;
-        cnt_testing++;
+
       end
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -460,7 +460,7 @@ initial
     reset();
 
     // // Test case 3: read from empty
-    cnt_testing = 0;
+
     // repeat(5)
       begin
         $display("TEST %0x", cnt_testing);
@@ -474,7 +474,7 @@ initial
         done_rd         = 1'b0;
         done_wr         = 1'b0;
         done_rd_wr      = 1'b0;
-        cnt_testing++;
+
       end
     // //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -483,7 +483,7 @@ initial
     reset();
 
     // // Test case 4: Write some value after full and read out all data
-    cnt_testing = 0;
+
     // repeat(5)
     begin
       $display("Test case 4: Write some value after full and read out all data");
@@ -505,7 +505,7 @@ initial
       done_rd         = 1'b0;
       done_wr         = 1'b0;
       done_rd_wr      = 1'b0;
-      cnt_testing++;
+
     end
     // ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -514,7 +514,7 @@ initial
     reset();
 
     // // Test case 5: write to half-full and after that, read and write at the same time
-    cnt_testing = 0;
+
     // repeat(5)
       begin
         $display("Test case 5: write to half-full and after that, read and write at the same time");
@@ -528,7 +528,7 @@ initial
         done_rd         = 1'b0;
         done_wr         = 1'b0;
         done_rd_wr      = 1'b0;
-        cnt_testing++;
+
       end
     // ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -537,7 +537,7 @@ initial
     reset();
 
     // // Test case 6: Read and write at the same time without delaying at the beginning of reading process
-    cnt_testing = 0;
+
     // repeat(5)
       begin
         $display("Test case 6: Read and write at the same time without delaying at the beginning of reading process");
@@ -551,7 +551,6 @@ initial
         done_rd         = 1'b0;
         done_wr         = 1'b0;
         done_rd_wr      = 1'b0;
-        cnt_testing++;
       end
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -560,7 +559,7 @@ initial
     reset();
 
     // // Test case 7: Alternating read and write processes
-    cnt_testing = 0;
+
     // repeat(5)
       begin
         $display("Test case 7: Alternating read and write processes");
@@ -575,7 +574,7 @@ initial
         done_rd         = 1'b0;
         done_wr         = 1'b0;
         done_rd_wr      = 1'b0;
-        cnt_testing++;
+
       end
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -584,7 +583,7 @@ initial
     reset();
 
     // // Test case 8: Write to full lifo, and read process (rdreq) begins immediately after wrreq has been deasserted.
-    cnt_testing = 0;
+
     // repeat(5)
     begin
       $display("Test case 8: Write to full lifo, and read process (rdreq) begins immediately after wrreq has been deasserted");
@@ -606,7 +605,7 @@ initial
       done_rd         = 1'b0;
       done_wr         = 1'b0;
       done_rd_wr      = 1'b0;
-      cnt_testing++;
+
     end
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -634,7 +633,7 @@ initial
     reset();
 
     // // // Test case 10: Write to lifo full twice and read out once (Test write to full )
-    cnt_testing = 0;
+
     // repeat(5)
     begin
       $display("Test case 10: Write to lifo full twice and read out once (Test write to full )");
@@ -665,7 +664,7 @@ initial
       done_rd         = 1'b0;
       done_wr         = 1'b0;
       done_rd_wr      = 1'b0;
-      cnt_testing++;
+
     end
     // ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -674,7 +673,7 @@ initial
     reset();
 
     // // Test case 11:  Write to lifo full once and read out twice (Test read from empty)
-    cnt_testing = 0;
+
     // repeat(5)
     begin
       $display("Test case 11:  Write to lifo full once and read out twice (Test read from empty)");
@@ -706,7 +705,7 @@ initial
       done_rd         = 1'b0;
       done_wr         = 1'b0;
       done_rd_wr      = 1'b0;
-      cnt_testing++;
+
     end
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -741,7 +740,7 @@ initial
     reset();
 
     // // Test case 13: Write some value, read until empty, and after that, write/read at the same time
-    cnt_testing = 0;
+
     // repeat(5)
       begin
         $display("Test case 15: Write some value, read until empty, and after that, write/read at the same time");
@@ -774,7 +773,7 @@ initial
           test_output_signal(0,0,1);
         join
         cnt_error();
-        cnt_testing++;
+
       end
     ////////////////////////////////////////////////////////////////////////////////////////////
 
