@@ -834,7 +834,7 @@ initial
 
       // // Test case 16: Writing 255 word to lifo, after that  make 256 transactions for simultaneous writing and reading
       begin
-        $display("Test case 16: Writing 255 word to lifo, after that  make 256 transactions for simultaneous writing and reading");
+        $display("Test case 16: Writing 255 word to lifo, after that  make 100 transactions for simultaneous writing and reading");
         fork
           rd_and_wr( 255, 100 );
           control_ptr(0,0,1);
