@@ -96,7 +96,7 @@ task wr_1clk_random();
 @( posedge clk_i_tb );
   wrreq_i_tb <= $urandom_range(1,0);
   rdreq_i_tb <= 1'b0;
-  data_i_tb <= $urandom_range(2**DWIDTH,0);
+  data_i_tb  <= $urandom_range(2**DWIDTH,0);
 
 endtask
 
@@ -142,7 +142,6 @@ forever
     if( _rd_and_wr && done_rd_wr )
       break;
   end
-
 endtask
 
 
@@ -150,7 +149,7 @@ task rd_and_wr_1clk();
 
 @( posedge clk_i_tb );
 wrreq_i_tb <= 1'b1;
-data_i_tb <= $urandom_range(2**DWIDTH,0);
+data_i_tb  <= $urandom_range(2**DWIDTH,0);
 rdreq_i_tb <= 1'b1;
 
 endtask
@@ -237,12 +236,12 @@ done_rd = 1'b1;
 $display("Finish!!!");
 endtask
 
-task rd_and_wr( input int _delay );
+task rd_and_wr( input int _delay, int _rd_wr );
 repeat( _delay )
   wr_1clk();
-repeat( 2**AWIDTH-_delay )
+repeat( _rd_wr-_delay )
   rd_and_wr_1clk();
-repeat( _delay +5)
+repeat( _delay +5 )
   rd_1clk();
 done_rd_wr = 1'b1;
 endtask
@@ -258,13 +257,11 @@ almost_full_tb <= 1'b0;
 @( posedge clk_i_tb );
 srst_i_tb <= 0;
 
-
-
 endtask
 
 task output_signal( input bit _read,
-                                     _write,
-                                     _rd_and_wr
+                              _write,
+                              _rd_and_wr
                           );
 forever
   begin
@@ -416,7 +413,7 @@ initial
           control_ptr(0,1,0);
           output_signal(0,1,0);
           test_output_signal(0,1,0);
-        join 
+        join
         cnt_error();
 
         fork
@@ -428,9 +425,11 @@ initial
         idle();
         cnt_error();
         reset_signal();
-
+        done_rd         = 1'b0;
+        done_wr         = 1'b0;
+        done_rd_wr      = 1'b0;
       end
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////
 
     repeat(2)
       idle();
@@ -519,7 +518,7 @@ initial
       begin
         $display("Test case 5: write to half-full and after that, read and write at the same time");
         fork
-          rd_and_wr( 2**AWIDTH/2 );
+          rd_and_wr( 2**AWIDTH/2, 2**AWIDTH );
           control_ptr(0,0,1);
           output_signal(0,0,1);
           test_output_signal(0,0,1);
@@ -542,7 +541,7 @@ initial
       begin
         $display("Test case 6: Read and write at the same time without delaying at the beginning of reading process");
         fork
-          rd_and_wr( 0 );
+          rd_and_wr( 0, 2**AWIDTH );
           control_ptr(0,0,1);
           output_signal(0,0,1);
           test_output_signal(0,0,1);
@@ -625,7 +624,7 @@ initial
     done_rd         = 1'b0;
     done_wr         = 1'b0;
     done_rd_wr      = 1'b0;
-    cnt_error();   
+    cnt_error();
     // ///////////////////////////////////////////////////////////////////////////////////////////////
 
     repeat(2)
@@ -724,7 +723,7 @@ initial
     cnt_error();
 
     fork
-      rd_and_wr( 0 );
+      rd_and_wr( 0, 2**AWIDTH  );
       control_ptr(0,0,1);
       output_signal(0,0,1);
       test_output_signal(0,0,1);
@@ -767,7 +766,7 @@ initial
         done_rd_wr      = 1'b0;
 
         fork
-          rd_and_wr( 0 );
+          rd_and_wr( 0, 2**AWIDTH );
           control_ptr(0,0,1);
           output_signal(0,0,1);
           test_output_signal(0,0,1);
@@ -808,6 +807,76 @@ initial
         reset();
       end
     /////////////////////////////////////////////////////////////////////////////////////////////
+    
+    repeat(2)
+      idle();
+    reset();
+
+    // // Test case 15: Writing 1 word to lifo, after that  make 100 transactions for simultaneous writing and reading
+      begin
+        $display("Test case 15: Writing 1 word to lifo, after that  make 100 transactions for simultaneous writing and reading");
+        fork
+          rd_and_wr( 1, 100 );
+          control_ptr(0,0,1);
+          output_signal(0,0,1);
+          test_output_signal(0,0,1);
+        join
+        cnt_error();
+        done_rd         = 1'b0;
+        done_wr         = 1'b0;
+        done_rd_wr      = 1'b0;
+      end
+
+    
+    repeat(2)
+      idle();
+    reset();
+
+      // // Test case 16: Writing 255 word to lifo, after that  make 256 transactions for simultaneous writing and reading
+      begin
+        $display("Test case 16: Writing 255 word to lifo, after that  make 256 transactions for simultaneous writing and reading");
+        fork
+          rd_and_wr( 255, 100 );
+          control_ptr(0,0,1);
+          output_signal(0,0,1);
+          test_output_signal(0,0,1);
+        join
+        cnt_error();
+        done_rd         = 1'b0;
+        done_wr         = 1'b0;
+        done_rd_wr      = 1'b0;
+      end
+
+    repeat(2)
+      idle();
+    reset();
+
+    // Test case 17: Run to full and back to empty (REPEAT 5 TIMES)
+    repeat(5)
+    begin
+      $display("Test case 17:  Run to full and back to empty (REPEAT 5 TIMES)");
+
+      fork
+        wr_only_non_idle( 2**AWIDTH );
+        control_ptr(0,1,0);
+        output_signal(0,1,0);
+        test_output_signal(0,1,0);
+      join
+      cnt_error();
+
+      fork
+        rd_only_non_idle( 2**AWIDTH );
+        control_ptr(1,0,0);
+        output_signal(1,0,0);
+        test_output_signal(1,0,0);
+      join
+      cnt_error();
+
+      done_rd         = 1'b0;
+      done_wr         = 1'b0;
+      done_rd_wr      = 1'b0;
+
+    end
 
     $display( "Test done!" );
     $stop();

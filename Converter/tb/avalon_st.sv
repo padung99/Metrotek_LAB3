@@ -1,9 +1,9 @@
 interface avalon_st #( 
   parameter DATA_W         = 32,
-  parameter CHANNEL_W      = 10
+  parameter CHANNEL_W      = 10,
+  parameter EMPTY_W        = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1
 ) ( input clk );
 
-localparam EMPTY_W = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1;
 
 logic [DATA_W-1:0]    data;
 logic [CHANNEL_W-1:0] channel;

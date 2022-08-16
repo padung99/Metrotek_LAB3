@@ -1,52 +1,40 @@
-package avl_st_pkg;
+package ast_dmx_pkg;
 
 typedef logic [7:0] pkt_t [$];
-typedef logic [255:0] pkt_receive_t [$];
 
-class ast_class #(
-  parameter DATA_W    = 32,
-  parameter CHANNEL_W = 10,
-  parameter EMPTY_W  = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1,
-  parameter MAX_PK    = 5
+class ast_dmx_c #(
+  parameter DATA_W         = 64,
+  parameter CHANNEL_W      = 8,
+  parameter EMPTY_W = $clog2(DATA_W/8),
+  parameter TX_DIR = 4
 );
 
 localparam WORD_IN = DATA_W/8;
 
-virtual avalon_st #(
-  .DATA_W    ( DATA_W    ),
-  .CHANNEL_W ( CHANNEL_W ),
-  .EMPTY_W   ( EMPTY_W   )
+virtual avalon_st_if #(
+  .DATA_WIDTH ( DATA_W ),
+  .CHANNEL_WIDTH ( CHANNEL_W ),
+  .EMPTY_WIDTH ( EMPTY_W ),
+  .TX_DIR ( TX_DIR )
 ) ast_if;
 
 mailbox #( pkt_t ) tx_fifo;
-mailbox #( pkt_receive_t ) rx_fifo;
 
+function new( virtual avalon_st_if #(
+                                    .DATA_WIDTH ( DATA_W ),
+                                    .CHANNEL_WIDTH ( CHANNEL_W ),
+                                    .EMPTY_WIDTH ( EMPTY_W ),
+                                    .TX_DIR ( TX_DIR )
+                                    ) _ast_if,
+              mailbox #( pkt_t ) _tx_fifo
+);
 
-mailbox #( logic [CHANNEL_W-1:0] ) channel_input;
-mailbox #( logic [CHANNEL_W-1:0] ) channel_output;
-mailbox #( logic [EMPTY_OUT_W-1:0] ) empty_output;
-
-function new ( virtual avalon_st #( .DATA_W    ( DATA_W    ),
-                                    .CHANNEL_W ( CHANNEL_W ),
-                                    .EMPTY_W   ( EMPTY_W   )
-                                  ) _ast_if,
-               mailbox #( pkt_t ) _tx_fifo,
-               mailbox #( pkt_receive_t ) _rx_fifo,
-               mailbox #( logic [CHANNEL_W-1:0] ) _channel_input,
-               mailbox #( logic [CHANNEL_W-1:0] ) _channel_output,
-               mailbox #( logic [EMPTY_OUT_W-1:0] ) _empty_output
-             );
-
+this.ast_if = _ast_if;
 this.tx_fifo = _tx_fifo;
-this.ast_if  = _ast_if;
-this.rx_fifo = _rx_fifo;
-this.channel_input = _channel_input;
-this.channel_output = _channel_output;
-this.empty_output = _empty_output;
 
 endfunction
 
-`define cb @( posedge ast_if.clk );
+ `define cb @( posedge ast_if.clk );
 
 task send_pk();
 
@@ -64,8 +52,8 @@ int last_word_ind;
 while( tx_fifo.num() != 0 )
   begin    
     tx_fifo.get( new_pk );
-    new_channel = $urandom_range( 2**CHANNEL_W,0 );
-    channel_input.put( new_channel );
+    // new_channel = $urandom_range( 2**CHANNEL_W,0 );
+    // channel_input.put( new_channel );
 
     pkt_size = new_pk.size();
 
@@ -112,7 +100,7 @@ while( tx_fifo.num() != 0 )
                     ast_if.valid   = 1'b1;
                     ast_if.sop     = 1'b1;
                     ast_if.empty   = 0;
-                    ast_if.channel = new_channel;
+                    // ast_if.channel = new_channel;
 
                     //0 -->last word-1
                     for( int j = WORD_IN-1; j >= 0; j-- )
@@ -136,7 +124,7 @@ while( tx_fifo.num() != 0 )
                     ast_if.empty = 0;
                     if( ast_if.valid == 1'b1 )
                       begin
-                        ast_if.channel = new_channel;
+                        // ast_if.channel = new_channel;
                         for( int j = (WORD_IN*i + WORD_IN) -1; j >= WORD_IN*i; j-- )
                           begin
                             ast_if.data[7:0] = new_pk[j];
@@ -184,62 +172,6 @@ while( tx_fifo.num() != 0 )
   
   repeat(10)
   `cb;
-  end
-
-endtask
-
-task reveive_pk();
-
-pkt_receive_t new_pk_receive;
-forever
-  begin
-    `cb;
-
-
-    if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
-      begin
-        new_pk_receive.push_back( ast_if.data );
-      //  $display( "receive: %x", ast_if.data ); 
-      end
-    else if( ast_if.valid == 1'b1 && ast_if.eop == 1'b1 )
-      begin
-        new_pk_receive.push_back( ast_if.data );
-        // $display( "receive: %x", ast_if.data );
-        rx_fifo.put( new_pk_receive );
-        new_pk_receive = {};
-      end
-
-    if( rx_fifo.num() >= MAX_PK  )
-     break;
-  end
-
-endtask
-
-task channel_out();
-
-forever
-  begin
-  `cb;
-
-    if( ast_if.sop == 1'b1 && ast_if.valid == 1'b1 )
-      channel_output.put( ast_if.channel );
-
-    if( channel_output.num() >= MAX_PK   )
-     break;
-  end
-
-endtask
-
-task empty_out();
-
-forever
-  begin
-  `cb;
-    if( ast_if.eop == 1'b1 && ast_if.valid == 1'b1 )
-      empty_output.put( ast_if.empty );
-
-    if( empty_output.num() >= MAX_PK )
-     break;
   end
 
 endtask
