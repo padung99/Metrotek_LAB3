@@ -106,7 +106,6 @@ task rd_1clk();
 wrreq_i_tb <= 1'b0;
 rdreq_i_tb <= 1'b1;
 
-
 endtask
 
 task rd_1clk_random();
@@ -115,10 +114,8 @@ task rd_1clk_random();
 wrreq_i_tb <= 1'b0;
 rdreq_i_tb <= $urandom_range(1,0);
 
-
 endtask
 
-// assign ptr = lifo_queue.size();
 
 task control_ptr( input bit _read,
                             _write,
@@ -248,12 +245,12 @@ endtask
 
 task reset();
 
-srst_i_tb <= 1;
-empty_tb <= 1;
-lifo_queue = {};
-full_tb <= 0;
+srst_i_tb       <= 1;
+empty_tb        <= 1;
+full_tb         <= 0;
 almost_empty_tb <= 1'b1;
-almost_full_tb <= 1'b0;
+almost_full_tb  <= 1'b0;
+lifo_queue       = {};
 @( posedge clk_i_tb );
 srst_i_tb <= 0;
 
@@ -297,14 +294,6 @@ forever
 
 endtask
 
-task reset_signal();
-
-
-done_rd         = 1'b0;
-done_wr         = 1'b0;
-done_rd_wr      = 1'b0;
-
-endtask
 
 assign valid_wr = wrreq_i_tb && !full_tb;
 assign valid_rd = rdreq_i_tb && !empty_tb;
@@ -385,11 +374,11 @@ else
   $display("q_o: %0d errors", q_error);
 
 $display("\n");
-q_error = 0;
-usew_error = 0;
-full_error = 0;
-empty_error = 0;
-almost_full_error = 0;
+q_error            = 0;
+usew_error         = 0;
+full_error         = 0;
+empty_error        = 0;
+almost_full_error  = 0;
 almost_empty_error = 0;
 
 endtask
@@ -424,7 +413,6 @@ initial
         join
         idle();
         cnt_error();
-        reset_signal();
         done_rd         = 1'b0;
         done_wr         = 1'b0;
         done_rd_wr      = 1'b0;
