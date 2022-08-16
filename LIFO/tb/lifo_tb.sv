@@ -262,7 +262,7 @@ srst_i_tb <= 0;
 
 endtask
 
-task non_synthesys_signal( input bit _read,
+task output_signal( input bit _read,
                                      _write,
                                      _rd_and_wr
                           );
@@ -410,11 +410,11 @@ initial
 
     repeat(5)
       begin
-        $display("TEST %0x", cnt_testing);
+        $display("Test case 1: Reading process begins immediately after full");
         fork
           wr_only( 2**AWIDTH );
           control_ptr(0,1,0);
-          non_synthesys_signal(0,1,0);
+          output_signal(0,1,0);
           test_output_signal(0,1,0);
         join 
         cnt_error();
@@ -422,7 +422,7 @@ initial
         fork
           rd_only( 2**AWIDTH );
           control_ptr(1,0,0);
-          non_synthesys_signal(1,0,0);
+          output_signal(1,0,0);
           test_output_signal(1,0,0);
         join
         idle();
@@ -440,11 +440,11 @@ initial
 
     // repeat(5)
       begin
-        $display("TEST %0x", cnt_testing);
+        $display("Test case 2: Write to full");
         fork
           wr_only( 2**AWIDTH + 5 );
           control_ptr(0,1,0);
-          non_synthesys_signal(0,1,0);
+          output_signal(0,1,0);
           test_output_signal(0,1,0);
         join
         cnt_error();
@@ -463,11 +463,11 @@ initial
 
     // repeat(5)
       begin
-        $display("TEST %0x", cnt_testing);
+        $display("Test case 3: read from empty");
         fork
           rd_only( 32 );
           control_ptr(1,0,0);
-          non_synthesys_signal(1,0,0);
+          output_signal(1,0,0);
           test_output_signal(1,0,0);
         join
         cnt_error();
@@ -490,7 +490,7 @@ initial
       fork
         wr_only( 2**AWIDTH +5 );
         control_ptr(0,1,0);
-        non_synthesys_signal(0,1,0);
+        output_signal(0,1,0);
         test_output_signal(0,1,0);
       join 
       cnt_error();
@@ -498,7 +498,7 @@ initial
       fork
         rd_only( 2**AWIDTH + 5 );
         control_ptr(1,0,0);
-        non_synthesys_signal(1,0,0);
+        output_signal(1,0,0);
         test_output_signal(1,0,0);
       join
       cnt_error();
@@ -521,7 +521,7 @@ initial
         fork
           rd_and_wr( 2**AWIDTH/2 );
           control_ptr(0,0,1);
-          non_synthesys_signal(0,0,1);
+          output_signal(0,0,1);
           test_output_signal(0,0,1);
         join
         cnt_error();
@@ -544,7 +544,7 @@ initial
         fork
           rd_and_wr( 0 );
           control_ptr(0,0,1);
-          non_synthesys_signal(0,0,1);
+          output_signal(0,0,1);
           test_output_signal(0,0,1);
         join
         cnt_error();
@@ -567,7 +567,7 @@ initial
           wr_only( 2**AWIDTH );
           rd_only( 2**AWIDTH + 2 );
           control_ptr(1,0,0);
-          non_synthesys_signal(1,0,0);
+          output_signal(1,0,0);
           test_output_signal(1,0,0);
         join
         cnt_error();
@@ -590,7 +590,7 @@ initial
       fork
         wr_only_non_idle( 2**AWIDTH +5 );
         control_ptr(0,1,0);
-        non_synthesys_signal(0,1,0);
+        output_signal(0,1,0);
         test_output_signal(0,1,0);
       join 
       cnt_error();
@@ -598,7 +598,7 @@ initial
       fork
         rd_only( 5 );
         control_ptr(1,0,0);
-        non_synthesys_signal(1,0,0);
+        output_signal(1,0,0);
         test_output_signal(1,0,0);
       join
       cnt_error();
@@ -619,7 +619,7 @@ initial
       wr_only_random( 1000 );
       rd_only_random( 1000 );
       control_ptr(0,1,0);
-      non_synthesys_signal(0,1,0);
+      output_signal(0,1,0);
       test_output_signal(0,1,0);
     join
     done_rd         = 1'b0;
@@ -641,7 +641,7 @@ initial
       fork
         wr_only( 2**AWIDTH );
         control_ptr(0,1,0);
-        non_synthesys_signal(0,1,0);
+        output_signal(0,1,0);
         test_output_signal(0,1,0);
       join
 
@@ -650,14 +650,14 @@ initial
       fork
         wr_only( 2**AWIDTH );
         control_ptr(0,1,0);
-        non_synthesys_signal(0,1,0);
+        output_signal(0,1,0);
         test_output_signal(0,1,0);
       join
 
       fork
         rd_only( 2**AWIDTH +2);
         control_ptr(1,0,0);
-        non_synthesys_signal(1,0,0);
+        output_signal(1,0,0);
         test_output_signal(1,0,0);
       join
       cnt_error();
@@ -681,7 +681,7 @@ initial
       fork
         wr_only( 2**AWIDTH );
         control_ptr(0,1,0);
-        non_synthesys_signal(0,1,0);
+        output_signal(0,1,0);
         test_output_signal(0,1,0);
       join
       cnt_error();
@@ -689,7 +689,7 @@ initial
       fork
         rd_only( 2**AWIDTH +2 );
         control_ptr(1,0,0);
-        non_synthesys_signal(1,0,0);
+        output_signal(1,0,0);
         test_output_signal(1,0,0);
       join
       cnt_error();
@@ -698,7 +698,7 @@ initial
       fork
         rd_only( 2**AWIDTH +2);
         control_ptr(1,0,0);
-        non_synthesys_signal(1,0,0);
+        output_signal(1,0,0);
         test_output_signal(1,0,0);
       join
       cnt_error();
@@ -718,7 +718,7 @@ initial
     fork
       wr_only( 2**AWIDTH );
       control_ptr(0,1,0);
-      non_synthesys_signal(0,1,0);
+      output_signal(0,1,0);
       test_output_signal(0,1,0);
     join
     cnt_error();
@@ -726,7 +726,7 @@ initial
     fork
       rd_and_wr( 0 );
       control_ptr(0,0,1);
-      non_synthesys_signal(0,0,1);
+      output_signal(0,0,1);
       test_output_signal(0,0,1);
     join
     cnt_error();
@@ -743,11 +743,11 @@ initial
 
     // repeat(5)
       begin
-        $display("Test case 15: Write some value, read until empty, and after that, write/read at the same time");
+        $display("Test case 13: Write some value, read until empty, and after that, write/read at the same time");
         fork
           wr_only( 10 );
           control_ptr(0,1,0);
-          non_synthesys_signal(0,1,0);
+          output_signal(0,1,0);
           test_output_signal(0,1,0);
         join 
         cnt_error();
@@ -755,7 +755,7 @@ initial
         fork
           rd_only( 10 + 2);
           control_ptr(1,0,0);
-          non_synthesys_signal(1,0,0);
+          output_signal(1,0,0);
           test_output_signal(1,0,0);
         join
         cnt_error();
@@ -769,7 +769,7 @@ initial
         fork
           rd_and_wr( 0 );
           control_ptr(0,0,1);
-          non_synthesys_signal(0,0,1);
+          output_signal(0,0,1);
           test_output_signal(0,0,1);
         join
         cnt_error();
@@ -789,7 +789,7 @@ initial
         fork
           wr_only( 20 );
           control_ptr(0,1,0);
-          non_synthesys_signal(0,1,0);
+          output_signal(0,1,0);
           test_output_signal(0,1,0);
         join 
         cnt_error();
@@ -797,7 +797,7 @@ initial
         fork
           rd_only_non_idle( 10 );
           control_ptr(1,0,0);
-          non_synthesys_signal(1,0,0);
+          output_signal(1,0,0);
           test_output_signal(1,0,0);
         join
         cnt_error();
