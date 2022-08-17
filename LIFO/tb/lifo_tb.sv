@@ -31,10 +31,6 @@ logic [DWIDTH-1:0]  q_tb;
 logic valid_rd;
 logic valid_wr;
 
-bit done_wr;
-bit done_rd_wr;
-bit done_rd;
-
 int q_error;
 int usew_error;
 int full_error;
@@ -42,7 +38,6 @@ int empty_error;
 int almost_full_error;
 int almost_empty_error;
 
-int cnt_testing;
 
 initial
   forever 
@@ -156,13 +151,6 @@ forever
     almost_full_tb  = ( ptr >= ALMOST_FULL_VALUE );
     empty_tb        = ( ptr == 0 );
     almost_empty_tb = ( ptr <= ALMOST_EMPTY_VALUE );
-
-    // if( _read && done_rd )
-    //   break;
-    // if( _write && done_wr )
-    //   break;
-    // if( _rd_and_wr && done_rd_wr )
-    //   break;
   end
 endtask
 
@@ -208,29 +196,26 @@ task wr_only( input int _repeat );
 $display("Start writing until full");
 repeat( _repeat )
   wr_1clk();
-
 $display("Finish!!!");
 idle();
-done_wr = 1'b1;
+
 endtask
 
 task wr_only_random( input int _repeat );
 $display("Start writing until full");
 repeat( _repeat )
   wr_1clk_random();
-
 $display("Finish!!!");
 idle();
-done_wr = 1'b1;
+
 endtask
 
 task wr_only_non_idle( input int _repeat );
 $display("Start writing until full");
 repeat( _repeat )
   wr_1clk();
-
 $display("Finish!!!");
-done_wr = 1'b1;
+
 endtask
 
 task rd_only( input int _repeat );
@@ -238,7 +223,6 @@ $display("Start reading until empty");
 repeat( _repeat )
   rd_1clk();
 idle();
-done_rd = 1'b1;
 $display("Finish!!!");
 endtask
 
@@ -246,7 +230,6 @@ task rd_only_non_idle( input int _repeat );
 $display("Start reading until empty");
 repeat( _repeat )
   rd_1clk();
-done_rd = 1'b1;
 $display("Finish!!!");
 endtask
 
@@ -254,7 +237,6 @@ task rd_only_random( input int _repeat );
 $display("Start reading until empty");
 repeat( _repeat )
   rd_1clk_random();
-done_rd = 1'b1;
 $display("Finish!!!");
 endtask
 
@@ -265,7 +247,6 @@ repeat( _rd_wr-_delay )
   rd_and_wr_1clk();
 repeat( _delay +5 )
   rd_1clk();
-done_rd_wr = 1'b1;
 endtask
 
 task reset_error_flag();
@@ -293,94 +274,9 @@ srst_i_tb = 0;
 
 endtask
 
-task output_signal( input bit _read,
-                              _write,
-                              _rd_and_wr
-                          );
-forever
-  begin
-    
-    // full_tb = ( ptr == 2**AWIDTH );
-    // almost_full_tb =  ( ptr >= ALMOST_FULL_VALUE );
-    // empty_tb = ( ptr == 0 );
-    // almost_empty_tb = ( ptr <= ALMOST_EMPTY_VALUE );
-
-    if( ptr == 2**AWIDTH )
-      full_tb = 1'b1;
-    else
-      full_tb = 1'b0;
-
-    if( ptr >= ALMOST_FULL_VALUE )
-      almost_full_tb = 1'b1;
-    else
-      almost_full_tb = 1'b0;
-
-    if( ptr == 0 )
-      empty_tb = 1'b1;
-    else
-      empty_tb = 1'b0;
-
-    if( ptr <= ALMOST_EMPTY_VALUE )
-      almost_empty_tb = 1'b1;
-    else
-      almost_empty_tb = 1'b0;
-    
-    if( _read && done_rd )
-      break;
-    if( _write && done_wr )
-      break;
-    if( _rd_and_wr && done_rd_wr )
-      break;
-    ##1;
-  end
-
-endtask
-
 
 assign valid_wr = wrreq_i_tb && !full_tb;
 assign valid_rd = rdreq_i_tb && !empty_tb;
-
-task test_output_signal( input bit _read,
-                               bit _write,
-                               bit _rd_and_wr
-                       );
-
-forever
-  begin
-  @( posedge clk_i_tb )
-  //TEST: q_o
-  if( q_tb != q_o_tb )
-    q_error++;
-
-  if( ptr != usedw_o_tb )
-    usew_error++;
-
-  //TEST: full_o
-  if( full_o_tb != full_tb )
-    full_error++;
-
-  //TEST: almost_full_o
-  if( almost_full_o_tb != almost_full_tb )
-    almost_full_error++;
-
-
-  //TEST: almost_empty_o
-  if( almost_empty_o_tb != almost_empty_tb )
-    almost_empty_error++;
-
-  //TEST: empty_o
-  if( empty_o_tb != empty_tb )
-    empty_error++;
-
-  // if( _read && done_rd )
-  //   break;
-  // if( _write && done_wr )
-  //   break;
-  // if( _rd_and_wr && done_rd_wr )
-  //   break;
-  end
-endtask
-
 
 task cnt_error();
 
