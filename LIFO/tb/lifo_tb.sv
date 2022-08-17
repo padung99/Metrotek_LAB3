@@ -81,7 +81,7 @@ task wr_1clk();
 @( posedge clk_i_tb );
   wrreq_i_tb <= 1'b1;
   rdreq_i_tb <= 1'b0;
-  data_i_tb <= $urandom_range(2**DWIDTH,0);
+  data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
 
 endtask
 
@@ -89,9 +89,9 @@ endtask
 task wr_1clk_random();
 
 @( posedge clk_i_tb );
-  wrreq_i_tb <= $urandom_range(1,0);
+  wrreq_i_tb <= $urandom_range( 1,0 );
   rdreq_i_tb <= 1'b0;
-  data_i_tb  <= $urandom_range(2**DWIDTH,0);
+  data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
 
 endtask
 
@@ -107,7 +107,7 @@ task rd_1clk_random();
 
 @( posedge clk_i_tb );
 wrreq_i_tb <= 1'b0;
-rdreq_i_tb <= $urandom_range(1,0);
+rdreq_i_tb <= $urandom_range( 1,0 );
 
 endtask
 
@@ -159,7 +159,7 @@ task rd_and_wr_1clk();
 
 @( posedge clk_i_tb );
 wrreq_i_tb <= 1'b1;
-data_i_tb  <= $urandom_range(2**DWIDTH,0);
+data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
 rdreq_i_tb <= 1'b1;
 
 endtask
@@ -421,7 +421,7 @@ initial
 
     $display("Test case 8: Write to full lifo, and read process (rdreq) begins immediately after wrreq has been deasserted");
 
-    wr_only_non_idle( 2**AWIDTH +10 );
+    wr_only_non_idle( 2**AWIDTH + 10 );
 
     cnt_error();
     reset_error_flag();
@@ -479,7 +479,7 @@ initial
     idle();
     // reset_error_flag();
 
-    rd_only( 2**AWIDTH +2);
+    rd_only( 2**AWIDTH + 2 );
     cnt_error();
 
 
