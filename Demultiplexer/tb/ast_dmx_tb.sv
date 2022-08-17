@@ -9,9 +9,11 @@ parameter int TX_DIR_TB         = 4;
 
 parameter int DIR_SEL_WIDTH_TB = TX_DIR_TB == 1 ? 1 : $clog2( TX_DIR_TB );
 
+parameter MAX_PK = 5;
+
 bit clk_i_tb;
 logic srst_i_tb;
-logic dir_i_tb [DIR_SEL_WIDTH_TB - 1 : 0 ];
+logic [DIR_SEL_WIDTH_TB - 1 : 0 ] dir_i_tb ;
 
 initial
   forever
@@ -21,25 +23,28 @@ default clocking cb
   @( posedge clk_i_tb );
 endclocking
 
-avalon_st_if #(
-  .DATA_WIDTH ( DATA_WIDTH_TB ),
+snk_avalon_st_if #(
+  .DATA_WIDTH    ( DATA_WIDTH_TB    ),
   .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
-  .EMPTY_WIDTH ( EMPTY_WIDTH_TB ),
-  .TX_DIR ( TX_DIR_TB )
-) ast_snk_if ( clk_i_tb );
+  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   )
+) ast_snk_if (
+  .clk ( clk_i_tb )
+);
 
-avalon_st_if #(
-  .DATA_WIDTH ( DATA_WIDTH_TB ),
+src_avalon_st_if #(
+  .DATA_WIDTH    ( DATA_WIDTH_TB    ),
   .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
-  .EMPTY_WIDTH ( EMPTY_WIDTH_TB ),
-  .TX_DIR ( TX_DIR_TB )
-) ast_src_if ( clk_i_tb );
+  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   ),
+  .TX_DIR        ( TX_DIR_TB        )
+) ast_src_if (
+  .clk ( clk_i_tb )
+);
 
 ast_dmx_c #(
-  .DATA_W ( DATA_WIDTH_TB ),
+  .DATA_W    ( DATA_WIDTH_TB    ),
   .CHANNEL_W ( CHANNEL_WIDTH_TB ),
-  .EMPTY_W ( EMPTY_WIDTH_TB ),
-  .TX_DIR ( TX_DIR_TB )
+  .EMPTY_W   ( EMPTY_WIDTH_TB   ),
+  .TX_DIR    ( TX_DIR_TB        )
 ) ast_send_pk;
 
 ast_dmx_c #(
@@ -60,7 +65,7 @@ ast_dmx #(
   .clk_i ( clk_i_tb ),
   .srst_i ( srst_i_tb ),
 
-  .dir_i ( dir_i_tb ),
+  .dir_i ( dir_i_tb ), ////
 
   .ast_data_i ( ast_snk_if.data ),
   .ast_startofpacket_i ( ast_snk_if.sop ),
@@ -79,6 +84,73 @@ ast_dmx #(
   .ast_ready_i ( ast_src_if.ready )
 );
 
+mailbox #( pkt_t ) send_packet      = new();
+mailbox #( pkt_t ) copy_send_packet = new();
+
+task gen_pk( mailbox #( pkt_t ) _send_packet,
+             mailbox #( pkt_t ) _copy_send_packet,
+             input int _min_byte,
+                   int _max_byte
+           );
+
+pkt_t new_pk;
+logic [7:0] new_data;
+int random_byte;
+int word_number;
+
+for( int i = 0; i < MAX_PK; i++ )
+  begin
+    random_byte = $urandom_range( _min_byte,_max_byte );
+    $display("PACKET %0d", i);
+    for( int j = 0; j < random_byte; j++ )
+      begin
+        new_data = $urandom_range( 2**8,0 );
+        new_pk.push_back( new_data );
+        $display("data: %x", new_data);
+      end
+    _send_packet.put( new_pk );
+    _copy_send_packet.put( new_pk );
+    new_pk = {};
+    $display("\n");
+  end
+
+endtask
+
+task assert_ready_1clk();
+
+@( posedge clk_i_tb )
+ast_src_if.ready[1] <= 1'b1;
+
+endtask
+
+task assert_ready();
+
+repeat(100)
+  assert_ready_1clk();
+
+endtask
+
+initial
+  begin
+    ast_src_if.ready[1] <= 1'b1;
+    dir_i_tb = 2'd1;
+    srst_i_tb <= 1'b1;
+    @( posedge clk_i_tb )
+    srst_i_tb <= 1'b0;
+
+    gen_pk ( send_packet, copy_send_packet, 20, 20  );
+
+    ast_send_pk = new( ast_snk_if, ast_src_if, send_packet );
+    
+    fork
+      ast_send_pk.send_pk();
+      assert_ready();
+    join
+
+    $stop();
+
+
+  end
 
 
 endmodule
