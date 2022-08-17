@@ -451,7 +451,8 @@ initial
     reset_error_flag();   
 
     $display("Test case 10: Write to lifo full twice and read out once (Test write to full )");
-
+    // This test case is used to check if read out values are first 256 values or second 256 values.
+    // Because of rule: Don't write to full lifo, correct result of read out data will be first 256 values
     wr_only( 2**AWIDTH );
     idle();
 
