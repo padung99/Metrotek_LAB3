@@ -18,7 +18,7 @@
   + Test case 4: 10765 ps 
 
 
-1) q_o ошибки ( Transcript: q_o: ... errors )
+5) q_o ошибки ( Transcript: q_o: ... errors )
 - Первое считанное значение неверно (По сравнению с значениями q_tb)
   + Test case 5: 14755 ps 
 - В начале процесса чтения есть лишное значение
@@ -36,7 +36,7 @@
   + Test case 14: 77565 ps 
 
 
-1) reset error:
+6) reset error:
 - Если srst_i = 1 когда rdreq = 1, у srst_i будет ошибка. Если после чтения будет idle(rdreq = 0 и wrreq = 0), результат сигнала "reset" будет нормальным как в остальных Test case
   + Test case 17: 99505 ps  (Reset должен начинаться на 99515 ps, и rdreq должен = 0 на 99515 ps )
  
