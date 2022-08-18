@@ -22,14 +22,14 @@ add log -r /*
 
 add wave -r *
 
-add wave "sim:/ast_dmx_tb/ast_src_if.data"
-add wave "sim:/ast_dmx_tb/ast_src_if.sop"
+add wave "sim:/ast_dmx_tb/dut/ast_data_o"
+add wave "sim:/ast_dmx_tb/dut/ast_startofpacket_o"
 
-add wave "sim:/ast_dmx_tb/ast_src_if.eop"
-add wave "sim:/ast_dmx_tb/ast_src_if.valid"
+add wave "sim:/ast_dmx_tb/dut/ast_endofpacket_o"
+add wave "sim:/ast_dmx_tb/dut/ast_valid_o"
 
-add wave "sim:/ast_dmx_tb/ast_src_if.empty"
-add wave "sim:/ast_dmx_tb/ast_src_if.channel"
+add wave "sim:/ast_dmx_tb/dut/ast_empty_o"
+add wave "sim:/ast_dmx_tb/dut/ast_channel_o"
 
 view -undock wave
 run -all

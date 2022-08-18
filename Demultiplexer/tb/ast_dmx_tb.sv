@@ -44,44 +44,46 @@ ast_dmx_c #(
   .DATA_W    ( DATA_WIDTH_TB    ),
   .CHANNEL_W ( CHANNEL_WIDTH_TB ),
   .EMPTY_W   ( EMPTY_WIDTH_TB   ),
-  .TX_DIR    ( TX_DIR_TB        )
+  .TX_DIR    ( TX_DIR_TB        ),
+  .MAX_PK    ( MAX_PK           )
 ) ast_send_pk;
 
 ast_dmx_c #(
-  .DATA_W ( DATA_WIDTH_TB ),
+  .DATA_W    ( DATA_WIDTH_TB    ),
   .CHANNEL_W ( CHANNEL_WIDTH_TB ),
-  .EMPTY_W ( EMPTY_WIDTH_TB ),
-  .TX_DIR ( TX_DIR_TB )
+  .EMPTY_W   ( EMPTY_WIDTH_TB   ),
+  .TX_DIR    ( TX_DIR_TB        ),
+  .MAX_PK    ( MAX_PK           )
 ) ast_receive_pk;
 
 ast_dmx #(
-  .DATA_WIDTH    ( DATA_WIDTH_TB ),
+  .DATA_WIDTH    ( DATA_WIDTH_TB    ),
   .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
-  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB ),
+  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   ),
 
   .TX_DIR        ( TX_DIR_TB ),
   .DIR_SEL_WIDTH ( DIR_SEL_WIDTH_TB )
 ) dut (
-  .clk_i ( clk_i_tb ),
+  .clk_i  ( clk_i_tb  ),
   .srst_i ( srst_i_tb ),
 
-  .dir_i ( dir_i_tb ), ////
+  .dir_i  ( dir_i_tb  ), ////
 
-  .ast_data_i ( ast_snk_if.data ),
-  .ast_startofpacket_i ( ast_snk_if.sop ),
-  .ast_endofpacket_i ( ast_snk_if.eop ),
-  .ast_valid_i ( ast_snk_if.valid ),
-  .ast_empty_i ( ast_snk_if.empty ),
-  .ast_channel_i ( ast_snk_if.channel ) ,
-  .ast_ready_o ( ast_snk_if.ready ),
+  .ast_data_i          ( ast_snk_if.data    ),
+  .ast_startofpacket_i ( ast_snk_if.sop     ),
+  .ast_endofpacket_i   ( ast_snk_if.eop     ),
+  .ast_valid_i         ( ast_snk_if.valid   ),
+  .ast_empty_i         ( ast_snk_if.empty   ),
+  .ast_channel_i       ( ast_snk_if.channel ) ,
+  .ast_ready_o         ( ast_snk_if.ready   ),
 
-  .ast_data_o ( ast_src_if.data ),
-  .ast_startofpacket_o ( ast_src_if.sop ),
-  .ast_endofpacket_o ( ast_src_if.eop ),
-  .ast_valid_o ( ast_src_if.valid ),
-  .ast_empty_o ( ast_src_if.empty ),
-  .ast_channel_o ( ast_src_if.channel ),
-  .ast_ready_i ( ast_src_if.ready )
+  .ast_data_o          ( ast_src_if.data    ),
+  .ast_startofpacket_o ( ast_src_if.sop     ),
+  .ast_endofpacket_o   ( ast_src_if.eop     ),
+  .ast_valid_o         ( ast_src_if.valid   ),
+  .ast_empty_o         ( ast_src_if.empty   ),
+  .ast_channel_o       ( ast_src_if.channel ),
+  .ast_ready_i         ( ast_src_if.ready   )
 );
 
 mailbox #( pkt_t ) send_packet      = new();
@@ -127,7 +129,6 @@ task assert_ready();
 
 repeat(100)
   assert_ready_1clk();
-
 endtask
 
 initial
@@ -138,7 +139,7 @@ initial
     @( posedge clk_i_tb )
     srst_i_tb <= 1'b0;
 
-    gen_pk ( send_packet, copy_send_packet, 20, 20  );
+    gen_pk ( send_packet, copy_send_packet, 16, 16 );
 
     ast_send_pk = new( ast_snk_if, ast_src_if, send_packet );
     

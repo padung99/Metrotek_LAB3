@@ -1,12 +1,14 @@
 package ast_dmx_pkg;
 
 typedef logic [7:0] pkt_t [$];
+typedef logic [63:0] pkt_receive_t [$];
 
 class ast_dmx_c #(
-  parameter DATA_W         = 64,
-  parameter CHANNEL_W      = 8,
-  parameter EMPTY_W = $clog2(DATA_W/8),
-  parameter TX_DIR = 4
+  parameter DATA_W    = 64,
+  parameter CHANNEL_W = 8,
+  parameter EMPTY_W   = $clog2(DATA_W/8),
+  parameter TX_DIR    = 4,
+  parameter MAX_PK    = 5
 );
 
 localparam WORD_IN = DATA_W/8;
@@ -26,6 +28,7 @@ virtual src_avalon_st_if #(
 
 
 mailbox #( pkt_t ) tx_fifo;
+mailbox #( pkt_receive_t ) rx_fifo;
 
 function new(
     virtual snk_avalon_st_if #(
@@ -41,11 +44,14 @@ function new(
                               ) _ast_if_src,
 
     mailbox #( pkt_t ) _tx_fifo
+    // ,
+    // mailbox #( pkt_t ) _rx_fifo
 );
 
 this.ast_if_snk = _ast_if_snk;
 this.ast_if_src = _ast_if_src;
 this.tx_fifo    = _tx_fifo;
+// this.rx_fifo    = _rx_fifo;
 
 endfunction
 
@@ -88,7 +94,7 @@ while( tx_fifo.num() != 0 )
     if( pkt_size <= WORD_IN )
       begin
          $display("In task send_pk 3");
-        if( ast_if_snk.ready ) ////// Error's here
+        // if( ast_if_snk.ready ) ////// Error's here
           begin
             ast_if_snk.data    = (DATA_W)'(0);
             ast_if_snk.valid   = 1'b1;
@@ -172,9 +178,9 @@ while( tx_fifo.num() != 0 )
 
         while( k >= last_word_ind )
           begin
-            ast_if_snk.valid = 1'b1;
-            ast_if_snk.eop = 1'b1;
-            ast_if_snk.empty = WORD_IN-byte_last_word;
+            ast_if_snk.valid   = 1'b1;
+            ast_if_snk.eop     = 1'b1;
+            ast_if_snk.empty   = WORD_IN-byte_last_word;
             ast_if_snk.channel = 0;
 
             ast_if_snk.data[7:0] = new_pk[k];
@@ -192,9 +198,38 @@ while( tx_fifo.num() != 0 )
         i = 0;
       end
   
-  repeat(10)
+  repeat(1)
   `cb_snk;
   end
+
+endtask
+
+task reveive_pk();
+
+pkt_receive_t new_pk_receive; //???
+// rx_fifo ????
+for( int i = 0; i < TX_DIR; i++ )
+  forever
+    begin
+      `cb_src;
+        begin
+          if( ast_if_src.valid[i] == 1'b1 && ast_if_src.eop[i] != 1'b1 )
+            begin
+              new_pk_receive.push_back( ast_if_src.data[i] );
+            //  $display( "receive: %x", ast_if_src.data );
+            end
+          else if( ast_if_src.valid[i] == 1'b1 && ast_if_src.eop[i] == 1'b1 )
+            begin
+              new_pk_receive.push_back( ast_if_src.data[i] );
+              // $display( "receive: %x", ast_if_src.data );
+              rx_fifo.put( new_pk_receive );
+              new_pk_receive = {};
+            end
+        end
+
+      if( rx_fifo.num() >= MAX_PK )
+        break;
+    end
 
 endtask
 

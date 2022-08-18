@@ -85,6 +85,13 @@ task wr_1clk();
 
 endtask
 
+task rd_1clk();
+
+@( posedge clk_i_tb );
+wrreq_i_tb <= 1'b0;
+rdreq_i_tb <= 1'b1;
+
+endtask
 
 task wr_1clk_random();
 
@@ -95,13 +102,6 @@ task wr_1clk_random();
 
 endtask
 
-task rd_1clk();
-
-@( posedge clk_i_tb );
-wrreq_i_tb <= 1'b0;
-rdreq_i_tb <= 1'b1;
-
-endtask
 
 task rd_1clk_random();
 
@@ -111,6 +111,30 @@ rdreq_i_tb <= $urandom_range( 1,0 );
 
 endtask
 
+
+task wr_1clk_random_valid();
+
+@( posedge clk_i_tb );
+  if( full_tb != 1'b1 )
+    wrreq_i_tb <= $urandom_range( 1,0 );
+  else
+    wrreq_i_tb <= 1'b0;
+  rdreq_i_tb <= 1'b0;
+  data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
+
+endtask
+
+
+task rd_1clk_random_valid();
+
+@( posedge clk_i_tb );
+wrreq_i_tb <= 1'b0;
+if( empty_tb != 1'b1 )
+  rdreq_i_tb <= $urandom_range( 1,0 );
+else
+  rdreq_i_tb <= 1'b0;
+  
+endtask
 
 task control_ptr();
 
@@ -210,6 +234,15 @@ idle();
 
 endtask
 
+task wr_only_random_valid( input int _repeat );
+$display("Start writing until full");
+repeat( _repeat )
+  wr_1clk_random_valid();
+$display("Finish!!!");
+idle();
+
+endtask
+
 task wr_only_non_idle( input int _repeat );
 $display("Start writing until full");
 repeat( _repeat )
@@ -237,6 +270,13 @@ task rd_only_random( input int _repeat );
 $display("Start reading until empty");
 repeat( _repeat )
   rd_1clk_random();
+$display("Finish!!!");
+endtask
+
+task rd_only_random_valid( input int _repeat );
+$display("Start reading until empty");
+repeat( _repeat )
+  rd_1clk_random_valid();
 $display("Finish!!!");
 endtask
 
@@ -575,25 +615,18 @@ initial
     reset();
     reset_error_flag();
 
-    repeat(3)
-      begin
-        $display("Test case 17: Reading process begins immediately after full, repeat 3 times with reset ( non idle before reset )");
-        
-        wr_only( 20 );
-        cnt_error();
-        reset_error_flag();
+    $display("Test case 17: Random rdreq and wrreq (Only valid input)");
+    //This random will pass only valid input ( when lifo is empty, no rdreq (rdreq = 0), when lifo is full, no wrreq (wrrep = 0) )
+    fork
+      wr_only_random_valid( 3000 );
+      rd_only_random_valid( 3000 );
+    join
 
-        rd_only_non_idle( 10 );
-        cnt_error();
-
-        // idle();
-        reset();
-      end
+    cnt_error();
 
     $display( "Test done!" );
     $stop();
     
-
   end
 
 endmodule
