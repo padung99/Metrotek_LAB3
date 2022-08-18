@@ -6,7 +6,7 @@
 - Сигнал определен неправильно, сигнал задержан на 1 такт
   + Test case 1: 5135 ps 
 
-1) almost_full_o ошибки ( Transcript: almost_full_o: ... errors )
+3) almost_full_o ошибки ( Transcript: almost_full_o: ... errors )
 - Сигнал определен неправильно
   + Все Test case при usew_o = 2
   
