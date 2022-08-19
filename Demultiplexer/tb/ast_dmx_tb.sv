@@ -13,7 +13,15 @@ parameter MAX_PK = 5;
 
 bit clk_i_tb;
 logic srst_i_tb;
-logic [DIR_SEL_WIDTH_TB - 1 : 0 ] dir_i_tb ;
+logic [DIR_SEL_WIDTH_TB-1:0] dir_i_tb ;
+
+logic [DATA_WIDTH_TB-1:0]    ast_data_o_tb          [TX_DIR_TB-1:0];
+logic                        ast_startofpacket_o_tb [TX_DIR_TB-1:0];
+logic                        ast_endofpacket_o_tb   [TX_DIR_TB-1:0];
+logic                        ast_valid_o_tb         [TX_DIR_TB-1:0];
+logic [EMPTY_WIDTH_TB-1:0]   ast_empty_o_tb         [TX_DIR_TB-1:0];
+logic [CHANNEL_WIDTH_TB-1:0] ast_channel_o_tb       [TX_DIR_TB-1:0];
+logic                        ast_ready_i_tb         [TX_DIR_TB-1:0];
 
 initial
   forever
@@ -23,7 +31,7 @@ default clocking cb
   @( posedge clk_i_tb );
 endclocking
 
-snk_avalon_st_if #(
+avalon_st_if #(
   .DATA_WIDTH    ( DATA_WIDTH_TB    ),
   .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
   .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   )
@@ -31,14 +39,22 @@ snk_avalon_st_if #(
   .clk ( clk_i_tb )
 );
 
-src_avalon_st_if #(
+avalon_st_if #(
   .DATA_WIDTH    ( DATA_WIDTH_TB    ),
   .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
-  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   ),
-  .TX_DIR        ( TX_DIR_TB        )
-) ast_src_if (
+  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   )
+) ast_src_if [TX_DIR_TB-1:0] (
   .clk ( clk_i_tb )
 );
+
+// src_avalon_st_if #(
+//   .DATA_WIDTH    ( DATA_WIDTH_TB    ),
+//   .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
+//   .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   ),
+//   .TX_DIR        ( TX_DIR_TB        )
+// ) ast_src_if (
+//   .clk ( clk_i_tb )
+// );
 
 ast_dmx_c #(
   .DATA_W    ( DATA_WIDTH_TB    ),
@@ -67,7 +83,7 @@ ast_dmx #(
   .clk_i  ( clk_i_tb  ),
   .srst_i ( srst_i_tb ),
 
-  .dir_i  ( dir_i_tb  ), ////
+  .dir_i  ( dir_i_tb  ),
 
   .ast_data_i          ( ast_snk_if.data    ),
   .ast_startofpacket_i ( ast_snk_if.sop     ),
@@ -77,13 +93,13 @@ ast_dmx #(
   .ast_channel_i       ( ast_snk_if.channel ) ,
   .ast_ready_o         ( ast_snk_if.ready   ),
 
-  .ast_data_o          ( ast_src_if.data    ),
-  .ast_startofpacket_o ( ast_src_if.sop     ),
-  .ast_endofpacket_o   ( ast_src_if.eop     ),
-  .ast_valid_o         ( ast_src_if.valid   ),
-  .ast_empty_o         ( ast_src_if.empty   ),
-  .ast_channel_o       ( ast_src_if.channel ),
-  .ast_ready_i         ( ast_src_if.ready   )
+  .ast_data_o          ( ast_data_o_tb          ),
+  .ast_startofpacket_o ( ast_startofpacket_o_tb ),
+  .ast_endofpacket_o   ( ast_endofpacket_o_tb   ),
+  .ast_valid_o         ( ast_valid_o_tb         ),
+  .ast_empty_o         ( ast_empty_o_tb         ),
+  .ast_channel_o       ( ast_channel_o_tb       ),
+  .ast_ready_i         ( ast_ready_i_tb         )
 );
 
 mailbox #( pkt_t ) send_packet      = new();
@@ -118,34 +134,39 @@ for( int i = 0; i < MAX_PK; i++ )
 
 endtask
 
-task assert_ready_1clk();
+// task assert_ready_1clk();
 
-@( posedge clk_i_tb )
-ast_src_if.ready[1] <= 1'b1;
+// @( posedge clk_i_tb )
+// ast_src_if.ready[1] <= 1'b1;
 
-endtask
+// endtask
 
-task assert_ready();
+// task assert_ready();
 
-repeat(100)
-  assert_ready_1clk();
-endtask
+// repeat(100)
+//   assert_ready_1clk();
+// endtask
 
 initial
   begin
-    ast_src_if.ready[1] <= 1'b1;
+    ast_ready_i_tb[0] <= 1'b1;
+    ast_ready_i_tb[1] <= 1'b1;
+    ast_ready_i_tb[2] <= 1'b1;
+    ast_ready_i_tb[3] <= 1'b1;
     dir_i_tb = 2'd1;
     srst_i_tb <= 1'b1;
     @( posedge clk_i_tb )
     srst_i_tb <= 1'b0;
 
-    gen_pk ( send_packet, copy_send_packet, 16, 16 );
+    // @( posedge clk_i_tb );
 
-    ast_send_pk = new( ast_snk_if, ast_src_if, send_packet );
+    gen_pk ( send_packet, copy_send_packet, 50, 50 );
+
+    ast_send_pk = new( ast_snk_if, send_packet );
     
     fork
       ast_send_pk.send_pk();
-      assert_ready();
+      // assert_ready();
     join
 
     $stop();

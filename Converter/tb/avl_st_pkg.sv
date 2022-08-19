@@ -6,7 +6,7 @@ typedef logic [255:0] pkt_receive_t [$];
 class ast_class #(
   parameter DATA_W    = 32,
   parameter CHANNEL_W = 10,
-  parameter EMPTY_W  = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1,
+  parameter EMPTY_OUT_W  = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1,
   parameter MAX_PK    = 5
 );
 
@@ -14,8 +14,7 @@ localparam WORD_IN = DATA_W/8;
 
 virtual avalon_st #(
   .DATA_W    ( DATA_W    ),
-  .CHANNEL_W ( CHANNEL_W ),
-  .EMPTY_W   ( EMPTY_W   )
+  .CHANNEL_W ( CHANNEL_W )
 ) ast_if;
 
 mailbox #( pkt_t ) tx_fifo;
@@ -27,8 +26,7 @@ mailbox #( logic [CHANNEL_W-1:0] ) channel_output;
 mailbox #( logic [EMPTY_OUT_W-1:0] ) empty_output;
 
 function new ( virtual avalon_st #( .DATA_W    ( DATA_W    ),
-                                    .CHANNEL_W ( CHANNEL_W ),
-                                    .EMPTY_W   ( EMPTY_W   )
+                                    .CHANNEL_W ( CHANNEL_W )
                                   ) _ast_if,
                mailbox #( pkt_t ) _tx_fifo,
                mailbox #( pkt_receive_t ) _rx_fifo,
