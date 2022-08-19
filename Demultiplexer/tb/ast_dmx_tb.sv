@@ -14,6 +14,7 @@ parameter MAX_PK = 5;
 bit clk_i_tb;
 logic srst_i_tb;
 logic [DIR_SEL_WIDTH_TB-1:0] dir_i_tb ;
+genvar i;
 
 logic [DATA_WIDTH_TB-1:0]    ast_data_o_tb          [TX_DIR_TB-1:0];
 logic                        ast_startofpacket_o_tb [TX_DIR_TB-1:0];
@@ -134,20 +135,13 @@ for( int i = 0; i < MAX_PK; i++ )
 
 endtask
 
-task output_array();
-
-forever
-  // for( int i = 0; i < TX_DIR_TB; i++ )
+generate
+  for( i = 0; i < TX_DIR_TB; i++ )
     begin
-      @( posedge clk_i_tb );
-      ast_src_if[0].data = ast_data_o_tb[0];
-      ast_src_if[1].data = ast_data_o_tb[1];
-      ast_src_if[2].data = ast_data_o_tb[2];
-      ast_src_if[3].data = ast_data_o_tb[3];
-      
+      assign ast_src_if[i].data = ast_data_o_tb[i];
     end
+endgenerate
 
-endtask
 
 // task assert_ready_1clk();
 
@@ -178,10 +172,8 @@ initial
     gen_pk ( send_packet, copy_send_packet, 32, 32 );
 
     ast_send_pk = new( ast_snk_if, send_packet );
-    
     fork
       ast_send_pk.send_pk();
-      output_array();
     join_any
 
     $stop();
