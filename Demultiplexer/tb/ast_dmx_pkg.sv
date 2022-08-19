@@ -71,7 +71,7 @@ while( tx_fifo.num() != 0 )
       number_of_word = int_part;
     else
       number_of_word = int_part + 1;
-  
+    
     if( pkt_size <= WORD_IN )
       begin
         if( ast_if.ready )
@@ -96,178 +96,80 @@ while( tx_fifo.num() != 0 )
     else
       begin
         $display("*******size: %0d*******", tx_fifo.num());
-        pk_data    = '0;
         while( cnt_bytes < number_of_word )
           begin
             if( cnt_bytes == 0 )
               begin
+                pk_data = (DATA_W)'(0);
                 ast_if.sop     <= 1'b1;
                 ast_if.eop     <= 1'b0;
                 ast_if.empty   <= 0;
                 ast_if.valid   <= 1'b1;
                 ast_if.channel <= new_channel;
-                // if( ast_if.valid == 1'b1 )
+                $display("pk_data: %x", pk_data);
+                for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                   begin
-                    for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
-                      begin
-                        // ast_if.data[7:0] = new_pk[j];
-                        pk_data[7:0] = new_pk[j];
-                        if( j != WORD_IN*cnt_bytes )
-                          // ast_if.data = ast_if.data << 8;
-                          pk_data = pk_data << 8;
-                      end
+                    // ast_if.data[7:0] = new_pk[j];
+                    pk_data[7:0] = new_pk[j];
+                    if( j != WORD_IN*cnt_bytes )
+                      // ast_if.data = ast_if.data << 8;
+                      pk_data = pk_data << 8;
                   end
-                $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
+                // $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
                 cnt_bytes++;
               end
             else if( ( cnt_bytes != 0 ) &&  ( cnt_bytes != number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
               begin
+                pk_data = (DATA_W)'(0);
                 random_valid = $urandom_range(1,0);
                 ast_if.sop     <= 1'b0;
                 ast_if.eop     <= 1'b0;
                 ast_if.valid   <= random_valid;
+                $display("pk_data: %x", pk_data);
                 if( random_valid == 1'b1 )
                   begin
                     for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                       begin
-                        // ast_if.data[7:0] = new_pk[j];
                         pk_data[7:0] = new_pk[j];
                         if( j != WORD_IN*cnt_bytes )
-                          // ast_if.data = ast_if.data << 8;
                           pk_data = pk_data << 8;
                       end
                   end
                 cnt_bytes = cnt_bytes + random_valid;
-                $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
+                // $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
               end
             else if( ( cnt_bytes == number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
               begin
-                // ast_if.empty   <= xxx;
+                byte_last_word = ( mod_part != 0 ) ? mod_part : WORD_IN;
+                pk_data = (DATA_W)'(0);
                 ast_if.eop     <= 1'b1;
                 ast_if.sop     <= 1'b0;
                 ast_if.valid   <= 1'b1;
-                $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
-                // if( ast_if.valid == 1'b1 )
+                ast_if.empty   <= WORD_IN - byte_last_word;
+                $display("pk_data: %x", pk_data);
+                // $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
+                for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                   begin
-                    for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
-                      begin
-                        // ast_if.data[7:0] = new_pk[j];
-                        pk_data[7:0] = new_pk[j];
-                        if( j != WORD_IN*cnt_bytes )
-                          // ast_if.data = ast_if.data << 8;
-                          pk_data = pk_data << 8;
-                      end
+                    pk_data[7:0] = new_pk[j];
+                    if( j != WORD_IN*cnt_bytes )
+                      pk_data = pk_data << 8;
                   end
+                for( int k = DATA_W-1; k >= byte_last_word*8; k--)
+                  pk_data[k] = 1'b0;
+
                 cnt_bytes++;
               end
-  
+            $display("pk_data: %x", pk_data);
             ast_if.data <= pk_data;
           `cb;
 
           end
         if( ast_if.eop == 1'b1 )
           begin
-            ast_if.eop <= 1'b0;
+            ast_if.eop   <= 1'b0;
             ast_if.valid <= 1'b0;
-            cnt_bytes = 0;
+            cnt_bytes     = 0;
           end
-      //   while( i < number_of_word -1 ) 
-      //     begin
-      //       // if( ast_if.ready )
-      //         begin
-      //           if( i == 0 )
-      //             begin
-      //               // ast_if.data    <= (DATA_W)'(0);
-      //               pk_data = (DATA_W)'(0);
-      //               ast_if.valid   <= 1'b1;
-      //               ast_if.sop     <= 1'b1;
-      //               ast_if.empty   <= 0;
-      //               ast_if.channel <= new_channel;
-
-      //               //0 -->last word-1
-      //               for( int j = WORD_IN-1; j >= 0; j-- )
-      //                 begin
-      //                   // ast_if.data[7:0] = new_pk[j];
-      //                   pk_data[7:0] = new_pk[j];
-      //                   if( j != 0 )
-      //                     // ast_if.data = ast_if.data << 8;
-      //                     pk_data = pk_data << 8;
-      //                 end
-      //               // ast_if.data
-      //               // `cb;
-      //               if( ast_if.ready )
-      //                 begin
-      //                   ast_if.valid <= 1'b0;
-      //                   ast_if.sop   <= 1'b0;
-      //                 end
-      //               i++;
-      //             end
-      //           else
-      //             begin
-      //               // ast_if.data <= (DATA_W)'(0);
-      //               pk_data = (DATA_W)'(0);
-      //               ast_if.valid <= $urandom_range(1,0);
-      //               if( ast_if.ready )
-      //                 begin
-      //                   ast_if.eop <= 1'b0;
-      //                   ast_if.sop <= 1'b0;
-      //                   ast_if.empty <= 0;
-      //                 end
-      //               if( ast_if.valid == 1'b1 )
-      //                 begin
-      //                   ast_if.channel <= new_channel;
-      //                   for( int j = (WORD_IN*i + WORD_IN) -1; j >= WORD_IN*i; j-- )
-      //                     begin
-      //                       // ast_if.data[7:0] = new_pk[j];
-      //                       pk_data[7:0] = new_pk[j];
-      //                       if( j != WORD_IN*i )
-      //                         // ast_if.data = ast_if.data << 8;
-      //                         pk_data = pk_data << 8 ;
-      //                     end
-      //                   i++;
-      //                 end
-      //               // `cb;
-      //             end
-      //             // `cb;
-      //         end
-      //     end
-
-      //   //push bytes to last word
-      //   if( mod_part != 0 )
-      //     byte_last_word = mod_part;
-      //   else
-      //     byte_last_word = WORD_IN;
-      //   last_word_ind = WORD_IN*i;
-      //   k = last_word_ind + byte_last_word -1;
-
-      //   ast_if.data <= (DATA_W)'(0);
-
-      //   while( k >= last_word_ind )
-      //     begin
-      //       ast_if.valid <= 1'b1;
-      //       ast_if.eop <= 1'b1;
-      //       ast_if.empty <= WORD_IN-byte_last_word;
-      //       ast_if.channel <= 0;
-
-      //       // ast_if.data[7:0] = new_pk[k];
-      //       pk_data[7:0] = new_pk[k];
-      //       if( k != last_word_ind )
-      //         // ast_if.data = ast_if.data << 8;
-      //         pk_data = pk_data << 8;
-
-      //       k--;
-      //     end
-      //     // `cb;
-      //     if( ast_if.ready )
-      //       begin
-      //         ast_if.empty <= 0;
-      //         ast_if.valid <= 1'b0;
-      //         ast_if.eop   <= 1'b0;
-      //       end
-      //   k = 0;
-      //   i = 0;
-      // ast_if.data <= pk_data;
-      // `cb;
       end
   repeat(5)
   `cb;

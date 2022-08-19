@@ -123,7 +123,7 @@ for( int i = 0; i < MAX_PK; i++ )
     for( int j = 0; j < random_byte; j++ )
       begin
         new_data = $urandom_range( 2**8,0 );
-        new_pk.push_back( new_data );
+        new_pk[j] = new_data;
         $display("data: %x", new_data);
       end
     _send_packet.put( new_pk );
@@ -160,7 +160,7 @@ initial
 
     // @( posedge clk_i_tb );
 
-    gen_pk ( send_packet, copy_send_packet, 50, 50 );
+    gen_pk ( send_packet, copy_send_packet, 32, 32 );
 
     ast_send_pk = new( ast_snk_if, send_packet );
     
