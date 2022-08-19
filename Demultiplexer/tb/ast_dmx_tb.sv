@@ -134,6 +134,21 @@ for( int i = 0; i < MAX_PK; i++ )
 
 endtask
 
+task output_array();
+
+forever
+  // for( int i = 0; i < TX_DIR_TB; i++ )
+    begin
+      @( posedge clk_i_tb );
+      ast_src_if[0].data = ast_data_o_tb[0];
+      ast_src_if[1].data = ast_data_o_tb[1];
+      ast_src_if[2].data = ast_data_o_tb[2];
+      ast_src_if[3].data = ast_data_o_tb[3];
+      
+    end
+
+endtask
+
 // task assert_ready_1clk();
 
 // @( posedge clk_i_tb )
@@ -166,8 +181,8 @@ initial
     
     fork
       ast_send_pk.send_pk();
-      // assert_ready();
-    join
+      output_array();
+    join_any
 
     $stop();
 

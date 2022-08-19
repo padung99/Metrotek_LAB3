@@ -109,13 +109,10 @@ while( tx_fifo.num() != 0 )
                 $display("pk_data: %x", pk_data);
                 for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                   begin
-                    // ast_if.data[7:0] = new_pk[j];
                     pk_data[7:0] = new_pk[j];
                     if( j != WORD_IN*cnt_bytes )
-                      // ast_if.data = ast_if.data << 8;
                       pk_data = pk_data << 8;
                   end
-                // $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
                 cnt_bytes++;
               end
             else if( ( cnt_bytes != 0 ) &&  ( cnt_bytes != number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
@@ -136,7 +133,6 @@ while( tx_fifo.num() != 0 )
                       end
                   end
                 cnt_bytes = cnt_bytes + random_valid;
-                // $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
               end
             else if( ( cnt_bytes == number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
               begin
@@ -147,7 +143,7 @@ while( tx_fifo.num() != 0 )
                 ast_if.valid   <= 1'b1;
                 ast_if.empty   <= WORD_IN - byte_last_word;
                 $display("pk_data: %x", pk_data);
-                // $display("i, number of word: %0d %0d ", cnt_bytes, number_of_word);
+
                 for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                   begin
                     pk_data[7:0] = new_pk[j];
@@ -156,7 +152,6 @@ while( tx_fifo.num() != 0 )
                   end
                 for( int k = DATA_W-1; k >= byte_last_word*8; k--)
                   pk_data[k] = 1'b0;
-
                 cnt_bytes++;
               end
             $display("pk_data: %x", pk_data);
@@ -177,36 +172,30 @@ while( tx_fifo.num() != 0 )
 
 endtask
 
-// task reveive_pk();
+task reveive_pk();
 
-// pkt_receive_t new_pk_receive; //???
-// // rx_fifo ????
-//   forever
-//     begin
-//       `cb_src;
-//         begin
-//           for( int i = 0; i < TX_DIR; i++ )
-//             begin
-//               if( ast_if_src.valid[i] == 1'b1 && ast_if_src.eop[i] != 1'b1 )
-//                 begin
-//                   new_pk_receive.push_back( ast_if_src.data[i] );
-//                 //  $display( "receive: %x", ast_if_src.data );
-//                 end
-//               else if( ast_if_src.valid[i] == 1'b1 && ast_if_src.eop[i] == 1'b1 )
-//                 begin
-//                   new_pk_receive.push_back( ast_if_src.data[i] );
-//                   // $display( "receive: %x", ast_if_src.data );
-//                   rx_fifo.put( new_pk_receive );
-//                   new_pk_receive = {};
-//                 end
-//             end
-//         end
+pkt_receive_t new_pk_receive;
+forever
+  begin
+    `cb;
+    if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
+      begin
+        new_pk_receive.push_back( ast_if.data );
+      //  $display( "receive: %x", ast_if.data ); 
+      end
+    else if( ast_if.valid == 1'b1 && ast_if.eop == 1'b1 )
+      begin
+        new_pk_receive.push_back( ast_if.data );
+        // $display( "receive: %x", ast_if.data );
+        rx_fifo.put( new_pk_receive );
+        new_pk_receive = {};
+      end
 
-//       if( rx_fifo.num() >= MAX_PK )
-//         break;
-//     end
+    if( rx_fifo.num() >= MAX_PK  )
+     break;
+  end
 
-// endtask
+endtask
 
 endclass
 
