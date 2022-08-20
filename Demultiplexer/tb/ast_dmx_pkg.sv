@@ -1,7 +1,6 @@
 package ast_dmx_pkg;
 
 typedef logic [7:0] pkt_t [$];
-typedef logic [63:0] pkt_receive_t [$];
 
 class ast_dmx_c #(
   parameter DATA_W    = 64,
@@ -20,7 +19,6 @@ virtual avalon_st_if #(
 ) ast_if;
 
 mailbox #( pkt_t ) tx_fifo;
-mailbox #( pkt_receive_t ) rx_fifo;
 
 function new(
     virtual avalon_st_if #(
@@ -39,7 +37,7 @@ endfunction
 
 `define cb @( posedge ast_if.clk );
 
-task send_pk();
+task send_pk( int _delay_between_packet );
 
 pkt_t new_pk;
 
@@ -76,23 +74,27 @@ while( tx_fifo.num() != 0 )
     
     if( pkt_size <= WORD_IN )
       begin
-        if( ast_if.ready )
+        // if( ast_if.ready )
           begin
-            ast_if.data    = (DATA_W)'(0);
-            ast_if.valid   = 1'b1;
-            ast_if.sop     = 1'b1;
-            ast_if.eop     = 1'b1;
-            ast_if.empty   = WORD_IN-pkt_size;
+            pk_data        = (DATA_W)'(0);
+            ast_if.valid   <= 1'b1;
+            ast_if.sop     <= 1'b1;
+            ast_if.eop     <= 1'b1;
+            ast_if.empty   <= WORD_IN-pkt_size;
             for( int j = pkt_size-1; j >= 0; j-- )
               begin
-                ast_if.data[7:0] = new_pk[j];
+                pk_data[7:0] = new_pk[j];
                 if( j != 0 )
-                  ast_if.data = ast_if.data << 8;
+                  pk_data = pk_data << 8;
               end
+            ast_if.data <= pk_data;
             `cb;
-            ast_if.valid = 1'b0;
-            ast_if.sop   = 1'b0;
-            ast_if.eop   = 1'b0;            
+            if( ast_if.eop == 1'b1 )
+              begin
+                ast_if.valid <= 1'b0;
+                ast_if.sop   <= 1'b0;
+                ast_if.eop   <= 1'b0;
+              end
           end
       end
     else
@@ -108,7 +110,6 @@ while( tx_fifo.num() != 0 )
                 ast_if.empty   <= 0;
                 ast_if.valid   <= 1'b1;
                 ast_if.channel <= new_channel;
-                // $display("pk_data: %x", pk_data);
                 for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                   begin
                     pk_data[7:0] = new_pk[j];
@@ -157,8 +158,8 @@ while( tx_fifo.num() != 0 )
                 cnt_bytes++;
               end
 
-          deassert_valid = ( ast_if.ready == 1'b0 && ( cnt_bytes != 1 ) ) ||
-                           ( ast_if.ready == 1'b0 && ( cnt_bytes == 1 ) && ( ast_if.valid == 1'b1 ) );
+          deassert_valid = ( ast_if.ready != 1'b1 && ( cnt_bytes != 1 ) ) ||
+                           ( ast_if.ready != 1'b1 && ( cnt_bytes == 1 ) && ( ast_if.valid == 1'b1 ) );
 
           if( deassert_valid )
             ast_if.valid <= 1'b0;
@@ -174,8 +175,14 @@ while( tx_fifo.num() != 0 )
             cnt_bytes     = 0;
           end
       end
-  repeat(5)
-  `cb;
+
+  repeat( _delay_between_packet )
+    `cb;
+
+  //Waiting for ready signal
+  while( ast_if.ready != 1'b1 )
+    `cb;
+  
   end
 
 endtask

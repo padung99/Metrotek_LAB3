@@ -9,7 +9,7 @@ parameter int TX_DIR_TB         = 4;
 
 parameter int DIR_SEL_WIDTH_TB = TX_DIR_TB == 1 ? 1 : $clog2( TX_DIR_TB );
 
-parameter MAX_PK = 5;
+parameter MAX_PK = 6;
 
 parameter WORD_IN = DATA_WIDTH_TB/8;
 
@@ -187,19 +187,17 @@ endgenerate
 task assert_ready_1clk();
 
 @( posedge clk_i_tb )
-// ast_src_if[0].ready <= 1'b0;
-ast_ready_i_tb[1] <= 1'b1;
-// ast_src_if[2].ready <= 1'b0;
-// ast_src_if[3].ready <= 1'b0;
+
+for( int i = 0; i < TX_DIR_TB; i++ )
+  ast_ready_i_tb[i] <= 1'b1;
+
 endtask
 
 task deassert_ready_1clk();
 
 @( posedge clk_i_tb )
-// ast_src_if[0].ready <= 1'b0;
-ast_ready_i_tb[1] <= 1'b0;
-// ast_src_if[2].ready <= 1'b0;
-// ast_src_if[3].ready <= 1'b0;
+for( int i = 0; i < TX_DIR_TB; i++ )
+  ast_ready_i_tb[i] <= 1'b0;
 endtask
 
 
@@ -214,35 +212,51 @@ forever
   begin
     random_assert   = $urandom_range( _min_assert, _max_assert );
     random_deassert = $urandom_range( _min_deassert, _max_deassert );
-
     repeat( random_assert )
       assert_ready_1clk();
     repeat( random_deassert )
       deassert_ready_1clk();
-
   end
+endtask
+
+task gen_dir();
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
+      // dir_i_tb <= $urandom_range(TX_DIR_TB-1,0); //Random dir
+      dir_i_tb <= 3; //Specific dir
+  end
+
+endtask
+
+task reset();
+
+srst_i_tb <= 1'b1;
+@( posedge clk_i_tb )
+srst_i_tb <= 1'b0;
+
 endtask
 
 initial
   begin
-    // ast_ready_i_tb[0] <= 1'b1;
-    ast_ready_i_tb[1] <= 1'b1;
-    // ast_ready_i_tb[2] <= 1'b1;
-    // ast_ready_i_tb[3] <= 1'b1;
-    dir_i_tb = 2'd1;
     srst_i_tb <= 1'b1;
     @( posedge clk_i_tb )
     srst_i_tb <= 1'b0;
-
-    // @( posedge clk_i_tb );
+    for( int i = 0; i < TX_DIR_TB; i++ )
+      ast_ready_i_tb[i] <= 1'b1;
 
     gen_pk ( send_packet, copy_send_packet, 88, 88 );
 
+    // // Test case 1: Random dir_i
     ast_send_pk = new( ast_snk_if, send_packet );
     fork
-      ast_send_pk.send_pk();
+      ast_send_pk.send_pk(3);
       assert_ready(1,3,1,3);
+      gen_dir();
     join_any
+
 
     $stop();
 
