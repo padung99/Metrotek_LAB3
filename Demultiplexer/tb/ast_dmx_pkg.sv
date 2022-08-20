@@ -37,7 +37,7 @@ this.tx_fifo = _tx_fifo;
 
 endfunction
 
- `define cb @( posedge ast_if.clk );
+`define cb @( posedge ast_if.clk );
 
 task send_pk();
 
@@ -54,6 +54,8 @@ int int_part, mod_part;
 int last_word_ind;
 bit random_valid;
 int cnt_bytes;
+
+logic deassert_valid;
 while( tx_fifo.num() != 0 )
   begin    
     tx_fifo.get( new_pk );
@@ -95,18 +97,18 @@ while( tx_fifo.num() != 0 )
       end
     else
       begin
-        $display("*******size: %0d*******", tx_fifo.num());
+        // $display("*******size: %0d*******", tx_fifo.num());
         while( cnt_bytes < number_of_word )
           begin
             if( cnt_bytes == 0 )
               begin
-                pk_data = (DATA_W)'(0);
+                pk_data         = (DATA_W)'(0);
                 ast_if.sop     <= 1'b1;
                 ast_if.eop     <= 1'b0;
                 ast_if.empty   <= 0;
                 ast_if.valid   <= 1'b1;
                 ast_if.channel <= new_channel;
-                $display("pk_data: %x", pk_data);
+                // $display("pk_data: %x", pk_data);
                 for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                   begin
                     pk_data[7:0] = new_pk[j];
@@ -117,12 +119,12 @@ while( tx_fifo.num() != 0 )
               end
             else if( ( cnt_bytes != 0 ) &&  ( cnt_bytes != number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
               begin
-                pk_data = (DATA_W)'(0);
+                pk_data      = (DATA_W)'(0);
                 random_valid = $urandom_range(1,0);
-                ast_if.sop     <= 1'b0;
-                ast_if.eop     <= 1'b0;
-                ast_if.valid   <= random_valid;
-                $display("pk_data: %x", pk_data);
+                ast_if.sop   <= 1'b0;
+                ast_if.eop   <= 1'b0;
+                ast_if.valid <= random_valid;
+
                 if( random_valid == 1'b1 )
                   begin
                     for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
@@ -137,12 +139,12 @@ while( tx_fifo.num() != 0 )
             else if( ( cnt_bytes == number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
               begin
                 byte_last_word = ( mod_part != 0 ) ? mod_part : WORD_IN;
-                pk_data = (DATA_W)'(0);
-                ast_if.eop     <= 1'b1;
-                ast_if.sop     <= 1'b0;
-                ast_if.valid   <= 1'b1;
-                ast_if.empty   <= WORD_IN - byte_last_word;
-                $display("pk_data: %x", pk_data);
+                pk_data        = (DATA_W)'(0);
+                ast_if.eop    <= 1'b1;
+                ast_if.sop    <= 1'b0;
+                ast_if.valid  <= 1'b1;
+                ast_if.empty  <= WORD_IN - byte_last_word;
+
 
                 for( int j = (WORD_IN*cnt_bytes + WORD_IN) -1; j >= WORD_IN*cnt_bytes; j-- )
                   begin
@@ -154,7 +156,13 @@ while( tx_fifo.num() != 0 )
                   pk_data[k] = 1'b0;
                 cnt_bytes++;
               end
-            $display("pk_data: %x", pk_data);
+
+          deassert_valid = ( ast_if.ready == 1'b0 && ( cnt_bytes != 1 ) ) ||
+                           ( ast_if.ready == 1'b0 && ( cnt_bytes == 1 ) && ( ast_if.valid == 1'b1 ) );
+
+          if( deassert_valid )
+            ast_if.valid <= 1'b0;
+
             ast_if.data <= pk_data;
           `cb;
 
@@ -168,31 +176,6 @@ while( tx_fifo.num() != 0 )
       end
   repeat(5)
   `cb;
-  end
-
-endtask
-
-task reveive_pk();
-
-pkt_receive_t new_pk_receive;
-forever
-  begin
-    `cb;
-    if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
-      begin
-        new_pk_receive.push_back( ast_if.data );
-      //  $display( "receive: %x", ast_if.data ); 
-      end
-    else if( ast_if.valid == 1'b1 && ast_if.eop == 1'b1 )
-      begin
-        new_pk_receive.push_back( ast_if.data );
-        // $display( "receive: %x", ast_if.data );
-        rx_fifo.put( new_pk_receive );
-        new_pk_receive = {};
-      end
-
-    if( rx_fifo.num() >= MAX_PK  )
-     break;
   end
 
 endtask
