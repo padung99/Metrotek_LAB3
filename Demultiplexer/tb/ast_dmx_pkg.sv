@@ -26,7 +26,6 @@ function new(
                               .CHANNEL_WIDTH ( CHANNEL_W ),
                               .EMPTY_WIDTH   ( EMPTY_W   )
                               ) _ast_if,
-
     mailbox #( pkt_t ) _tx_fifo
 );
 
@@ -55,7 +54,9 @@ int cnt_bytes;
 
 logic deassert_valid;
 while( tx_fifo.num() != 0 )
-  begin    
+  begin
+    while( ast_if.ready != 1'b1 )
+      `cb;  
     tx_fifo.get( new_pk );
     new_channel = $urandom_range( 2**CHANNEL_W,0 );
     // channel_input.put( new_channel );
@@ -71,7 +72,7 @@ while( tx_fifo.num() != 0 )
       number_of_word = int_part;
     else
       number_of_word = int_part + 1;
-    
+
     if( pkt_size <= WORD_IN )
       begin
         // if( ast_if.ready )
@@ -180,8 +181,8 @@ while( tx_fifo.num() != 0 )
     `cb;
 
   //Waiting for ready signal
-  while( ast_if.ready != 1'b1 )
-    `cb;
+  // while( ast_if.ready != 1'b1 )
+  //   `cb;
   
   end
 
