@@ -136,11 +136,11 @@ logic [DATA_WIDTH_TB-1:0] tmp_data;
 for( int i = 0; i < MAX_PK; i++ )
   begin
     random_byte = $urandom_range( _min_byte,_max_byte );
-    // $display("PACKET %0d", i);
+
     int_part  = random_byte / 8;
     mod_part  = random_byte % 8;
     word_byte = ( mod_part == 0 ) ? int_part : int_part + 1;
-    // $display("word_byte: %0d", word_byte);
+
     for( int j = 0; j < (word_byte-1)*8; j++ )
       begin
         new_data  = $urandom_range( 2**8,0 );
@@ -156,7 +156,7 @@ for( int i = 0; i < MAX_PK; i++ )
     for( int j = random_byte -1; j >= WORD_IN*(word_byte-1); j-- )
       begin
         word_data[word_byte-1][7:0] = new_pk[j];
-        // $display("word_data[%0d][7:0] %0x",word_byte-1, word_data[word_byte-1] );
+        
         if( j != WORD_IN*(word_byte-1) )
           word_data[word_byte-1] = word_data[word_byte-1] << 8;
       end
@@ -172,14 +172,10 @@ for( int i = 0; i < MAX_PK; i++ )
           word_data[word_byte-2-i] = tmp_data;
         end
 
-    // for( int i = 0; i < word_byte; i++ )
-    //   $display("word: %x", word_data[i]);
-
     _fifo_packet_word.put( word_data );
     _fifo_packet_byte.put( new_pk );
     word_data = {};
     new_pk    = {};
-    // $display("\n");
   end
 
 endtask
@@ -343,7 +339,7 @@ initial
     srst_i_tb <= 1'b0;
 
     // // // ********************Test case 1********************
-    $display("[Random 'dir_i' -- 5 packet ( 70 bytes/packet ) --  Random 'ready']");
+    $display("TEST 1: [Random 'dir_i' -- 5 packet ( 70 bytes/packet ) --  Random 'ready']");
     gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
     set_assert_range( 1,3,1,3 );
     dir_setting( 1,100 );
@@ -361,7 +357,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("[dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    $display("TEST 2: [dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
     
@@ -374,7 +370,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("[dir_i = 2 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    $display("TEST 3: [dir_i = 2 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
     
@@ -387,7 +383,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("[dir_i = 1 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    $display("TEST 4: [dir_i = 1 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
     
@@ -400,7 +396,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("[dir_i = 0 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    $display("TEST 5: [dir_i = 0 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
     
@@ -413,7 +409,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("Test data: Number of byte = 8k \n[dir_i = 3 -- 5 packet ( 64 bytes/packet ) -- random 'ready']");
+    $display("TEST 6: Test data: Number of byte = 8k \n[dir_i = 3 -- 5 packet ( 64 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 64, 64 );
     
@@ -426,7 +422,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("Test data: Number of bytes < 8 bytes \n[random dir_i -- 5 packet ( 6 bytes/packet ) -- random 'ready']");
+    $display("TEST 7: Test data: Number of bytes < 8 bytes \n[random dir_i -- 5 packet ( 6 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 6, 6 );
     
@@ -439,7 +435,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("Test data: number of byte = 8 bytes \n[random dir_i -- 5 packet ( 8 bytes/packet ) -- random 'ready']");
+    $display("TEST 8: Test data: number of byte = 8 bytes \n[random dir_i -- 5 packet ( 8 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case when number of bytes in packet = 1 word (8 bytes)
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 8, 8 );
@@ -453,7 +449,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("Test data: number of byte = 9 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
+    $display("TEST 9: Test data: number of byte = 9 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case
     // // when number of bytes in packet = 9 bytes (2 words) = 1 word + 1 byte 
     fifo_packet_byte = new();
@@ -472,7 +468,7 @@ initial
     set_assert_range( 150,150,0,0 );
     reset();
       
-    $display("[RANDOM dir_i -- 5 packet ( 70 bytes/packet ) -- ready = 1]");
+    $display("TEST 10: [RANDOM dir_i -- 5 packet ( 70 bytes/packet ) -- ready = 1]");
     gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
     ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
@@ -486,7 +482,7 @@ initial
     set_assert_range( 1,3,1,3 );
     reset();
     
-    $display("Test data: number of byte = 1 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
+    $display("TEST 11: Test data: number of byte = 1 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case
     // // when number of bytes in packet = 1 bytes ( 1 word only )
     fifo_packet_byte = new();
@@ -496,17 +492,6 @@ initial
     ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
     ast_send_pk.send_pk( 3 );
-
-    // // // Test 12: byte = 830 ?????????? TB error, not rtl error
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 800, 800 ); 
-
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3, 1,3 );
-    //   gen_dir(0, 3);
-    //   compare_output( fifo_packet_word );
-    // join_any
 
     $stop();
 
