@@ -18,4 +18,7 @@
 4) eop_o ошибки:
 - eop_o неопределен (всегда = 0)
   + Test case 3
-  + Test case 6 
+  + Test case 6
+
+Lỗi khi cho random ready_i:
+- Test case 8: 105 ps: ready_i = 0 nhưng vẫn có data output, 115 ps, giá trị 1 data chỉ có thể nhận 1 lần valid, nhưng ở đây 1 data được valid 2 lần
