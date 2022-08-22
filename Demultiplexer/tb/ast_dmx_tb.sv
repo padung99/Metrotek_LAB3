@@ -27,6 +27,14 @@ logic [EMPTY_WIDTH_TB-1:0]   ast_empty_o_tb         [TX_DIR_TB-1:0];
 logic [CHANNEL_WIDTH_TB-1:0] ast_channel_o_tb       [TX_DIR_TB-1:0];
 logic                        ast_ready_i_tb         [TX_DIR_TB-1:0];
 
+int min_assert;
+int max_assert;
+int min_deassert;
+int max_deassert;
+
+bit rand_dir;
+int dir_select;
+
 
 initial
   forever
@@ -176,7 +184,7 @@ for( int i = 0; i < MAX_PK; i++ )
 
 endtask
 
-task compare_output( mailbox #( pkt_word_t ) _fifo_packet_word );
+task compare_output();
 
 pkt_word_t new_pk_word;
 logic [DATA_WIDTH_TB-1:0] new_word;
@@ -185,46 +193,52 @@ int j;
 int mb_size;
 int pk_size;
 logic [DIR_SEL_WIDTH_TB-1:0] dir_tmp;
-
-mb_size = _fifo_packet_word.num();
-while( _fifo_packet_word.num() != 0 )
+int size_mb;
+mb_size = fifo_packet_word.num();
+forever
   begin
-    $display("*****PACKET %0d*****", mb_size - _fifo_packet_word.num() );
-    _fifo_packet_word.get( new_pk_word );
-    pk_size = new_pk_word.size();
-    $display("pk_size: %0d", pk_size);
-    j = 0;
-    while( j < pk_size )
+    @( posedge clk_i_tb );
+    while( fifo_packet_word.num() != 0 )
       begin
-        if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
-          dir_tmp = dir_i_tb;
-        for( int i = 0; i < TX_DIR_TB; i++ )
+        size_mb = fifo_packet_word.num();
+        $display("*****PACKET %0d*****", mb_size - fifo_packet_word.num() );
+        fifo_packet_word.get( new_pk_word );
+        pk_size = new_pk_word.size();
+        $display("pk_size: %0d words", pk_size);
+        j = 0;
+        while( j < pk_size )
           begin
-            if( i == dir_tmp )
+            if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
+              dir_tmp = dir_i_tb;
+            for( int i = 0; i < TX_DIR_TB; i++ )
               begin
-                if( ast_valid_o_tb[i] == 1'b1 )
+                if( i == dir_tmp )
                   begin
-                    new_word = new_pk_word[j];
-                    if( new_word == ast_data_o_tb[i] )
-                      $display("dir %0d / word %0d -- No error ", i, j );
-                    else
-                      $display("dir %0d / word %0d -- error ###send: %x, receive: %x", i, j, new_word, ast_data_o_tb[i] );
-                    j++;
+                    if( ast_valid_o_tb[i] == 1'b1 )
+                      begin
+                        new_word = new_pk_word[j];
+                        if( new_word == ast_data_o_tb[i] )
+                          $display("dir %0d / word %0d -- No error ", i, j );
+                        else
+                          $display("dir %0d / word %0d -- error ###send: %x, receive: %x", i, j, new_word, ast_data_o_tb[i] );
+                        j++;
+                      end
+                  end
+                else
+                  begin
+                    if( ast_valid_o_tb[i] == 1'b1 )
+                      begin
+                        $display("Channel error: Data should be sended via channel %0d, not channel %0d ", dir_tmp, i);
+                        j++;
+                      end
                   end
               end
-            else
-              begin
-                if( ast_valid_o_tb[i] == 1'b1 )
-                  begin
-                    $display("Channel error: Data should be sended via channel %0d, not channel %0d ", dir_tmp, i);
-                    j++;
-                  end
-              end
+            @( posedge clk_i_tb );
           end
-        @( posedge clk_i_tb );
+        $display("\n");
       end
-    $display("\n");
   end
+
 
 endtask
 
@@ -259,40 +273,52 @@ for( int i = 0; i < TX_DIR_TB; i++ )
 endtask
 
 
-task assert_ready( input int _min_assert, int _max_assert,
-                         int _min_deassert, int _max_deassert
-                 );
+task assert_ready();
 
 int random_assert;
 int random_deassert;
 
 forever
   begin
-    random_assert   = $urandom_range( _min_assert, _max_assert );
-    random_deassert = $urandom_range( _min_deassert, _max_deassert );
-    repeat( random_assert )
-      assert_ready_1clk();
-    repeat( random_deassert )
-      deassert_ready_1clk();
+    random_assert   = $urandom_range( min_assert, max_assert );
+    random_deassert = $urandom_range( min_deassert, max_deassert );
+      repeat( random_assert )
+        assert_ready_1clk();
+      repeat( random_deassert )
+        deassert_ready_1clk();
   end
 endtask
 
-task gen_dir( input bit _random_dir, int _dir );
+task set_assert_range( input int _min_assert, _max_assert,
+                             int _min_deassert, _max_deassert
+                     );
+
+min_assert = _min_assert;
+max_assert = _max_assert;
+min_deassert = _min_deassert;
+max_deassert = _max_deassert;
+
+endtask
+
+task dir_setting( input bit _rand_dir, int _dir_select );
+
+rand_dir = _rand_dir;
+dir_select = _dir_select;
+
+endtask
+
+task gen_dir();
 
 forever
   begin
     @( posedge clk_i_tb );
     if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
       begin
-        if( _random_dir == 1'b1 )
+        if( rand_dir == 1'b1 )
           dir_i_tb <= $urandom_range(TX_DIR_TB-1,0);
         else
-          dir_i_tb <= _dir;
+          dir_i_tb <= dir_select;
       end
-      // begin
-      //   dir_tmp  = 3; 
-      //   dir_i_tb <= dir_tmp;
-      // end
   end
 
 endtask
@@ -317,75 +343,162 @@ initial
     srst_i_tb <= 1'b0;
 
     // // // ********************Test case 1********************
+    $display("[Random 'dir_i' -- 5 packet ( 70 bytes/packet ) --  Random 'ready']");
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 1,100 );
+
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    fork
+      ast_send_pk.send_pk( 3 );
+      assert_ready();
+      gen_dir();
+      compare_output();
+    join_any
+
+    // // // ********************Test case 2********************
+    dir_setting( 0,3 );
+    set_assert_range( 1,3,1,3 );
+    reset();
     
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    $display("[dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3,1,3 );
-    //   gen_dir( 1, 100 );
-    //   compare_output( fifo_packet_word );
-    // join_any
+    ast_send_pk.send_pk( 3 );
 
-    // // // Test 2
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    // // // ********************Test case 3********************
+    dir_setting( 0,2 );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("[dir_i = 2 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3,1,3 );
-    //   gen_dir(0,3);
-    //   compare_output( fifo_packet_word );
-    // join_any
+    ast_send_pk.send_pk( 3 );
 
-    // // // Test 3
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    // // // ********************Test case 4********************
+    dir_setting( 0, 1 );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("[dir_i = 1 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3,1,3 );
-    //   gen_dir(0,2);
-    //   compare_output( fifo_packet_word );
-    // join_any
+    ast_send_pk.send_pk( 3 );
 
-    // // // Test 4
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    // // // ********************Test case 5********************
+    dir_setting( 0, 0 );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("[dir_i = 0 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3,1,3 );
-    //   gen_dir(0,1);
-    //   compare_output( fifo_packet_word );
-    // join_any
+    ast_send_pk.send_pk( 3 );
 
-    // // // Test 5
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    // // // ********************Test case 6********************
+    dir_setting( 0, 3 );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("Test data: Number of byte = 8k \n[dir_i = 3 -- 5 packet ( 64 bytes/packet ) -- random 'ready']");
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 64, 64 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3,1,3 );
-    //   gen_dir(0,0);
-    //   compare_output( fifo_packet_word );
-    // join_any
+    ast_send_pk.send_pk( 3 );
 
-    // // // Test 6
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    // // // ********************Test case 7********************
+    dir_setting( 1,100  );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("Test data: Number of bytes < 8 bytes \n[random dir_i -- 5 packet ( 6 bytes/packet ) -- random 'ready']");
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 6, 6 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
 
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 150,150, 0,0 );
-    //   gen_dir(1,100);
-    //   compare_output( fifo_packet_word );
-    // join_any
+    ast_send_pk.send_pk( 3 );
 
-    // // TEST DATA:
-    // // // Test 7: byte = 8k
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 64, 64 );
+    // // // ********************Test case 8********************
+    dir_setting( 1, 100 );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("Test data: number of byte = 8 bytes \n[random dir_i -- 5 packet ( 8 bytes/packet ) -- random 'ready']");
+    // // This test is used to test corner case when number of bytes in packet = 1 word (8 bytes)
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 8, 8 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+
+    ast_send_pk.send_pk( 3 );
+
+    // // // ********************Test case 9********************
+    dir_setting( 1, 100 );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("Test data: number of byte = 9 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
+    // // This test is used to test corner case
+    // // when number of bytes in packet = 9 bytes (2 words) = 1 word + 1 byte 
+    fifo_packet_byte = new();
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 9, 9 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+
+    ast_send_pk.send_pk( 3 );
+
+    // // // ********************Test case 10********************
+    fifo_packet_byte = new();
+    fifo_packet_word = new();
+
+    // dir_i_tb  <= $urandom_range(TX_DIR_TB-1, 0);
+    dir_setting( 1, 100 );
+    set_assert_range( 150,150,0,0 );
+    reset();
+      
+    $display("[RANDOM dir_i -- 5 packet ( 70 bytes/packet ) -- ready = 1]");
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+
+    ast_send_pk.send_pk( 3 );
+
+
+    ast_send_pk.send_pk( 3 );
+
+    // // // ********************Test case 11********************
+    dir_setting( 1, 100 );
+    set_assert_range( 1,3,1,3 );
+    reset();
+    
+    $display("Test data: number of byte = 1 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
+    // // This test is used to test corner case
+    // // when number of bytes in packet = 1 bytes ( 1 word only )
+    fifo_packet_byte = new();
+
+    gen_pk ( fifo_packet_byte, fifo_packet_word, 1, 1 );
+    
+    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+
+    ast_send_pk.send_pk( 3 );
+
+    // // // Test 12: byte = 830 ?????????? TB error, not rtl error
+    // gen_pk ( fifo_packet_byte, fifo_packet_word, 800, 800 ); 
 
     // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
     // fork
@@ -394,61 +507,6 @@ initial
     //   gen_dir(0, 3);
     //   compare_output( fifo_packet_word );
     // join_any
-
-    // // // // Test 8: byte < 8
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 6, 6 );
-
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3, 1,3 );
-    //   gen_dir(1, 100);
-    //   compare_output( fifo_packet_word );
-    // join_any
-
-    // // // Test 9: byte = 8
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 8, 8 );
-
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3, 1,3 );
-    //   gen_dir(1, 100);
-    //   compare_output( fifo_packet_word );
-    // join_any
-
-    // // // Test 10: byte = 9
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 9, 9 );
-
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3, 1,3 );
-    //   gen_dir(1, 100);
-    //   compare_output( fifo_packet_word );
-    // join_any
-
-    // // // Test 11: byte = 1
-    // gen_pk ( fifo_packet_byte, fifo_packet_word, 1, 1 );
-
-    // ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    // fork
-    //   ast_send_pk.send_pk( 3 );
-    //   assert_ready( 1,3, 1,3 );
-    //   gen_dir(1, 100);
-    //   compare_output( fifo_packet_word );
-    // join_any
-
-    // // // Test 12: byte = 830 ?????????? TB error, not rtl error
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 800, 800 ); 
-
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
-    fork
-      ast_send_pk.send_pk( 3 );
-      assert_ready( 1,3, 1,3 );
-      gen_dir(0, 3);
-      compare_output( fifo_packet_word );
-    join_any
 
     $stop();
 
