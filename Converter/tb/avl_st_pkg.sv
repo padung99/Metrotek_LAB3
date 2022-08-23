@@ -1,7 +1,6 @@
 package avl_st_pkg;
 
 typedef logic [7:0] pkt_t [$];
-typedef logic [255:0] pkt_receive_t [$];
 
 class ast_class #(
   parameter DATA_W    = 32,
@@ -16,31 +15,19 @@ virtual avalon_st #(
   .CHANNEL_W ( CHANNEL_W )
 ) ast_if;
 
+typedef logic [DATA_W-1:0] pkt_receive_t [$];
 mailbox #( pkt_t ) tx_fifo;
-mailbox #( pkt_receive_t ) rx_fifo;
-
-
-mailbox #( logic [CHANNEL_W-1:0] ) channel_input;
-mailbox #( logic [CHANNEL_W-1:0] ) channel_output;
-mailbox #( logic [EMPTY_OUT_W-1:0] ) empty_output;
+// mailbox #( pkt_receive_t ) rx_fifo;
 
 function new ( virtual avalon_st #( .DATA_W    ( DATA_W    ),
                                     .CHANNEL_W ( CHANNEL_W )
                                   ) _ast_if,
-               mailbox #( pkt_t ) _tx_fifo,
-               mailbox #( pkt_receive_t ) _rx_fifo,
-               mailbox #( logic [CHANNEL_W-1:0] ) _channel_input,
-               mailbox #( logic [CHANNEL_W-1:0] ) _channel_output,
-               mailbox #( logic [EMPTY_OUT_W-1:0] ) _empty_output
+               mailbox #( pkt_t ) _tx_fifo            
              );
 
 this.tx_fifo = _tx_fifo;
 this.ast_if  = _ast_if;
-this.rx_fifo = _rx_fifo;
-this.channel_input = _channel_input;
-this.channel_output = _channel_output;
-this.empty_output = _empty_output;
-
+// this.rx_fifo = _rx_fifo;
 endfunction
 
 `define cb @( posedge ast_if.clk );
@@ -68,7 +55,6 @@ while( tx_fifo.num() != 0 )
       `cb;  
     tx_fifo.get( new_pk );
     new_channel = $urandom_range( 2**CHANNEL_W,0 );
-    // channel_input.put( new_channel );
 
     pkt_size = new_pk.size();
 
@@ -337,7 +323,7 @@ endtask
 
 // endtask
 
-task reveive_pk();
+task reveive_pk( mailbox #( pkt_receive_t ) _rx_fifo );
 
 pkt_receive_t new_pk_receive;
 forever
@@ -346,18 +332,17 @@ forever
     if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
       begin
         new_pk_receive.push_back( ast_if.data );
-      //  $display( "receive: %x", ast_if.data ); 
+      //  $display( "receive: %x", ast_if.data );
       end
     else if( ast_if.valid == 1'b1 && ast_if.eop == 1'b1 )
       begin
         new_pk_receive.push_back( ast_if.data );
         // $display( "receive: %x", ast_if.data );
-        rx_fifo.put( new_pk_receive );
+        _rx_fifo.put( new_pk_receive );
+        // $display("receive mb_size: %0d", _rx_fifo.num());
         new_pk_receive = {};
       end
 
-    // if( rx_fifo.num() >= MAX_PK  )
-    //  break;
   end
 
 endtask

@@ -1,24 +1,27 @@
-1) data_o ошибки:
-- Последнее слово data_o неверно (лишние байты)
-  + Test case 2: 375 ps, Transcript: data_o [1][4] mismatch: receive: ..., correct: ....
- 
+Test case 1:
+- empty_o сигнал неверен при том, что количество byte = WORD_OUT*4
+  + Ошибка на 365 ps, тут empty должен = 0, а не 31.
 
+Test case 2:
+- Ошибка data_o: Последнее слово data_o неверно (лишние байты)
+  + Ошибка на 1985 ps, тут data_o должен = 000....000063e100b3, а не 35a3e2dc617.....63e100b3
 
-2) empty_o ошибки:
-- empty_o сигнал неверен при том, что количество byte = WORD_OUT*k (k = 1,2,3,...)
-  + Test case 1 (k = 4): 305 ps, Transcript: empty signal error, correct: 0, output: 31
-  + Test case 5 (k = 1): 65 ps, Transcript: empty signal error, correct: 0, output: 3
+Test case 3:
+- Ошибка eop_o: Сигнал eop не определен правильно
+  + 3475 ps: Тут eop_o должен = 0, потому, что только 1 word получен.
 
-3) channel_o ошибки: 
-- channel_o неопределен (всегда = X)
-  + Test case 3
-  + Test case 6
+Test case 5:
+- empty_o сигнал неверен при том, что количество byte = WORD_OUT*1
+  + 3985 ps, тут empty должен = 0, а не 31.
 
- 
-4) eop_o ошибки:
-- eop_o неопределен (всегда = 0)
-  + Test case 3
-  + Test case 6
+Test case 6:
+- Ошибка eop_o: Сигнал eop не определен правильно
+  + 4395 ps: Тут eop_o должен = 0, потому, что только 1 word получен.
 
-Lỗi khi cho random ready_i:
-- Test case 8: 105 ps: ready_i = 0 nhưng vẫn có data output, 115 ps, giá trị 1 data chỉ có thể nhận 1 lần valid, nhưng ở đây 1 data được valid 2 lần
+Test case 8: Подача случайного сигнала ready на вход
+- Ошибка выходных данных
+  + 5215 ps: При ready = 0 выходных данных не будет, а здесь ready = 0 и выходные данные есть
+
+Test case 9:
+- Ошибка при подаче случайного сигнала ready на вход.
+  + 5375 ps --> 5395 ps: Значение 1 данных может быть "valid" только один раз, но здесь данные "valid" дважды, поэтому, данные в полученных пакетах не будут правильно определены 
