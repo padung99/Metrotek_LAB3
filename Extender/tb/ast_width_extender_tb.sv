@@ -170,24 +170,24 @@ task output_word( mailbox #( pkt_t ) _send_byte,
                   mailbox #( pkt_receive_t ) _send_word_out
                );
 
-pkt_receive_t new_pkt_receive;
+pkt_receive_t             new_pkt_receive;
 logic [DATA_OUT_W_TB-1:0] new_output_data;
 
-pkt_t new_pkt;
-int last_byte_index;
-int pkt_size;
-int word_number;
+pkt_t                      new_pkt;
+int                        last_byte_index;
+int                        pkt_size;
+int                        word_number;
 logic [EMPTY_OUT_W_TB-1:0] empty_byte;
 logic [EMPTY_OUT_W_TB-1:0] byte_in_last_word;
 
 while( _send_byte.num() != 0 )
   begin
     _send_byte.get( new_pkt );
-    pkt_size = new_pkt.size();
+    pkt_size    = new_pkt.size();
     word_number = (( pkt_size % WORD_OUT ) == 0 )? pkt_size/WORD_OUT : pkt_size/WORD_OUT +1 ;
     
     byte_in_last_word = pkt_size - ( pkt_size/WORD_OUT )*WORD_OUT;
-    empty_byte = (( pkt_size % WORD_OUT ) == 0 ) ? 0 : (  WORD_OUT- byte_in_last_word );
+    empty_byte        = (( pkt_size % WORD_OUT ) == 0 ) ? 0 : (  WORD_OUT- byte_in_last_word );
 
     //0 -->last word-1
     for( int j = 0; j < word_number-1; j++ )
@@ -306,9 +306,9 @@ initial
   begin
     
     ast_src_if.ready <= 1'b1;
-    srst_i_tb <= 1'b1;
+    srst_i_tb        <= 1'b1;
     @( posedge clk_i_tb );
-    srst_i_tb <= 1'b0;
+    srst_i_tb        <= 1'b0;
     
     // // // **********************TEST CASE 1*************************
     gen_pkt( send_byte, copy_send_byte, WORD_OUT*4, WORD_OUT*4 );
