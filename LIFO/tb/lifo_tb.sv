@@ -156,7 +156,7 @@ repeat( 5 )
   end
 endtask
 
-// --------------------------------------------------------------
+
 task wr_1clk( input int _write_type = 1 );
 
 @( posedge clk_i_tb );
@@ -184,7 +184,6 @@ else if( _write_type == 3 )
 
 endtask
 
-// --------------------------------------------------------------
 
 task wr_only( input int _write_type = 1, int _repeat = 0 );
 
@@ -221,80 +220,7 @@ else if( _write_type == 4 )
   end
 
 endtask
-//----------------------------------------------------------------------
 
-// // ********************************************************************
-
-// task wr_1clk();
-
-// @( posedge clk_i_tb );
-//   wrreq_i_tb <= 1'b1;
-//   rdreq_i_tb <= 1'b0;
-//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-
-// endtask
-
-// task wr_1clk_random();
-
-// @( posedge clk_i_tb );
-//   wrreq_i_tb <= $urandom_range( 1,0 );
-//   rdreq_i_tb <= 1'b0;
-//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-
-// endtask
-
-// task wr_1clk_random_valid();
-
-// @( posedge clk_i_tb );
-//   if( full_tb != 1'b1 )
-//     wrreq_i_tb <= $urandom_range( 1,0 );
-//   else
-//     wrreq_i_tb <= 1'b0;
-//   rdreq_i_tb <= 1'b0;
-//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-
-// endtask
-// // ********************************************************************
-
-// // ********************************************************************
-// task wr_only( input int _repeat );
-// $display("Start writing until full");
-// repeat( _repeat )
-//   wr_1clk();
-// $display("Finish!!!");
-// idle();
-
-// endtask
-
-// task wr_only_random( input int _repeat );
-// $display("Start writing until full");
-// repeat( _repeat )
-//   wr_1clk_random();
-// $display("Finish!!!");
-// idle();
-
-// endtask
-
-// task wr_only_random_valid( input int _repeat );
-// $display("Start writing until full");
-// repeat( _repeat )
-//   wr_1clk_random_valid();
-// $display("Finish!!!");
-// idle();
-
-// endtask
-
-// task wr_only_non_idle( input int _repeat );
-// $display("Start writing until full");
-// repeat( _repeat )
-//   wr_1clk();
-// $display("Finish!!!");
-
-// endtask
-
-// // ********************************************************************
-
-//----------------------------------------------------------------------
 task rd_1clk( input int _read_type = 1 );
 
 @( posedge clk_i_tb );
@@ -318,7 +244,6 @@ else if( _read_type == 3 )
   end
 endtask
 
-//----------------------------------------------------------------------
 
 task rd_only( input int _read_type = 1, int _repeat = 0);
 
@@ -353,67 +278,7 @@ else if( _read_type == 4 )
   end
 
 endtask
-//--------------------------------------------------------------------
 
-// // ********************************************************************
-// task rd_1clk();
-
-// @( posedge clk_i_tb );
-// wrreq_i_tb <= 1'b0;
-// rdreq_i_tb <= 1'b1;
-
-// endtask
-
-// task rd_1clk_random();
-
-// @( posedge clk_i_tb );
-// wrreq_i_tb <= 1'b0;
-// rdreq_i_tb <= $urandom_range( 1,0 );
-
-// endtask
-
-// task rd_1clk_random_valid();
-
-// @( posedge clk_i_tb );
-// wrreq_i_tb <= 1'b0;
-// if( empty_tb != 1'b1 )
-//   rdreq_i_tb <= $urandom_range( 1,0 );
-// else
-//   rdreq_i_tb <= 1'b0;
-  
-// endtask
-// // ********************************************************************
-
-// // ********************************************************************
-// task rd_only( input int _repeat );
-// $display("Start reading until empty");
-// repeat( _repeat )
-//   rd_1clk();
-// idle();
-// $display("Finish!!!");
-// endtask
-
-// task rd_only_random( input int _repeat );
-// $display("Start reading until empty");
-// repeat( _repeat )
-//   rd_1clk_random();
-// $display("Finish!!!");
-// endtask
-
-// task rd_only_random_valid( input int _repeat );
-// $display("Start reading until empty");
-// repeat( _repeat )
-//   rd_1clk_random_valid();
-// $display("Finish!!!");
-// endtask
-
-// task rd_only_non_idle( input int _repeat );
-// $display("Start reading until empty");
-// repeat( _repeat )
-//   rd_1clk();
-// $display("Finish!!!");
-// endtask
-// // ********************************************************************
 
 task rd_and_wr( input int _delay, int _rd_wr );
 repeat( _delay )
@@ -596,7 +461,6 @@ initial
 
     $display("Test case 8: Write to full lifo, and read process (rdreq) begins immediately after wrreq has been deasserted");
 
-    // wr_only_non_idle( 2**AWIDTH + 10 );
     wr_only( 4, 2**AWIDTH + 10 );
 
     cnt_error();
@@ -614,8 +478,6 @@ initial
 
     $display("Test case 9: Random rdreq and wrreq");
     fork
-      // wr_only_random( 3000 );
-      // rd_only_random( 3000 );
       wr_only( 2, 3000 );
       rd_only( 2, 3000 );
     join
@@ -647,7 +509,6 @@ initial
     reset_error_flag();
 
     $display("Test case 11:  Write to lifo full once and read out twice (Test read from empty)");
-
 
     wr_only( 1, 2**AWIDTH );
     // reset_error_flag();
@@ -701,19 +562,15 @@ initial
     cnt_error();
 
 
-    
-    
     // // // *************************************** Test case 14 *************************************************
     repeat(2)
       idle();
     reset();
     reset_error_flag();
 
-      begin
-        $display("Test case 14: Writing 1 word to lifo, after that  make 100 transactions for simultaneous writing and reading");
-        rd_and_wr( 1, 100 );
-        cnt_error();
-      end
+    $display("Test case 14: Writing 1 word to lifo, after that  make 100 transactions for simultaneous writing and reading");
+    rd_and_wr( 1, 100 );
+    cnt_error();
 
 
     // // // *************************************** Test case 15 *************************************************  
@@ -738,15 +595,12 @@ initial
       begin
         $display("Test case 16:  Run to full and back to empty (REPEAT 3 TIMES)");
 
-        // wr_only_non_idle( 2**AWIDTH );
         wr_only( 4, 2**AWIDTH );
         cnt_error();
         reset_error_flag();
 
-        // rd_only_non_idle( 2**AWIDTH );
         rd_only( 4, 2**AWIDTH );
         cnt_error();
-
       end
 
     // // // *************************************** Test case 17 *************************************************
@@ -758,8 +612,6 @@ initial
     $display("Test case 17: Random rdreq and wrreq (Only valid input)");
     //This random will pass only valid input ( when lifo is empty, no rdreq (rdreq = 0), when lifo is full, no wrreq (wrrep = 0) )
     fork
-      // wr_only_random_valid( 3000 );
-      // rd_only_random_valid( 3000 );
       wr_only( 3, 3000 );
       rd_only( 3, 3000 );
     join
