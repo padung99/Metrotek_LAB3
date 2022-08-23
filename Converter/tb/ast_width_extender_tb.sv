@@ -88,10 +88,10 @@ ast_class # (
 
 typedef logic [DATA_OUT_W_TB-1:0] pkt_receive_t [$];
 
-mailbox #( pkt_t ) send_packet             = new();
-mailbox #( pkt_t ) copy_send_packet        = new();
+mailbox #( pkt_t ) send_byte             = new();
+mailbox #( pkt_t ) copy_send_byte        = new();
 mailbox #( pkt_receive_t ) receive_packet  = new();
-mailbox #( pkt_receive_t ) test_receive_pk = new();
+mailbox #( pkt_receive_t ) send_word_out = new();
 
 mailbox #( logic [CHANNEL_W_TB-1:0] ) channel_input  = new();
 mailbox #( logic [CHANNEL_W_TB-1:0] ) channel_output = new();
@@ -99,8 +99,8 @@ mailbox #( logic [CHANNEL_W_TB-1:0] ) channel_output = new();
 mailbox #( logic [EMPTY_OUT_W_TB-1:0] ) empty_input  = new();
 mailbox #( logic [EMPTY_OUT_W_TB-1:0] ) empty_output = new();
 
-task gen_pk( mailbox #( pkt_t ) _send_packet,
-             mailbox #( pkt_t ) _copy_send_packet,
+task gen_pk( mailbox #( pkt_t ) _send_byte,
+             mailbox #( pkt_t ) _copy_send_byte,
              input int _min_byte,
                    int _max_byte
            );
@@ -118,8 +118,8 @@ for( int i = 0; i < MAX_PK; i++ )
         new_data = $urandom_range( 2**8,0 );
         new_pk.push_back( new_data );
       end
-    _send_packet.put( new_pk );
-    _copy_send_packet.put( new_pk );
+    _send_byte.put( new_pk );
+    _copy_send_byte.put( new_pk );
     new_pk = {};
   end
 
@@ -169,8 +169,8 @@ max_deassert = _max_deassert;
 endtask
 
 
-task output_word( mailbox #( pkt_t ) _send_packet,
-                  mailbox #( pkt_receive_t ) _test_receive_pk
+task output_word( mailbox #( pkt_t ) _send_byte,
+                  mailbox #( pkt_receive_t ) _send_word_out
                );
 
 pkt_receive_t new_pk_receive;
@@ -183,9 +183,9 @@ int word_number;
 logic [EMPTY_OUT_W_TB-1:0] empty_byte;
 logic [EMPTY_OUT_W_TB-1:0] byte_in_last_word;
 
-while( _send_packet.num() != 0 )
+while( _send_byte.num() != 0 )
   begin
-    _send_packet.get( new_pk );
+    _send_byte.get( new_pk );
     pk_size = new_pk.size();
     word_number = (( pk_size % WORD_OUT ) == 0 )? pk_size/WORD_OUT : pk_size/WORD_OUT +1 ;
     
@@ -220,14 +220,14 @@ while( _send_packet.num() != 0 )
       new_pk_receive.insert( word_number-1, new_output_data );
       // $display("output: %x", new_pk_receive[word_number-1]); 
   k = 0;
-  _test_receive_pk.put( new_pk_receive );
+  _send_word_out.put( new_pk_receive );
   new_pk_receive = {};
   end
 
 endtask
 
 task test_data( mailbox #( pkt_receive_t ) _receive_packet,
-                mailbox #( pkt_receive_t ) _test_receive_pk
+                mailbox #( pkt_receive_t ) _send_word_out
                  );
 
 pkt_receive_t new_pk_receive;
@@ -239,8 +239,8 @@ int mbox_size;
 
 bit data_error;
 
-if( _receive_packet.num() != _test_receive_pk.num() )
-  $display("Number of packet mismatch, send: %0d, receive: %0d", _test_receive_pk.num(), _receive_packet.num() );
+if( _receive_packet.num() != _send_word_out.num() )
+  $display("Number of packet mismatch, send: %0d, receive: %0d", _send_word_out.num(), _receive_packet.num() );
 else
   begin
     $display("--------Test 'data_o' signal-----------");
@@ -249,7 +249,7 @@ else
     while( _receive_packet.num() != 0 )
       begin
         _receive_packet.get( new_pk_receive );
-        _test_receive_pk.get( new_test_pk_receive );
+        _send_word_out.get( new_test_pk_receive );
         $display("###PACKET [%0d]", mbox_size-_receive_packet.num());
         if( new_pk_receive.size() != new_test_pk_receive.size() )
           $display("Packet [%0d]'s size mismatch: send: %0d, receive: %0d", packet_size -_receive_packet.num(), new_test_pk_receive.size(), new_pk_receive.size());
@@ -289,9 +289,9 @@ initial
     srst_i_tb <= 1'b0;
     
     // // // **********************TEST CASE 1*************************
-    gen_pk( send_packet, copy_send_packet, WORD_OUT*4, WORD_OUT*4 );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet );
+    gen_pk( send_byte, copy_send_byte, WORD_OUT*4, WORD_OUT*4 );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte );
     set_assert_range( 2*(WORD_OUT*4)/8+5,2*(WORD_OUT*4)/8+5,0,0 );
     $display("TEST CASE 1: Number of bytes = [WORD_OUT*k] = 32 * 4 = 128");
     fork
@@ -299,171 +299,171 @@ initial
       ast_receive_pk.reveive_pk( receive_packet );
       assert_ready();
     join_any
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
  
     // // // **********************TEST CASE 2*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet, 132, 132 );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet );
+    gen_pk( send_byte, copy_send_byte, 132, 132 );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte );
     set_assert_range( 2*(132)/8+5,2*(132)/8+5,0,0 );
     $display("TEST CASE 2: Number of bytes = [WORD_OUT*k + N] = 32*4 + 4 = 132");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 3*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet, WORD_IN, WORD_IN );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet ); 
+    gen_pk( send_byte, copy_send_byte, WORD_IN, WORD_IN );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte ); 
     set_assert_range( 2*(WORD_IN)/8+5,2*(WORD_IN)/8+5,0,0 );
     $display("TEST CASE 3: Number of bytes = [WORD_IN] = 8");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 4*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet, WORD_IN*1+5, WORD_IN*1+5 );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet ); 
+    gen_pk( send_byte, copy_send_byte, WORD_IN*1+5, WORD_IN*1+5 );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte ); 
     set_assert_range( 2*(WORD_IN*1+5)/8+5,2*(WORD_IN*1+5)/8+5,0,0 );
     $display("TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 14");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 5*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet, WORD_OUT*1, WORD_OUT*1 );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet ); 
+    gen_pk( send_byte, copy_send_byte, WORD_OUT*1, WORD_OUT*1 );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte ); 
     set_assert_range( 2*(WORD_OUT*1)/8+5,2*(WORD_OUT*1)/8+5,0,0 );
     $display("TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 6*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet,  WORD_IN - 6,  WORD_IN - 6 );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet ); 
+    gen_pk( send_byte, copy_send_byte,  WORD_IN - 6,  WORD_IN - 6 );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte ); 
     set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
     $display("TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 7*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet, WORD_IN*3, WORD_IN*3 );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet ); 
+    gen_pk( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte ); 
     set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
     $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3 ");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 8*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet, WORD_IN*3, WORD_IN*3 );
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet ); 
+    gen_pk( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte ); 
     set_assert_range( 1,3,1,3 );
     $display("TEST CASE 8 : Random ready ( only 1 word output )");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     
     // // // **********************TEST CASE 9*************************
-    send_packet = new();
-    copy_send_packet = new();
+    send_byte      = new();
+    copy_send_byte = new();
 
-    test_receive_pk = new();
+    send_word_out  = new();
     reset();
-    gen_pk( send_packet, copy_send_packet, WORD_OUT*3+2, WORD_OUT*3 +2);
-    ast_send_pk    = new( ast_snk_if, send_packet );
-    ast_receive_pk = new( ast_src_if, send_packet ); 
+    gen_pk( send_byte, copy_send_byte, WORD_OUT*3+2, WORD_OUT*3 +2);
+    ast_send_pk    = new( ast_snk_if, send_byte );
+    ast_receive_pk = new( ast_src_if, send_byte ); 
     set_assert_range( 1,3,1,3 );
     $display("TEST CASE 9 : Random ready ( many words ouput )");
 
     ast_send_pk.send_pk(3);
 
-    $display("Test receive mb_size: %0d", receive_packet.num());
+    // $display("Test receive mb_size: %0d", receive_packet.num());
 
-    output_word( copy_send_packet, test_receive_pk );
-    test_data( receive_packet, test_receive_pk );
+    output_word( copy_send_byte, send_word_out );
+    test_data( receive_packet, send_word_out );
     $display("\n");
     
     $display("Test done!!");
