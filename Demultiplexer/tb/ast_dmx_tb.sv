@@ -35,6 +35,7 @@ int max_deassert;
 bit rand_dir;
 int dir_select;
 
+logic [DIR_SEL_WIDTH_TB-1:0] dir_tmp;
 
 initial
   forever
@@ -188,7 +189,7 @@ int j;
 
 int mb_size;
 int pk_size;
-logic [DIR_SEL_WIDTH_TB-1:0] dir_tmp;
+
 int size_mb;
 mb_size = fifo_packet_word.num();
 forever
@@ -204,8 +205,10 @@ forever
         j = 0;
         while( j < pk_size )
           begin
+            
             if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
               dir_tmp = dir_i_tb;
+
             for( int i = 0; i < TX_DIR_TB; i++ )
               begin
                 if( i == dir_tmp )
@@ -235,7 +238,33 @@ forever
       end
   end
 
+endtask
 
+task test_channel();
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( ast_valid_o_tb[dir_tmp] == 1'b1 &&  ast_startofpacket_o_tb[dir_tmp] == 1'b1 )
+      begin
+        if( ast_channel_o_tb[dir_tmp] != ast_snk_if.channel )
+          $display("Channel error, send: %0d, receive: %0d", ast_snk_if.channel, ast_channel_o_tb[dir_tmp] );
+      end
+  end
+
+endtask
+
+task test_empty();
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( ast_valid_o_tb[dir_tmp] == 1'b1 &&  ast_endofpacket_o_tb[dir_tmp] == 1'b1 )
+      begin
+        if( ast_empty_o_tb[dir_tmp] != ast_snk_if.empty )
+          $display("Empty error, correct: %0d, receive: %0d", ast_empty_o_tb[dir_tmp], ast_snk_if.empty);
+      end
+  end
 endtask
 
 generate
@@ -308,13 +337,11 @@ task gen_dir();
 forever
   begin
     @( posedge clk_i_tb );
-    if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
-      begin
-        if( rand_dir == 1'b1 )
-          dir_i_tb <= $urandom_range(TX_DIR_TB-1,0);
-        else
-          dir_i_tb <= dir_select;
-      end
+    if( rand_dir == 1'b1 )
+      dir_i_tb <= $urandom_range(TX_DIR_TB-1,0);
+    else
+      dir_i_tb <= dir_select;
+
   end
 
 endtask
@@ -350,12 +377,15 @@ initial
       assert_ready();
       gen_dir();
       compare_output();
+      test_channel();
+      test_empty();
     join_any
 
     // // // ********************Test case 2********************
     dir_setting( 0,3 );
     set_assert_range( 1,3,1,3 );
     reset();
+    dir_tmp = 3;
     
     $display("TEST 2: [dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
@@ -366,6 +396,7 @@ initial
     ast_send_pk.send_pk( 3 );
 
     // // // ********************Test case 3********************
+    dir_tmp = 2;
     dir_setting( 0,2 );
     set_assert_range( 1,3,1,3 );
     reset();
@@ -379,6 +410,7 @@ initial
     ast_send_pk.send_pk( 3 );
 
     // // // ********************Test case 4********************
+    dir_tmp = 1;
     dir_setting( 0, 1 );
     set_assert_range( 1,3,1,3 );
     reset();
@@ -392,6 +424,7 @@ initial
     ast_send_pk.send_pk( 3 );
 
     // // // ********************Test case 5********************
+    dir_tmp = 0;
     dir_setting( 0, 0 );
     set_assert_range( 1,3,1,3 );
     reset();
@@ -405,8 +438,10 @@ initial
     ast_send_pk.send_pk( 3 );
 
     // // // ********************Test case 6********************
+    dir_tmp = 3;
     dir_setting( 0, 3 );
     set_assert_range( 1,3,1,3 );
+    
     reset();
     
     $display("TEST 6: Test data: Number of byte = 8k \n[dir_i = 3 -- 5 packet ( 64 bytes/packet ) -- random 'ready']");
@@ -421,7 +456,7 @@ initial
     dir_setting( 1,100  );
     set_assert_range( 1,3,1,3 );
     reset();
-    
+    dir_tmp = 0;
     $display("TEST 7: Test data: Number of bytes < 8 bytes \n[random dir_i -- 5 packet ( 6 bytes/packet ) -- random 'ready']");
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 6, 6 );
@@ -434,9 +469,10 @@ initial
     dir_setting( 1, 100 );
     set_assert_range( 1,3,1,3 );
     reset();
-    
+    dir_tmp = 0;
     $display("TEST 8: Test data: number of byte = 8 bytes \n[random dir_i -- 5 packet ( 8 bytes/packet ) -- random 'ready']");
-    // // This test is used to test corner case when number of bytes in packet = 1 word (8 bytes)
+    // // This test is used to test corner case
+    // // when number of bytes in packet = 1 word (8 bytes)
     fifo_packet_byte = new();
     gen_pk ( fifo_packet_byte, fifo_packet_word, 8, 8 );
     
@@ -448,7 +484,7 @@ initial
     dir_setting( 1, 100 );
     set_assert_range( 1,3,1,3 );
     reset();
-    
+    dir_tmp = 0;
     $display("TEST 9: Test data: number of byte = 9 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case
     // // when number of bytes in packet = 9 bytes (2 words) = 1 word + 1 byte 
@@ -463,11 +499,10 @@ initial
     fifo_packet_byte = new();
     fifo_packet_word = new();
 
-    // dir_i_tb  <= $urandom_range(TX_DIR_TB-1, 0);
     dir_setting( 1, 100 );
     set_assert_range( 150,150,0,0 );
     reset();
-      
+    dir_tmp = 0;  
     $display("TEST 10: [RANDOM dir_i -- 5 packet ( 70 bytes/packet ) -- ready = 1]");
     gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
     ast_send_pk = new( ast_snk_if, fifo_packet_byte );
@@ -481,7 +516,7 @@ initial
     dir_setting( 1, 100 );
     set_assert_range( 1,3,1,3 );
     reset();
-    
+    dir_tmp = 0;
     $display("TEST 11: Test data: number of byte = 1 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case
     // // when number of bytes in packet = 1 bytes ( 1 word only )

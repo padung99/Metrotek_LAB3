@@ -59,7 +59,6 @@ while( tx_fifo.num() != 0 )
       `cb;  
     tx_fifo.get( new_pk );
     new_channel = $urandom_range( 2**CHANNEL_W,0 );
-    // channel_input.put( new_channel );
 
     pkt_size = new_pk.size();
 
@@ -75,32 +74,28 @@ while( tx_fifo.num() != 0 )
 
     if( pkt_size <= WORD_IN )
       begin
-        // if( ast_if.ready )
+        pk_data        = (DATA_W)'(0);
+        ast_if.valid   <= 1'b1;
+        ast_if.sop     <= 1'b1;
+        ast_if.eop     <= 1'b1;
+        ast_if.empty   <= WORD_IN-pkt_size;
+        for( int j = pkt_size-1; j >= 0; j-- )
           begin
-            pk_data        = (DATA_W)'(0);
-            ast_if.valid   <= 1'b1;
-            ast_if.sop     <= 1'b1;
-            ast_if.eop     <= 1'b1;
-            ast_if.empty   <= WORD_IN-pkt_size;
-            for( int j = pkt_size-1; j >= 0; j-- )
-              begin
-                pk_data[7:0] = new_pk[j];
-                if( j != 0 )
-                  pk_data = pk_data << 8;
-              end
-            ast_if.data <= pk_data;
-            `cb;
-            if( ast_if.eop == 1'b1 )
-              begin
-                ast_if.valid <= 1'b0;
-                ast_if.sop   <= 1'b0;
-                ast_if.eop   <= 1'b0;
-              end
+            pk_data[7:0] = new_pk[j];
+            if( j != 0 )
+              pk_data = pk_data << 8;
+          end
+        ast_if.data <= pk_data;
+        `cb;
+        if( ast_if.eop == 1'b1 )
+          begin
+            ast_if.valid <= 1'b0;
+            ast_if.sop   <= 1'b0;
+            ast_if.eop   <= 1'b0;
           end
       end
     else
       begin
-        // $display("*******size: %0d*******", tx_fifo.num());
         while( cnt_bytes < number_of_word )
           begin
             if( cnt_bytes == 0 )
