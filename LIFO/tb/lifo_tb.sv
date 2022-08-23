@@ -76,66 +76,6 @@ rd_data_queue lifo_queue;
 logic [AWIDTH:0] ptr;
 // logic [AWIDTH:0] ptr = {(AWIDTH+1){1'b0}};
 
-task wr_1clk();
-
-@( posedge clk_i_tb );
-  wrreq_i_tb <= 1'b1;
-  rdreq_i_tb <= 1'b0;
-  data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-
-endtask
-
-task rd_1clk();
-
-@( posedge clk_i_tb );
-wrreq_i_tb <= 1'b0;
-rdreq_i_tb <= 1'b1;
-
-endtask
-
-task wr_1clk_random();
-
-@( posedge clk_i_tb );
-  wrreq_i_tb <= $urandom_range( 1,0 );
-  rdreq_i_tb <= 1'b0;
-  data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-
-endtask
-
-
-task rd_1clk_random();
-
-@( posedge clk_i_tb );
-wrreq_i_tb <= 1'b0;
-rdreq_i_tb <= $urandom_range( 1,0 );
-
-endtask
-
-
-task wr_1clk_random_valid();
-
-@( posedge clk_i_tb );
-  if( full_tb != 1'b1 )
-    wrreq_i_tb <= $urandom_range( 1,0 );
-  else
-    wrreq_i_tb <= 1'b0;
-  rdreq_i_tb <= 1'b0;
-  data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-
-endtask
-
-
-task rd_1clk_random_valid();
-
-@( posedge clk_i_tb );
-wrreq_i_tb <= 1'b0;
-if( empty_tb != 1'b1 )
-  rdreq_i_tb <= $urandom_range( 1,0 );
-else
-  rdreq_i_tb <= 1'b0;
-  
-endtask
-
 task control_ptr();
 
 forever
@@ -216,69 +156,264 @@ repeat( 5 )
   end
 endtask
 
-task wr_only( input int _repeat );
-$display("Start writing until full");
-repeat( _repeat )
-  wr_1clk();
-$display("Finish!!!");
-idle();
+// --------------------------------------------------------------
+task wr_1clk( input int _write_type );
+
+@( posedge clk_i_tb );
+if( _write_type == 1 )
+  begin
+    wrreq_i_tb <= 1'b1;
+    rdreq_i_tb <= 1'b0;
+    data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
+  end
+else if( _write_type == 2 )
+  begin
+    wrreq_i_tb <= $urandom_range( 1,0 );
+    rdreq_i_tb <= 1'b0;
+    data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
+  end
+else if( _write_type == 3 )
+  begin
+    if( full_tb != 1'b1 )
+      wrreq_i_tb <= $urandom_range( 1,0 );
+    else
+      wrreq_i_tb <= 1'b0;
+  rdreq_i_tb <= 1'b0;
+  data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
+  end
 
 endtask
 
-task wr_only_random( input int _repeat );
-$display("Start writing until full");
-repeat( _repeat )
-  wr_1clk_random();
-$display("Finish!!!");
-idle();
+// --------------------------------------------------------------
+
+task wr_only( input int _write_type, int _repeat );
+
+if( _write_type == 1 )
+  begin
+    $display("Start writing until full");
+    repeat( _repeat )
+      wr_1clk(1);
+    $display("Finish!!!");
+    idle();
+  end
+else if( _write_type == 2 )
+  begin
+    $display("Start writing until full");
+    repeat( _repeat )
+      wr_1clk(2);
+    $display("Finish!!!");
+    idle();
+  end
+else if( _write_type == 3 )
+  begin
+    $display("Start writing until full");
+    repeat( _repeat )
+      wr_1clk(3);
+    $display("Finish!!!");
+    idle();
+  end
+else if( write_type == 4 )
+  begin
+    $display("Start writing until full");
+    repeat( _repeat )
+      wr_1clk(1);
+    $display("Finish!!!");
+  end
 
 endtask
+//----------------------------------------------------------------------
 
-task wr_only_random_valid( input int _repeat );
-$display("Start writing until full");
-repeat( _repeat )
-  wr_1clk_random_valid();
-$display("Finish!!!");
-idle();
+// // ********************************************************************
 
+// task wr_1clk();
+
+// @( posedge clk_i_tb );
+//   wrreq_i_tb <= 1'b1;
+//   rdreq_i_tb <= 1'b0;
+//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
+
+// endtask
+
+// task wr_1clk_random();
+
+// @( posedge clk_i_tb );
+//   wrreq_i_tb <= $urandom_range( 1,0 );
+//   rdreq_i_tb <= 1'b0;
+//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
+
+// endtask
+
+// task wr_1clk_random_valid();
+
+// @( posedge clk_i_tb );
+//   if( full_tb != 1'b1 )
+//     wrreq_i_tb <= $urandom_range( 1,0 );
+//   else
+//     wrreq_i_tb <= 1'b0;
+//   rdreq_i_tb <= 1'b0;
+//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
+
+// endtask
+// // ********************************************************************
+
+// // ********************************************************************
+// task wr_only( input int _repeat );
+// $display("Start writing until full");
+// repeat( _repeat )
+//   wr_1clk();
+// $display("Finish!!!");
+// idle();
+
+// endtask
+
+// task wr_only_random( input int _repeat );
+// $display("Start writing until full");
+// repeat( _repeat )
+//   wr_1clk_random();
+// $display("Finish!!!");
+// idle();
+
+// endtask
+
+// task wr_only_random_valid( input int _repeat );
+// $display("Start writing until full");
+// repeat( _repeat )
+//   wr_1clk_random_valid();
+// $display("Finish!!!");
+// idle();
+
+// endtask
+
+// task wr_only_non_idle( input int _repeat );
+// $display("Start writing until full");
+// repeat( _repeat )
+//   wr_1clk();
+// $display("Finish!!!");
+
+// endtask
+
+// // ********************************************************************
+
+//----------------------------------------------------------------------
+task rd_1clk( input int _read_type );
+
+@( posedge clk_i_tb );
+if( _read_type == 1 )
+  begin
+    wrreq_i_tb <= 1'b0;
+    rdreq_i_tb <= 1'b1;
+  end
+else if( _read_type == 2 )
+  begin
+    wrreq_i_tb <= 1'b0;
+    rdreq_i_tb <= $urandom_range( 1,0 );
+  end
+else if( _read_type == 3 )
+  begin
+    wrreq_i_tb <= 1'b0;
+    if( empty_tb != 1'b1 )
+      rdreq_i_tb <= $urandom_range( 1,0 );
+    else
+      rdreq_i_tb <= 1'b0; 
+  end
 endtask
 
-task wr_only_non_idle( input int _repeat );
-$display("Start writing until full");
-repeat( _repeat )
-  wr_1clk();
-$display("Finish!!!");
+//----------------------------------------------------------------------
+
+task rd_only( input int _read_type, int _repeat );
+
+if( _read_type == 1 )
+  begin
+    $display("Start reading until empty");
+    repeat( _repeat )
+      rd_1clk( 1 );
+    idle();
+    $display("Finish!!!");
+  end
+else if( _read_type == 2 )
+  begin
+    $display("Start reading until empty");
+    repeat( _repeat )
+      rd_1clk( 2 );
+    $display("Finish!!!"); 
+  end
+else if( _read_type == 3 )
+  begin
+    $display("Start reading until empty");
+    repeat( _repeat )
+      rd_1clk( 3 );
+    $display("Finish!!!");
+  end
+else if( _read_type == 4 )
+  begin
+    $display("Start reading until empty");
+    repeat( _repeat )
+      rd_1clk( 1 );
+    $display("Finish!!!");
+  end
 
 endtask
+//--------------------------------------------------------------------
 
-task rd_only( input int _repeat );
-$display("Start reading until empty");
-repeat( _repeat )
-  rd_1clk();
-idle();
-$display("Finish!!!");
-endtask
+// // ********************************************************************
+// task rd_1clk();
 
-task rd_only_non_idle( input int _repeat );
-$display("Start reading until empty");
-repeat( _repeat )
-  rd_1clk();
-$display("Finish!!!");
-endtask
+// @( posedge clk_i_tb );
+// wrreq_i_tb <= 1'b0;
+// rdreq_i_tb <= 1'b1;
 
-task rd_only_random( input int _repeat );
-$display("Start reading until empty");
-repeat( _repeat )
-  rd_1clk_random();
-$display("Finish!!!");
-endtask
+// endtask
 
-task rd_only_random_valid( input int _repeat );
-$display("Start reading until empty");
-repeat( _repeat )
-  rd_1clk_random_valid();
-$display("Finish!!!");
-endtask
+// task rd_1clk_random();
+
+// @( posedge clk_i_tb );
+// wrreq_i_tb <= 1'b0;
+// rdreq_i_tb <= $urandom_range( 1,0 );
+
+// endtask
+
+// task rd_1clk_random_valid();
+
+// @( posedge clk_i_tb );
+// wrreq_i_tb <= 1'b0;
+// if( empty_tb != 1'b1 )
+//   rdreq_i_tb <= $urandom_range( 1,0 );
+// else
+//   rdreq_i_tb <= 1'b0;
+  
+// endtask
+// // ********************************************************************
+
+// // ********************************************************************
+// task rd_only( input int _repeat );
+// $display("Start reading until empty");
+// repeat( _repeat )
+//   rd_1clk();
+// idle();
+// $display("Finish!!!");
+// endtask
+
+// task rd_only_random( input int _repeat );
+// $display("Start reading until empty");
+// repeat( _repeat )
+//   rd_1clk_random();
+// $display("Finish!!!");
+// endtask
+
+// task rd_only_random_valid( input int _repeat );
+// $display("Start reading until empty");
+// repeat( _repeat )
+//   rd_1clk_random_valid();
+// $display("Finish!!!");
+// endtask
+
+// task rd_only_non_idle( input int _repeat );
+// $display("Start reading until empty");
+// repeat( _repeat )
+//   rd_1clk();
+// $display("Finish!!!");
+// endtask
+// // ********************************************************************
 
 task rd_and_wr( input int _delay, int _rd_wr );
 repeat( _delay )
