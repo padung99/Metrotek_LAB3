@@ -9,7 +9,7 @@ parameter int TX_DIR_TB         = 4;
 
 parameter int DIR_SEL_WIDTH_TB = TX_DIR_TB == 1 ? 1 : $clog2( TX_DIR_TB );
 
-parameter MAX_PK = 5;
+parameter MAX_PKT = 5;
 
 parameter WORD_IN = DATA_WIDTH_TB/8;
 
@@ -63,20 +63,16 @@ avalon_st_if #(
 
 
 ast_dmx_c #(
-  .DATA_W    ( DATA_WIDTH_TB    ),
-  .CHANNEL_W ( CHANNEL_WIDTH_TB ),
-  .EMPTY_W   ( EMPTY_WIDTH_TB   ),
-  .TX_DIR    ( TX_DIR_TB        ),
-  .MAX_PK    ( MAX_PK           )
-) ast_send_pk;
+  .DATA_W     ( DATA_WIDTH_TB    ),
+  .CHANNEL_W  ( CHANNEL_WIDTH_TB ),
+  .EMPTY_W    ( EMPTY_WIDTH_TB   )
+) ast_send_pkt;
 
 ast_dmx_c #(
   .DATA_W    ( DATA_WIDTH_TB    ),
   .CHANNEL_W ( CHANNEL_WIDTH_TB ),
-  .EMPTY_W   ( EMPTY_WIDTH_TB   ),
-  .TX_DIR    ( TX_DIR_TB        ),
-  .MAX_PK    ( MAX_PK           )
-) ast_receive_pk;
+  .EMPTY_W   ( EMPTY_WIDTH_TB   )
+) ast_receive_pkt;
 
 ast_dmx #(
   .DATA_WIDTH    ( DATA_WIDTH_TB    ),
@@ -110,16 +106,16 @@ ast_dmx #(
 
 typedef logic [DATA_WIDTH_TB-1:0] pkt_word_t [$];
 
-mailbox #( pkt_t )      fifo_packet_byte = new();
-mailbox #( pkt_word_t ) fifo_packet_word = new();
+mailbox #( pkt_t )      fifo_pkt_byte = new();
+mailbox #( pkt_word_t ) fifo_pkt_word = new();
 
-task gen_pk( mailbox #( pkt_t )      _fifo_packet_byte,
-             mailbox #( pkt_word_t ) _fifo_packet_word,
-             input int _min_byte,
-                   int _max_byte
+task gen_pkt( mailbox #( pkt_t )      _fifo_pkt_byte,
+              mailbox #( pkt_word_t ) _fifo_pkt_word,
+              input int _min_byte,
+                    int _max_byte
            );
 
-pkt_t new_pk;
+pkt_t new_pkt;
 logic [7:0] new_data;
 int random_byte;
 int word_number;
@@ -134,7 +130,7 @@ int byte_last_word;
 
 logic [DATA_WIDTH_TB-1:0] tmp_data;
 
-for( int i = 0; i < MAX_PK; i++ )
+for( int i = 0; i < MAX_PKT; i++ )
   begin
     random_byte = $urandom_range( _min_byte,_max_byte );
 
@@ -145,18 +141,18 @@ for( int i = 0; i < MAX_PK; i++ )
     for( int j = 0; j < (word_byte-1)*8; j++ )
       begin
         new_data  = $urandom_range( 2**8,0 );
-        new_pk[j] = new_data;
+        new_pkt[j] = new_data;
       end
-    word_data = {<<8{new_pk}}; //packing byte to word
+    word_data = {<<8{new_pkt}}; //packing byte to word
     for( int j = (word_byte-1)*8; j < random_byte; j++ )
       begin
         new_data  = $urandom_range( 2**8,0 );
-        new_pk[j] = new_data;
+        new_pkt[j] = new_data;
       end
 
     for( int j = random_byte -1; j >= WORD_IN*(word_byte-1); j-- )
       begin
-        word_data[word_byte-1][7:0] = new_pk[j];
+        word_data[word_byte-1][7:0] = new_pkt[j];
         
         if( j != WORD_IN*(word_byte-1) )
           word_data[word_byte-1] = word_data[word_byte-1] << 8;
@@ -173,37 +169,37 @@ for( int i = 0; i < MAX_PK; i++ )
           word_data[word_byte-2-i] = tmp_data;
         end
 
-    _fifo_packet_word.put( word_data );
-    _fifo_packet_byte.put( new_pk );
-    word_data = {};
-    new_pk    = {};
+    _fifo_pkt_word.put( word_data );
+    _fifo_pkt_byte.put( new_pkt );
+    word_data  = {};
+    new_pkt    = {};
   end
 
 endtask
 
 task compare_output();
 
-pkt_word_t new_pk_word;
+pkt_word_t new_pkt_word;
 logic [DATA_WIDTH_TB-1:0] new_word;
 int j;
 
 int mb_size;
-int pk_size;
+int pkt_size;
 
 int size_mb;
-mb_size = fifo_packet_word.num();
+mb_size = fifo_pkt_word.num();
 forever
   begin
     @( posedge clk_i_tb );
-    while( fifo_packet_word.num() != 0 )
+    while( fifo_pkt_word.num() != 0 )
       begin
-        size_mb = fifo_packet_word.num();
-        $display("*****PACKET %0d*****", mb_size - fifo_packet_word.num() );
-        fifo_packet_word.get( new_pk_word );
-        pk_size = new_pk_word.size();
-        $display("pk_size: %0d words", pk_size);
+        size_mb = fifo_pkt_word.num();
+        $display("*****PACKET %0d*****", mb_size - fifo_pkt_word.num() );
+        fifo_pkt_word.get( new_pkt_word );
+        pkt_size = new_pkt_word.size();
+        $display("pkt_size: %0d words", pkt_size);
         j = 0;
-        while( j < pk_size )
+        while( j < pkt_size )
           begin
             
             if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
@@ -215,7 +211,7 @@ forever
                   begin
                     if( ast_valid_o_tb[i] == 1'b1 )
                       begin
-                        new_word = new_pk_word[j];
+                        new_word = new_pkt_word[j];
                         if( new_word == ast_data_o_tb[i] )
                           $display("dir %0d / word %0d -- No error ", i, j );
                         else
@@ -367,13 +363,13 @@ initial
 
     // // // ********************Test case 1********************
     $display("TEST 1: [Random 'dir_i' -- 5 packet ( 70 bytes/packet ) --  Random 'ready']");
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
     set_assert_range( 1,3,1,3 );
     dir_setting( 1,100 );
 
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
     fork
-      ast_send_pk.send_pk( 3 );
+      ast_send_pkt.send_pkt( 3 );
       assert_ready();
       gen_dir();
       compare_output();
@@ -388,12 +384,12 @@ initial
     dir_tmp = 3;
     
     $display("TEST 2: [dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 3********************
     dir_tmp = 2;
@@ -402,12 +398,12 @@ initial
     reset();
     
     $display("TEST 3: [dir_i = 2 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 4********************
     dir_tmp = 1;
@@ -416,12 +412,12 @@ initial
     reset();
     
     $display("TEST 4: [dir_i = 1 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 5********************
     dir_tmp = 0;
@@ -430,12 +426,12 @@ initial
     reset();
     
     $display("TEST 5: [dir_i = 0 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 6********************
     dir_tmp = 3;
@@ -445,12 +441,12 @@ initial
     reset();
     
     $display("TEST 6: Test data: Number of byte = 8k \n[dir_i = 3 -- 5 packet ( 64 bytes/packet ) -- random 'ready']");
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 64, 64 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 64, 64 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 7********************
     dir_setting( 1,100  );
@@ -458,12 +454,12 @@ initial
     reset();
     dir_tmp = 0;
     $display("TEST 7: Test data: Number of bytes < 8 bytes \n[random dir_i -- 5 packet ( 6 bytes/packet ) -- random 'ready']");
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 6, 6 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 6, 6 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 8********************
     dir_setting( 1, 100 );
@@ -473,12 +469,12 @@ initial
     $display("TEST 8: Test data: number of byte = 8 bytes \n[random dir_i -- 5 packet ( 8 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case
     // // when number of bytes in packet = 1 word (8 bytes)
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 8, 8 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 8, 8 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 9********************
     dir_setting( 1, 100 );
@@ -488,29 +484,29 @@ initial
     $display("TEST 9: Test data: number of byte = 9 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case
     // // when number of bytes in packet = 9 bytes (2 words) = 1 word + 1 byte 
-    fifo_packet_byte = new();
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 9, 9 );
+    fifo_pkt_byte = new();
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 9, 9 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 10********************
-    fifo_packet_byte = new();
-    fifo_packet_word = new();
+    fifo_pkt_byte = new();
+    fifo_pkt_word = new();
 
     dir_setting( 1, 100 );
     set_assert_range( 150,150,0,0 );
     reset();
     dir_tmp = 0;  
     $display("TEST 10: [RANDOM dir_i -- 5 packet ( 70 bytes/packet ) -- ready = 1]");
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 70, 70 );
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     // // // ********************Test case 11********************
     dir_setting( 1, 100 );
@@ -520,13 +516,13 @@ initial
     $display("TEST 11: Test data: number of byte = 1 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
     // // This test is used to test corner case
     // // when number of bytes in packet = 1 bytes ( 1 word only )
-    fifo_packet_byte = new();
+    fifo_pkt_byte = new();
 
-    gen_pk ( fifo_packet_byte, fifo_packet_word, 1, 1 );
+    gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 1, 1 );
     
-    ast_send_pk = new( ast_snk_if, fifo_packet_byte );
+    ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
 
-    ast_send_pk.send_pk( 3 );
+    ast_send_pkt.send_pkt( 3 );
 
     $stop();
 
