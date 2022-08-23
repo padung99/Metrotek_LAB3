@@ -13,8 +13,8 @@ parameter MAX_PKT = 5;
 
 parameter WORD_IN = DATA_WIDTH_TB/8;
 
-bit clk_i_tb;
-logic srst_i_tb;
+bit                          clk_i_tb;
+logic                        srst_i_tb;
 logic [DIR_SEL_WIDTH_TB-1:0] dir_i_tb;
 
 genvar i;
@@ -115,10 +115,10 @@ task gen_pkt( mailbox #( pkt_t )      _fifo_pkt_byte,
                     int _max_byte
            );
 
-pkt_t new_pkt;
+pkt_t       new_pkt;
 logic [7:0] new_data;
-int random_byte;
-int word_number;
+int         random_byte;
+int         word_number;
 
 logic [DATA_WIDTH_TB-1:0] word_data[$];
 
@@ -140,13 +140,13 @@ for( int i = 0; i < MAX_PKT; i++ )
 
     for( int j = 0; j < (word_byte-1)*8; j++ )
       begin
-        new_data  = $urandom_range( 2**8,0 );
+        new_data   = $urandom_range( 2**8,0 );
         new_pkt[j] = new_data;
       end
     word_data = {<<8{new_pkt}}; //packing byte to word
     for( int j = (word_byte-1)*8; j < random_byte; j++ )
       begin
-        new_data  = $urandom_range( 2**8,0 );
+        new_data   = $urandom_range( 2**8,0 );
         new_pkt[j] = new_data;
       end
 
@@ -314,8 +314,8 @@ task set_assert_range( input int _min_assert, _max_assert,
                              int _min_deassert, _max_deassert
                      );
 
-min_assert = _min_assert;
-max_assert = _max_assert;
+min_assert   = _min_assert;
+max_assert   = _max_assert;
 min_deassert = _min_deassert;
 max_deassert = _max_deassert;
 
@@ -323,7 +323,7 @@ endtask
 
 task dir_setting( input bit _rand_dir, int _dir_select );
 
-rand_dir = _rand_dir;
+rand_dir   = _rand_dir;
 dir_select = _dir_select;
 
 endtask
