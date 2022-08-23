@@ -14,8 +14,8 @@ parameter WORD_IN  = ( DATA_IN_W_TB/8 );
 
 parameter MAX_PKT = 5;
 
-bit                          clk_i_tb;
-logic                        srst_i_tb;
+bit       clk_i_tb;
+logic     srst_i_tb;
 
 int k;
 
@@ -92,20 +92,20 @@ typedef logic [DATA_OUT_W_TB-1:0] pkt_receive_t [$];
 
 mailbox #( pkt_t ) send_byte              = new();
 mailbox #( pkt_t ) copy_send_byte         = new();
-mailbox #( pkt_receive_t ) receive_pkt = new();
+mailbox #( pkt_receive_t ) receive_pkt    = new();
 mailbox #( pkt_receive_t ) send_word_out  = new();
 
 
 task gen_pkt( mailbox #( pkt_t ) _send_byte,
               mailbox #( pkt_t ) _copy_send_byte,
-             input int _min_byte,
-                   int _max_byte
+              input int _min_byte,
+                    int _max_byte
            );
 
-pkt_t new_pkt;
+pkt_t       new_pkt;
 logic [7:0] new_data;
-int random_byte;
-int word_number;
+int         random_byte;
+int         word_number;
 
 for( int i = 0; i < MAX_PKT; i++ )
   begin
@@ -158,8 +158,8 @@ task set_assert_range( input int _min_assert, _max_assert,
                              int _min_deassert, _max_deassert
                      );
 
-min_assert = _min_assert;
-max_assert = _max_assert;
+min_assert   = _min_assert;
+max_assert   = _max_assert;
 min_deassert = _min_deassert;
 max_deassert = _max_deassert;
 
@@ -170,8 +170,8 @@ task output_word( mailbox #( pkt_t ) _send_byte,
                   mailbox #( pkt_receive_t ) _send_word_out
                );
 
-pkt_receive_t             new_pkt_receive;
-logic [DATA_OUT_W_TB-1:0] new_output_data;
+pkt_receive_t              new_pkt_receive;
+logic [DATA_OUT_W_TB-1:0]  new_output_data;
 
 pkt_t                      new_pkt;
 int                        last_byte_index;
