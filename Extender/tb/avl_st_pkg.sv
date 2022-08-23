@@ -175,10 +175,6 @@ while( tx_fifo.num() != 0 )
   repeat( _delay_between_pkt )
     `cb;
 
-  //Waiting for ready signal
-  // while( ast_if.ready != 1'b1 )
-  //   `cb;
-  
   end
 
 endtask
@@ -191,16 +187,11 @@ forever
   begin
     `cb;
     if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
-      begin
-        new_pkt_receive.push_back( ast_if.data );
-      //  $display( "receive: %x", ast_if.data );
-      end
+      new_pkt_receive.push_back( ast_if.data );
     else if( ast_if.valid == 1'b1 && ast_if.eop == 1'b1 )
       begin
         new_pkt_receive.push_back( ast_if.data );
-        // $display( "receive: %x", ast_if.data );
         _rx_fifo.put( new_pkt_receive );
-        // $display("receive mb_size: %0d", _rx_fifo.num());
         new_pkt_receive = {};
       end
 
