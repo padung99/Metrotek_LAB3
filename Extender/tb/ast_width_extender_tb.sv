@@ -92,7 +92,7 @@ typedef logic [DATA_OUT_W_TB-1:0] pkt_receive_t [$];
 
 mailbox #( pkt_t ) send_byte              = new();
 mailbox #( pkt_t ) copy_send_byte         = new();
-mailbox #( pkt_receive_t ) receive_packet = new();
+mailbox #( pkt_receive_t ) receive_pkt = new();
 mailbox #( pkt_receive_t ) send_word_out  = new();
 
 
@@ -219,46 +219,46 @@ while( _send_byte.num() != 0 )
 
 endtask
 
-task test_data( mailbox #( pkt_receive_t ) _receive_packet,
+task test_data( mailbox #( pkt_receive_t ) _receive_pkt,
                 mailbox #( pkt_receive_t ) _send_word_out
                  );
 
 pkt_receive_t new_pkt_receive;
 pkt_receive_t new_test_pkt_receive;
 
-int packet_size;
+int pkt_size;
 
 int mbox_size;
 
 bit data_error;
 
-if( _receive_packet.num() != _send_word_out.num() )
-  $display("Number of packet mismatch, send: %0d, receive: %0d", _send_word_out.num(), _receive_packet.num() );
+if( _receive_pkt.num() != _send_word_out.num() )
+  $display("Number of packet mismatch, send: %0d, receive: %0d", _send_word_out.num(), _receive_pkt.num() );
 else
   begin
     $display("--------Test 'data_o' signal-----------");
-    mbox_size = _receive_packet.num();
-    packet_size = _receive_packet.num();
-    while( _receive_packet.num() != 0 )
+    mbox_size = _receive_pkt.num();
+    pkt_size = _receive_pkt.num();
+    while( _receive_pkt.num() != 0 )
       begin
-        _receive_packet.get( new_pkt_receive );
+        _receive_pkt.get( new_pkt_receive );
         _send_word_out.get( new_test_pkt_receive );
-        $display("###PACKET [%0d]", mbox_size-_receive_packet.num());
+        $display("###PACKET [%0d]", mbox_size-_receive_pkt.num());
         if( new_pkt_receive.size() != new_test_pkt_receive.size() )
-          $display("Packet [%0d]'s size mismatch: send: %0d, receive: %0d", packet_size -_receive_packet.num(), new_test_pkt_receive.size(), new_pkt_receive.size());
+          $display("Packet [%0d]'s size mismatch: send: %0d, receive: %0d", pkt_size -_receive_pkt.num(), new_test_pkt_receive.size(), new_pkt_receive.size());
         else
           begin
             for( int i = 0; i < new_pkt_receive.size(); i++ )
               begin
                 if( new_pkt_receive[i] != new_test_pkt_receive[i] )
                   begin
-                    $display("data_o [%0d][%0d] mismatch: receive: %0x, correct: %x", packet_size -_receive_packet.num(), i, new_pkt_receive[i], new_test_pkt_receive[i] );
+                    $display("data_o [%0d][%0d] mismatch: receive: %0x, correct: %x", pkt_size -_receive_pkt.num(), i, new_pkt_receive[i], new_test_pkt_receive[i] );
                     data_error = 1'b1;
                   end
               end
           end
         if( !data_error )
-          $display("No error with data in PACKET [%0d]",mbox_size-_receive_packet.num() );
+          $display("No error with data in PACKET [%0d]",mbox_size-_receive_pkt.num() );
         data_error = 1'b0;
       end
   end 
@@ -319,15 +319,14 @@ initial
     byte_send = WORD_OUT*4;
     fork
       ast_send_pkt.send_pkt(3);
-      ast_receive_pkt.reveive_pkt( receive_packet );
+      ast_receive_pkt.reveive_pkt( receive_pkt );
       assert_ready();
       test_channel();
       test_empty();
     join_any
-    // $display("Test receive mb_size: %0d", receive_packet.num());
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
  
     // // // **********************TEST CASE 2*************************
@@ -346,7 +345,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 3*************************
@@ -365,7 +364,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 4*************************
@@ -384,7 +383,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 5*************************
@@ -403,7 +402,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 6*************************
@@ -422,7 +421,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 7*************************
@@ -441,7 +440,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     // // // **********************TEST CASE 8*************************
@@ -460,7 +459,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     
@@ -480,7 +479,7 @@ initial
     ast_send_pkt.send_pkt(3);
 
     output_word( copy_send_byte, send_word_out );
-    test_data( receive_packet, send_word_out );
+    test_data( receive_pkt, send_word_out );
     $display("\n");
     
     $display("Test done!!");
