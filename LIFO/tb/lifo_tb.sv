@@ -157,7 +157,7 @@ repeat( 5 )
 endtask
 
 // --------------------------------------------------------------
-task wr_1clk( input int _write_type );
+task wr_1clk( input int _write_type = 1 );
 
 @( posedge clk_i_tb );
 if( _write_type == 1 )
@@ -186,7 +186,7 @@ endtask
 
 // --------------------------------------------------------------
 
-task wr_only( input int _write_type, int _repeat );
+task wr_only( input int _write_type = 1, int _repeat = 0 );
 
 if( _write_type == 1 )
   begin
@@ -212,7 +212,7 @@ else if( _write_type == 3 )
     $display("Finish!!!");
     idle();
   end
-else if( write_type == 4 )
+else if( _write_type == 4 )
   begin
     $display("Start writing until full");
     repeat( _repeat )
@@ -295,7 +295,7 @@ endtask
 // // ********************************************************************
 
 //----------------------------------------------------------------------
-task rd_1clk( input int _read_type );
+task rd_1clk( input int _read_type = 1 );
 
 @( posedge clk_i_tb );
 if( _read_type == 1 )
@@ -320,7 +320,7 @@ endtask
 
 //----------------------------------------------------------------------
 
-task rd_only( input int _read_type, int _repeat );
+task rd_only( input int _read_type = 1, int _repeat = 0);
 
 if( _read_type == 1 )
   begin
@@ -505,13 +505,13 @@ initial
     // // // *************************************** Test case 1 *************************************************
     $display("Test case 1: Reading process begins immediately after full");
     fork
-      wr_only( 2**AWIDTH );
+      wr_only( 1, 2**AWIDTH );
       control_ptr();
     join_any
     cnt_error();
     reset_error_flag();
 
-    rd_only( 2**AWIDTH );
+    rd_only( 1, 2**AWIDTH );
     cnt_error();
 
     
@@ -522,7 +522,7 @@ initial
     reset_error_flag();
 
     $display("Test case 2: Write to full");
-    wr_only( 2**AWIDTH + 5 );
+    wr_only( 1, 2**AWIDTH + 5 );
     cnt_error();
 
 
@@ -534,7 +534,7 @@ initial
     reset_error_flag();
 
     $display("Test case 3: read from empty");
-    rd_only( 32 );
+    rd_only( 1, 32 );
     cnt_error();
 
  
@@ -546,11 +546,11 @@ initial
 
     $display("Test case 4: Write some value after full and read out all data");
 
-    wr_only( 2**AWIDTH +5 );
+    wr_only( 1, 2**AWIDTH +5 );
     cnt_error();
     reset_error_flag();
 
-    rd_only( 2**AWIDTH + 5 );
+    rd_only( 1, 2**AWIDTH + 5 );
     cnt_error();
 
     
@@ -582,8 +582,8 @@ initial
 
     $display("Test case 7: Alternating read and write processes");
     fork
-      wr_only( 2**AWIDTH );
-      rd_only( 2**AWIDTH + 2 );
+      wr_only( 1, 2**AWIDTH );
+      rd_only( 1, 2**AWIDTH + 2 );
     join
     cnt_error();
 
@@ -596,12 +596,13 @@ initial
 
     $display("Test case 8: Write to full lifo, and read process (rdreq) begins immediately after wrreq has been deasserted");
 
-    wr_only_non_idle( 2**AWIDTH + 10 );
+    // wr_only_non_idle( 2**AWIDTH + 10 );
+    wr_only( 4, 2**AWIDTH + 10 );
 
     cnt_error();
     reset_error_flag();
 
-    rd_only( 5 );
+    rd_only( 1, 5 );
     cnt_error();
 
 
@@ -613,8 +614,10 @@ initial
 
     $display("Test case 9: Random rdreq and wrreq");
     fork
-      wr_only_random( 3000 );
-      rd_only_random( 3000 );
+      // wr_only_random( 3000 );
+      // rd_only_random( 3000 );
+      wr_only( 2, 3000 );
+      rd_only( 2, 3000 );
     join
 
     cnt_error();
@@ -628,12 +631,12 @@ initial
     $display("Test case 10: Write to lifo full twice and read out once (Test write to full )");
     // This test case is used to check if read out values are first 256 values or second 256 values.
     // Because of rule: Don't write to full lifo, correct result of read out data will be first 256 values
-    wr_only( 2**AWIDTH );
+    wr_only( 1, 2**AWIDTH );
     idle();
 
-    wr_only( 2**AWIDTH );
+    wr_only( 1, 2**AWIDTH );
 
-    rd_only( 2**AWIDTH  + 2 );
+    rd_only( 1, 2**AWIDTH  + 2 );
     cnt_error();
 
     
@@ -646,15 +649,15 @@ initial
     $display("Test case 11:  Write to lifo full once and read out twice (Test read from empty)");
 
 
-    wr_only( 2**AWIDTH );
+    wr_only( 1, 2**AWIDTH );
     // reset_error_flag();
 
-    rd_only( 2**AWIDTH +2 );
+    rd_only( 1, 2**AWIDTH +2 );
 
     idle();
     // reset_error_flag();
 
-    rd_only( 2**AWIDTH + 2 );
+    rd_only( 1, 2**AWIDTH + 2 );
     cnt_error();
 
 
@@ -666,7 +669,7 @@ initial
     
     $display("Test case 12: Write to lifo full and after that read/write at the same time");
 
-    wr_only( 2**AWIDTH );
+    wr_only( 1, 2**AWIDTH );
     cnt_error();
     reset_error_flag();
 
@@ -683,11 +686,11 @@ initial
     
     $display("Test case 13: Write some value, read until empty, and after that, write/read at the same time");
 
-    wr_only( 10 );
+    wr_only( 1, 10 );
     cnt_error();
     reset_error_flag();
 
-    rd_only( 10 + 2 );
+    rd_only( 1, 10 + 2 );
     cnt_error();
     reset_error_flag();
 
@@ -735,11 +738,13 @@ initial
       begin
         $display("Test case 16:  Run to full and back to empty (REPEAT 3 TIMES)");
 
-        wr_only_non_idle( 2**AWIDTH );
+        // wr_only_non_idle( 2**AWIDTH );
+        wr_only( 4, 2**AWIDTH );
         cnt_error();
         reset_error_flag();
 
-        rd_only_non_idle( 2**AWIDTH );
+        // rd_only_non_idle( 2**AWIDTH );
+        rd_only( 4, 2**AWIDTH );
         cnt_error();
 
       end
@@ -753,8 +758,10 @@ initial
     $display("Test case 17: Random rdreq and wrreq (Only valid input)");
     //This random will pass only valid input ( when lifo is empty, no rdreq (rdreq = 0), when lifo is full, no wrreq (wrrep = 0) )
     fork
-      wr_only_random_valid( 3000 );
-      rd_only_random_valid( 3000 );
+      // wr_only_random_valid( 3000 );
+      // rd_only_random_valid( 3000 );
+      wr_only( 3, 3000 );
+      rd_only( 3, 3000 );
     join
 
     cnt_error();
