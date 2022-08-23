@@ -24,6 +24,8 @@ int max_assert;
 int min_deassert;
 int max_deassert;
 
+int byte_send;
+
 initial
   forever
     #5 clk_i_tb = !clk_i_tb;
@@ -98,6 +100,8 @@ mailbox #( logic [CHANNEL_W_TB-1:0] ) channel_output = new();
 
 mailbox #( logic [EMPTY_OUT_W_TB-1:0] ) empty_input  = new();
 mailbox #( logic [EMPTY_OUT_W_TB-1:0] ) empty_output = new();
+
+int cnt_packet;
 
 task gen_pk( mailbox #( pkt_t ) _send_byte,
              mailbox #( pkt_t ) _copy_send_byte,
@@ -271,6 +275,36 @@ else
   end 
 endtask
 
+task test_channel();
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( ast_src_if.valid == 1'b1 &&  ast_src_if.sop == 1'b1 )
+      begin
+        if( ast_src_if.channel != ast_snk_if.channel )
+          $display("Channel error, send: %0d, receive: %0d", ast_snk_if.channel, ast_src_if.channel );
+      end
+  end
+
+endtask
+
+task test_empty();
+
+// logic [EMPTY_IN_W_TB-1:0] empty_in;
+logic [EMPTY_OUT_W_TB-1:0] empty_out;
+
+forever
+  begin
+    @( posedge clk_i_tb );
+    if( ast_src_if.valid == 1'b1 &&  ast_src_if.eop == 1'b1 )
+      begin
+        empty_out = WORD_OUT - ( byte_send % WORD_OUT );
+        if( empty_out != ast_src_if.empty )
+          $display("Empty error, correct: %0d, receive: %0d", empty_out, ast_src_if.empty);
+      end
+  end
+endtask
 
 task reset();
 
@@ -294,10 +328,13 @@ initial
     ast_receive_pk = new( ast_src_if, send_byte );
     set_assert_range( 2*(WORD_OUT*4)/8+5,2*(WORD_OUT*4)/8+5,0,0 );
     $display("TEST CASE 1: Number of bytes = [WORD_OUT*k] = 32 * 4 = 128");
+    byte_send = WORD_OUT*4;
     fork
       ast_send_pk.send_pk(3);
       ast_receive_pk.reveive_pk( receive_packet );
       assert_ready();
+      test_channel();
+      test_empty();
     join_any
     // $display("Test receive mb_size: %0d", receive_packet.num());
 
@@ -311,6 +348,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = 132;
     gen_pk( send_byte, copy_send_byte, 132, 132 );
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte );
@@ -331,6 +369,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = WORD_IN;
     gen_pk( send_byte, copy_send_byte, WORD_IN, WORD_IN );
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte ); 
@@ -351,6 +390,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = WORD_IN*1+5;
     gen_pk( send_byte, copy_send_byte, WORD_IN*1+5, WORD_IN*1+5 );
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte ); 
@@ -371,6 +411,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = WORD_OUT*1;
     gen_pk( send_byte, copy_send_byte, WORD_OUT*1, WORD_OUT*1 );
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte ); 
@@ -391,6 +432,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = WORD_IN - 6;
     gen_pk( send_byte, copy_send_byte,  WORD_IN - 6,  WORD_IN - 6 );
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte ); 
@@ -411,6 +453,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = WORD_IN*3;
     gen_pk( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte ); 
@@ -431,6 +474,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = WORD_IN*3;
     gen_pk( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte ); 
@@ -452,6 +496,7 @@ initial
 
     send_word_out  = new();
     reset();
+    byte_send = WORD_OUT*3+2;
     gen_pk( send_byte, copy_send_byte, WORD_OUT*3+2, WORD_OUT*3 +2);
     ast_send_pk    = new( ast_snk_if, send_byte );
     ast_receive_pk = new( ast_src_if, send_byte ); 
