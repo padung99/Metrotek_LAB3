@@ -302,6 +302,24 @@ srst_i_tb <= 1'b0;
 
 endtask
 
+function pkt_t gen_1_pkt ( int pkt_size );
+
+pkt_t new_pkt;
+logic [7:0] gen_random_byte;
+
+for( int i = 0; i < pkt_size; i++ )
+  begin
+    gen_random_byte = $urandom_range( 2**8,0 );
+    new_pkt[i] = gen_random_byte;
+    // $display("Byte %0d: %x", i,gen_random_byte );
+  end
+
+return new_pkt;
+
+endfunction
+
+pkt_t pkt1;
+
 initial
   begin
     
@@ -311,176 +329,187 @@ initial
     srst_i_tb        <= 1'b0;
     
     // // // **********************TEST CASE 1*************************
-    gen_pkt( send_byte, copy_send_byte, WORD_OUT*4, WORD_OUT*4 );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte );
+    // gen_pkt( send_byte, copy_send_byte, WORD_OUT*4, WORD_OUT*4 );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte );
+    ast_send_pkt    = new( ast_snk_if );
+    ast_receive_pkt = new( ast_src_if );
     set_assert_range( 2*(WORD_OUT*4)/8+5,2*(WORD_OUT*4)/8+5,0,0 );
     $display("TEST CASE 1: Number of bytes = [WORD_OUT*k] = 32 * 4 = 128");
     byte_send = WORD_OUT*4;
     fork
-      ast_send_pkt.send_pkt(3);
-      ast_receive_pkt.reveive_pkt( receive_pkt );
+      ast_send_pkt.send_pkt( gen_1_pkt( 128 ), 3);
+      ast_receive_pkt.receive_pkt();
+      // ast_receive_pkt.reveive_pkt( receive_pkt );
       assert_ready();
-      test_channel();
-      test_empty();
+      // test_channel();
+      // test_empty();
     join_any
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+
+    // $display("pkt_size: %0d", ast_send_pkt.rx_fifo.num());
+    // while( ast_send_pkt.rx_fifo.num() != 0 )
+    //   begin
+    //     ast_send_pkt.rx_fifo.get( pkt1 );
+    //     for( int j = 0; j < pkt1.size(); j++ )
+    //       $display("[%0d] Byte %0x", ast_send_pkt.rx_fifo.num(), pkt1[j]);
+    //   end
     $display("\n");
  
-    // // // **********************TEST CASE 2*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 2*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
+    // send_word_out  = new();
     reset();
     byte_send = 132;
-    gen_pkt( send_byte, copy_send_byte, 132, 132 );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte );
+    // gen_pkt( send_byte, copy_send_byte, 132, 132 );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte );
     set_assert_range( 2*(132)/8+5,2*(132)/8+5,0,0 );
     $display("TEST CASE 2: Number of bytes = [WORD_OUT*k + N] = 32*4 + 4 = 132");
 
-    ast_send_pkt.send_pkt(3);
+    ast_send_pkt.send_pkt( gen_1_pkt( 132 ), 3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
     $display("\n");
     
-    // // // **********************TEST CASE 3*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 3*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
-    reset();
-    byte_send = WORD_IN;
-    gen_pkt( send_byte, copy_send_byte, WORD_IN, WORD_IN );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte ); 
-    set_assert_range( 2*(WORD_IN)/8+5,2*(WORD_IN)/8+5,0,0 );
-    $display("TEST CASE 3: Number of bytes = [WORD_IN] = 8");
+    // send_word_out  = new();
+    // reset();
+    // byte_send = WORD_IN;
+    // gen_pkt( send_byte, copy_send_byte, WORD_IN, WORD_IN );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte ); 
+    // set_assert_range( 2*(WORD_IN)/8+5,2*(WORD_IN)/8+5,0,0 );
+    // $display("TEST CASE 3: Number of bytes = [WORD_IN] = 8");
 
-    ast_send_pkt.send_pkt(3);
+    // ast_send_pkt.send_pkt(3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
-    $display("\n");
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+    // $display("\n");
     
-    // // // **********************TEST CASE 4*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 4*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
-    reset();
-    byte_send = WORD_IN*1+5;
-    gen_pkt( send_byte, copy_send_byte, WORD_IN*1+5, WORD_IN*1+5 );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte ); 
-    set_assert_range( 2*(WORD_IN*1+5)/8+5,2*(WORD_IN*1+5)/8+5,0,0 );
-    $display("TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 14");
+    // send_word_out  = new();
+    // reset();
+    // byte_send = WORD_IN*1+5;
+    // gen_pkt( send_byte, copy_send_byte, WORD_IN*1+5, WORD_IN*1+5 );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte ); 
+    // set_assert_range( 2*(WORD_IN*1+5)/8+5,2*(WORD_IN*1+5)/8+5,0,0 );
+    // $display("TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 14");
 
-    ast_send_pkt.send_pkt(3);
+    // ast_send_pkt.send_pkt(3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
-    $display("\n");
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+    // $display("\n");
     
-    // // // **********************TEST CASE 5*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 5*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
-    reset();
-    byte_send = WORD_OUT*1;
-    gen_pkt( send_byte, copy_send_byte, WORD_OUT*1, WORD_OUT*1 );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte ); 
-    set_assert_range( 2*(WORD_OUT*1)/8+5,2*(WORD_OUT*1)/8+5,0,0 );
-    $display("TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32");
+    // send_word_out  = new();
+    // reset();
+    // byte_send = WORD_OUT*1;
+    // gen_pkt( send_byte, copy_send_byte, WORD_OUT*1, WORD_OUT*1 );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte ); 
+    // set_assert_range( 2*(WORD_OUT*1)/8+5,2*(WORD_OUT*1)/8+5,0,0 );
+    // $display("TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32");
 
-    ast_send_pkt.send_pkt(3);
+    // ast_send_pkt.send_pkt(3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
-    $display("\n");
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+    // $display("\n");
     
-    // // // **********************TEST CASE 6*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 6*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
-    reset();
-    byte_send = WORD_IN - 6;
-    gen_pkt( send_byte, copy_send_byte,  WORD_IN - 6,  WORD_IN - 6 );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte ); 
-    set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
-    $display("TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2");
+    // send_word_out  = new();
+    // reset();
+    // byte_send = WORD_IN - 6;
+    // gen_pkt( send_byte, copy_send_byte,  WORD_IN - 6,  WORD_IN - 6 );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte ); 
+    // set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
+    // $display("TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2");
 
-    ast_send_pkt.send_pkt(3);
+    // ast_send_pkt.send_pkt(3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
-    $display("\n");
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+    // $display("\n");
     
-    // // // **********************TEST CASE 7*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 7*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
-    reset();
-    byte_send = WORD_IN*3;
-    gen_pkt( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte ); 
-    set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
-    $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3 ");
+    // send_word_out  = new();
+    // reset();
+    // byte_send = WORD_IN*3;
+    // gen_pkt( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte ); 
+    // set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
+    // $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3 ");
 
-    ast_send_pkt.send_pkt(3);
+    // ast_send_pkt.send_pkt(3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
-    $display("\n");
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+    // $display("\n");
     
-    // // // **********************TEST CASE 8*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 8*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
-    reset();
-    byte_send = WORD_IN*3;
-    gen_pkt( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte ); 
-    set_assert_range( 1,3,1,3 );
-    $display("TEST CASE 8 : Random ready ( only 1 word output )");
+    // send_word_out  = new();
+    // reset();
+    // byte_send = WORD_IN*3;
+    // gen_pkt( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte ); 
+    // set_assert_range( 1,3,1,3 );
+    // $display("TEST CASE 8 : Random ready ( only 1 word output )");
 
-    ast_send_pkt.send_pkt(3);
+    // ast_send_pkt.send_pkt(3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
-    $display("\n");
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+    // $display("\n");
     
     
-    // // // **********************TEST CASE 9*************************
-    send_byte      = new();
-    copy_send_byte = new();
+    // // // // **********************TEST CASE 9*************************
+    // send_byte      = new();
+    // copy_send_byte = new();
 
-    send_word_out  = new();
-    reset();
-    byte_send = WORD_OUT*3+2;
-    gen_pkt( send_byte, copy_send_byte, WORD_OUT*3+2, WORD_OUT*3 +2);
-    ast_send_pkt    = new( ast_snk_if, send_byte );
-    ast_receive_pkt = new( ast_src_if, send_byte ); 
-    set_assert_range( 1,3,1,3 );
-    $display("TEST CASE 9 : Random ready ( many words ouput )");
+    // send_word_out  = new();
+    // reset();
+    // byte_send = WORD_OUT*3+2;
+    // gen_pkt( send_byte, copy_send_byte, WORD_OUT*3+2, WORD_OUT*3 +2);
+    // ast_send_pkt    = new( ast_snk_if, send_byte );
+    // ast_receive_pkt = new( ast_src_if, send_byte ); 
+    // set_assert_range( 1,3,1,3 );
+    // $display("TEST CASE 9 : Random ready ( many words ouput )");
 
-    ast_send_pkt.send_pkt(3);
+    // ast_send_pkt.send_pkt(3);
 
-    output_word( copy_send_byte, send_word_out );
-    test_data( receive_pkt, send_word_out );
-    $display("\n");
+    // output_word( copy_send_byte, send_word_out );
+    // test_data( receive_pkt, send_word_out );
+    // $display("\n");
     
     $display("Test done!!");
     $stop();
