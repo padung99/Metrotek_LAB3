@@ -184,7 +184,7 @@ endtask
 task receive_pkt();
 
 logic [DATA_W-1:0] data_out;
-logic [DATA_W-1:0] data_shifted;
+
 pkt_t tx_pkt;
 int j;
 j = 0;
@@ -207,7 +207,7 @@ forever
         for( int i = 0; i < BYTE_WORD - ast_if.empty; i++ )
           begin
             tx_pkt.push_back(data_out[7:0]);
-            $display("last data_o: %x", data_out);
+            // $display("last data_o: %x", data_out);
             $display( "[%0d] %x", tx_pkt.size(), data_out[7:0] );
             data_out   = data_out >> 8;
           end

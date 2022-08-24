@@ -349,13 +349,13 @@ initial
     // output_word( copy_send_byte, send_word_out );
     // test_data( receive_pkt, send_word_out );
 
-    // $display("pkt_size: %0d", ast_send_pkt.rx_fifo.num());
-    // while( ast_send_pkt.rx_fifo.num() != 0 )
-    //   begin
-    //     ast_send_pkt.rx_fifo.get( pkt1 );
-    //     for( int j = 0; j < pkt1.size(); j++ )
-    //       $display("[%0d] Byte %0x", ast_send_pkt.rx_fifo.num(), pkt1[j]);
-    //   end
+    $display("pkt_size: %0d", ast_receive_pkt.tx_fifo.num());
+    while( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt1 );
+        for( int j = 0; j < pkt1.size(); j++ )
+          $display("[%0d] Byte %x", ast_receive_pkt.tx_fifo.num(), pkt1[j]);
+      end
     $display("\n");
  
     // // // // **********************TEST CASE 2*************************
@@ -375,6 +375,13 @@ initial
 
     // output_word( copy_send_byte, send_word_out );
     // test_data( receive_pkt, send_word_out );
+    $display("pkt_size: %0d", ast_receive_pkt.tx_fifo.num());
+    while( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt1 );
+        for( int j = 0; j < pkt1.size(); j++ )
+          $display("[%0d] Byte %x", ast_receive_pkt.tx_fifo.num(), pkt1[j]);
+      end
     $display("\n");
     
     // // // // **********************TEST CASE 3*************************
