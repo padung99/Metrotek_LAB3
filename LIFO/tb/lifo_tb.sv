@@ -169,33 +169,6 @@ repeat( 5 )
 endtask
 
 
-// task wr_1clk( input int _write_type = 1 );
-
-// @( posedge clk_i_tb );
-// if( _write_type == 1 )
-//   begin
-//     wrreq_i_tb <= 1'b1;
-//     rdreq_i_tb <= 1'b0;
-//     data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-//   end
-// else if( _write_type == 2 )
-//   begin
-//     wrreq_i_tb <= $urandom_range( 1,0 );
-//     rdreq_i_tb <= 1'b0;
-//     data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-//   end
-// else if( _write_type == 3 )
-//   begin
-//     if( full_tb != 1'b1 )
-//       wrreq_i_tb <= $urandom_range( 1,0 );
-//     else
-//       wrreq_i_tb <= 1'b0;
-//   rdreq_i_tb <= 1'b0;
-//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-//   end
-
-// endtask
-
 task wr_1clk( input request_type_t _write_type = FORCE_RQ );
 
 @( posedge clk_i_tb );
@@ -212,28 +185,6 @@ case( _write_type )
       wrreq_i_tb <= 1'b0;
     end
 endcase
-
-// if( _write_type == 1 )
-//   begin
-//     wrreq_i_tb <= 1'b1;
-//     rdreq_i_tb <= 1'b0;
-//     data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-//   end
-// else if( _write_type == 2 )
-//   begin
-//     wrreq_i_tb <= $urandom_range( 1,0 );
-//     rdreq_i_tb <= 1'b0;
-//     data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-//   end
-// else if( _write_type == 3 )
-//   begin
-//     if( full_tb != 1'b1 )
-//       wrreq_i_tb <= $urandom_range( 1,0 );
-//     else
-//       wrreq_i_tb <= 1'b0;
-//   rdreq_i_tb <= 1'b0;
-//   data_i_tb  <= $urandom_range( 2**DWIDTH,0 );
-//   end
 
 endtask
 
@@ -277,38 +228,6 @@ case( _write_type )
   
 endcase
 
-// if( _write_type == 1 )
-//   begin
-//     $display("Start writing until full");
-//     repeat( _repeat )
-//       wr_1clk(1);
-//     $display("Finish!!!");
-//     idle();
-//   end
-// else if( _write_type == 2 )
-//   begin
-//     $display("Start writing until full");
-//     repeat( _repeat )
-//       wr_1clk(2);
-//     $display("Finish!!!");
-//     idle();
-//   end
-// else if( _write_type == 3 )
-//   begin
-//     $display("Start writing until full");
-//     repeat( _repeat )
-//       wr_1clk(3);
-//     $display("Finish!!!");
-//     idle();
-//   end
-// else if( _write_type == 4 )
-//   begin
-//     $display("Start writing until full");
-//     repeat( _repeat )
-//       wr_1clk(1);
-//     $display("Finish!!!");
-//   end
-
 endtask
 
 task rd_1clk( input request_type_t _read_type = FORCE_RQ );
@@ -326,26 +245,6 @@ case( _read_type )
     rdreq_i_tb <= 1'b0;
   end
 endcase
-
-// @( posedge clk_i_tb );
-// if( _read_type == 1 )
-//   begin
-//     wrreq_i_tb <= 1'b0;
-//     rdreq_i_tb <= 1'b1;
-//   end
-// else if( _read_type == 2 )
-//   begin
-//     wrreq_i_tb <= 1'b0;
-//     rdreq_i_tb <= $urandom_range( 1,0 );
-//   end
-// else if( _read_type == 3 )
-//   begin
-//     wrreq_i_tb <= 1'b0;
-//     if( empty_tb != 1'b1 )
-//       rdreq_i_tb <= $urandom_range( 1,0 );
-//     else
-//       rdreq_i_tb <= 1'b0; 
-//   end
 
 endtask
 
@@ -385,36 +284,6 @@ case( _read_type )
     end
 
 endcase
-
-// if( _read_type == 1 )
-//   begin
-//     $display("Start reading until empty");
-//     repeat( _repeat )
-//       rd_1clk( 1 );
-//     idle();
-//     $display("Finish!!!");
-//   end
-// else if( _read_type == 2 )
-//   begin
-//     $display("Start reading until empty");
-//     repeat( _repeat )
-//       rd_1clk( 2 );
-//     $display("Finish!!!"); 
-//   end
-// else if( _read_type == 3 )
-//   begin
-//     $display("Start reading until empty");
-//     repeat( _repeat )
-//       rd_1clk( 3 );
-//     $display("Finish!!!");
-//   end
-// else if( _read_type == 4 )
-//   begin
-//     $display("Start reading until empty");
-//     repeat( _repeat )
-//       rd_1clk( 1 );
-//     $display("Finish!!!");
-//   end
 
 endtask
 
