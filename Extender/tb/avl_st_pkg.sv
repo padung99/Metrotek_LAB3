@@ -18,20 +18,28 @@ virtual avalon_st #(
 // typedef logic [DATA_W-1:0] pkt_receive_t [$];
 mailbox #( pkt_t ) tx_fifo;
 mailbox #( pkt_t ) rx_fifo;
+mailbox #( logic [CHANNEL_W-1:0] ) tx_fifo_channel;
+mailbox #( logic [CHANNEL_W-1:0] ) rx_fifo_channel;
+
 // mailbox #( pkt_receive_t ) rx_fifo;
 
 function new ( virtual avalon_st #( .DATA_W    ( DATA_W    ),
                                     .CHANNEL_W ( CHANNEL_W )
                                   ) _ast_if       
              );
-this.ast_if  = _ast_if;
-this.tx_fifo = new(); 
-this.rx_fifo = new();
+this.ast_if          = _ast_if;
+this.tx_fifo         = new(); 
+this.rx_fifo         = new();
+this.tx_fifo_channel = new();
+this.rx_fifo_channel = new();
 endfunction
 
 `define cb @( posedge ast_if.clk );
 
-task send_pkt( input pkt_t _rx_pkt, int _delay_between_pkt );
+task send_pkt( input pkt_t _rx_pkt,
+                     logic [CHANNEL_W-1:0] _channel_rx,
+                     int _delay_between_pkt
+              );
 
 // pkt_t _rx_pkt;
 
@@ -39,7 +47,7 @@ logic [DATA_W-1:0] pkt_data;
 
 int pkt_size;
 int i, k;
-logic [CHANNEL_W-1:0] new_channel;
+// logic [CHANNEL_W-1:0] new_channel;
 int byte_last_word;
 int number_of_word;
 int int_part, mod_part;
@@ -51,13 +59,14 @@ logic deassert_valid;
 // while( tx_fifo.num() != 0 )
   begin
     this.rx_fifo.put( _rx_pkt );
+    this.rx_fifo_channel.put( _channel_rx );
     while( ast_if.ready != 1'b1 )
       `cb;  
     // tx_fifo.get( _rx_pkt );
-    new_channel = $urandom_range( 2**CHANNEL_W,0 );
+    // new_channel = $urandom_range( 2**CHANNEL_W,0 );
 
     pkt_size = _rx_pkt.size();
-
+    // $display("Packet size: %0d", pkt_size);
 
     int_part = pkt_size / BYTE_WORD;
     
@@ -77,6 +86,7 @@ logic deassert_valid;
             ast_if.sop     <= 1'b1;
             ast_if.eop     <= 1'b1;
             ast_if.empty   <= BYTE_WORD-pkt_size;
+            ast_if.channel <= _channel_rx;
             for( int j = pkt_size-1; j >= 0; j-- )
               begin
                 pkt_data[7:0] = _rx_pkt[j];
@@ -106,7 +116,7 @@ logic deassert_valid;
                 ast_if.eop     <= 1'b0;
                 ast_if.empty   <= 0;
                 ast_if.valid   <= 1'b1;
-                ast_if.channel <= new_channel;
+                ast_if.channel <= _channel_rx;
                 for( int j = (BYTE_WORD*cnt_byte + BYTE_WORD) -1; j >= BYTE_WORD*cnt_byte; j-- )
                   begin
                     pkt_data[7:0] = _rx_pkt[j];
@@ -187,17 +197,26 @@ logic [DATA_W-1:0] data_out;
 
 pkt_t tx_pkt;
 int j;
+bit sop_flag;
+bit eop_flag;
 j = 0;
+
 forever
   begin
     `cb;
     data_out = ast_if.data;
+    if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
+      begin
+        
+        this.tx_fifo_channel.put( ast_if.channel );
+        $display("channel: %0d", ast_if.channel);
+      end
     if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
       begin
         for( int i = 0; i < BYTE_WORD - ast_if.empty; i++ )
           begin
             tx_pkt.push_back(data_out[7:0]);
-            $display( "[%0d] %x", tx_pkt.size(), data_out[7:0] );
+            // $display( "[%0d] %x", tx_pkt.size(), data_out[7:0] );
             data_out     = data_out >> 8;         
           end
         j++;
@@ -208,10 +227,11 @@ forever
           begin
             tx_pkt.push_back(data_out[7:0]);
             // $display("last data_o: %x", data_out);
-            $display( "[%0d] %x", tx_pkt.size(), data_out[7:0] );
+            // $display( "[%0d] %x", tx_pkt.size(), data_out[7:0] );
             data_out   = data_out >> 8;
           end
         this.tx_fifo.put( tx_pkt );
+        $display("tx_fifo size: %0d",tx_fifo.num() );
         tx_pkt = {};
         j = 0;
       end
