@@ -213,7 +213,7 @@ initial
     rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
 
     fork
-      ast_send_pkt.send_pkt( pkt_send , rx_channel, 3 );
+      ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
       ast_receive_pkt.receive_pkt();
       assert_ready();
     join_any
@@ -243,7 +243,7 @@ initial
 
     $display("TEST CASE 2: Number of bytes = [WORD_OUT*k + N] = 32*4 + 4 = 132");
 
-    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 1 );
 
     ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     if( tx_channel != rx_channel )
@@ -270,7 +270,7 @@ initial
 
     $display("TEST CASE 3: Number of bytes = [WORD_IN] = 8");
 
-    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 1 );
 
     ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     if( tx_channel != rx_channel )
@@ -297,7 +297,7 @@ initial
     set_assert_range( 1,3,1,3 );
     $display("TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 13");
 
-    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 1 );
 
     ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     if( tx_channel != rx_channel )
