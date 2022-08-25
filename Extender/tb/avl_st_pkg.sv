@@ -3,8 +3,8 @@ package avl_st_pkg;
 typedef logic [7:0] pkt_t [$];
 
 class ast_class #(
-  parameter DATA_W    = 32,
-  parameter CHANNEL_W = 10,
+  parameter DATA_W       = 32,
+  parameter CHANNEL_W    = 10,
   parameter EMPTY_OUT_W  = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1
 );
 
