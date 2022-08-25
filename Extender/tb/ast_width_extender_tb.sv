@@ -90,38 +90,6 @@ ast_class # (
 
 typedef logic [DATA_OUT_W_TB-1:0] pkt_receive_t [$];
 
-// mailbox #( pkt_t ) pkt_send    = new();
-// mailbox #( pkt_t ) pkt_receive = new();
-// mailbox #( pkt_t ) copy_send_byte         = new();
-// mailbox #( pkt_receive_t ) receive_pkt    = new();
-// mailbox #( pkt_receive_t ) send_word_out  = new();
-
-
-task gen_pkt( mailbox #( pkt_t ) _send_byte,
-              mailbox #( pkt_t ) _copy_send_byte,
-              input int _min_byte,
-                    int _max_byte
-           );
-
-pkt_t       new_pkt;
-logic [7:0] new_data;
-int         random_byte;
-int         word_number;
-
-for( int i = 0; i < MAX_PKT; i++ )
-  begin
-    random_byte = $urandom_range( _min_byte,_max_byte );
-    for( int j = 0; j < random_byte; j++ )
-      begin
-        new_data = $urandom_range( 2**8,0 );
-        new_pkt.push_back( new_data );
-      end
-    _send_byte.put( new_pkt );
-    _copy_send_byte.put( new_pkt );
-    new_pkt = {};
-  end
-
-endtask
 
 task assert_ready_1clk();
 
@@ -148,10 +116,10 @@ forever
   begin
     random_assert   = $urandom_range( min_assert, max_assert );
     random_deassert = $urandom_range( min_deassert, max_deassert );
-      repeat( random_assert )
-        assert_ready_1clk();
-      repeat( random_deassert )
-        deassert_ready_1clk();
+    repeat( random_assert )
+      assert_ready_1clk();
+    repeat( random_deassert )
+      deassert_ready_1clk();
   end
 endtask
 
@@ -164,135 +132,6 @@ max_assert   = _max_assert;
 min_deassert = _min_deassert;
 max_deassert = _max_deassert;
 
-endtask
-
-
-task output_word( mailbox #( pkt_t ) _send_byte,
-                  mailbox #( pkt_receive_t ) _send_word_out
-               );
-
-pkt_receive_t              new_pkt_receive;
-logic [DATA_OUT_W_TB-1:0]  new_output_data;
-
-pkt_t                      new_pkt;
-int                        last_byte_index;
-int                        pkt_size;
-int                        word_number;
-logic [EMPTY_OUT_W_TB-1:0] empty_byte;
-logic [EMPTY_OUT_W_TB-1:0] byte_in_last_word;
-
-while( _send_byte.num() != 0 )
-  begin
-    _send_byte.get( new_pkt );
-    pkt_size    = new_pkt.size();
-    word_number = (( pkt_size % WORD_OUT ) == 0 )? pkt_size/WORD_OUT : pkt_size/WORD_OUT +1 ;
-    
-    byte_in_last_word = pkt_size - ( pkt_size/WORD_OUT )*WORD_OUT;
-    empty_byte        = (( pkt_size % WORD_OUT ) == 0 ) ? 0 : (  WORD_OUT- byte_in_last_word );
-
-    //0 -->last word-1
-    for( int j = 0; j < word_number-1; j++ )
-      begin
-        new_output_data = (DATA_OUT_W_TB)'(0);
-
-        for( k = WORD_OUT*j+WORD_OUT-1; k >= WORD_OUT*j; k-- )
-          begin
-            new_output_data[7:0] = new_pkt[k];
-            if( k != WORD_OUT*j )
-              new_output_data = new_output_data << 8;
-          end  
-        new_pkt_receive.insert( j, new_output_data );
-      end
-
-      //last word
-      new_output_data = (DATA_OUT_W_TB)'(0);
-      for( k = pkt_size-1; k >= (word_number-1)*WORD_OUT; k-- )
-        begin
-          new_output_data[7:0] = new_pkt[k];
-          if( k != (word_number-1)*WORD_OUT )
-            new_output_data = new_output_data << 8;
-        end
-      new_pkt_receive.insert( word_number-1, new_output_data );
-  k = 0;
-  _send_word_out.put( new_pkt_receive );
-  new_pkt_receive = {};
-  end
-
-endtask
-
-// task test_data( mailbox #( pkt_receive_t ) _receive_pkt,
-//                 mailbox #( pkt_receive_t ) _send_word_out
-//                  );
-
-// pkt_receive_t new_pkt_receive;
-// pkt_receive_t new_test_pkt_receive;
-
-// int pkt_size;
-
-// int mbox_size;
-
-// bit data_error;
-
-// if( _receive_pkt.num() != _send_word_out.num() )
-//   $display("Number of packet mismatch, send: %0d, receive: %0d", _send_word_out.num(), _receive_pkt.num() );
-// else
-//   begin
-//     $display("--------Test 'data_o' signal-----------");
-//     mbox_size = _receive_pkt.num();
-//     pkt_size = _receive_pkt.num();
-//     while( _receive_pkt.num() != 0 )
-//       begin
-//         _receive_pkt.get( new_pkt_receive );
-//         _send_word_out.get( new_test_pkt_receive );
-//         $display("###PACKET [%0d]", mbox_size-_receive_pkt.num());
-//         if( new_pkt_receive.size() != new_test_pkt_receive.size() )
-//           $display("Packet [%0d]'s size mismatch: send: %0d, receive: %0d", pkt_size -_receive_pkt.num(), new_test_pkt_receive.size(), new_pkt_receive.size());
-//         else
-//           begin
-//             for( int i = 0; i < new_pkt_receive.size(); i++ )
-//               begin
-//                 if( new_pkt_receive[i] != new_test_pkt_receive[i] )
-//                   begin
-//                     $display("data_o [%0d][%0d] mismatch: receive: %0x, correct: %x", pkt_size -_receive_pkt.num(), i, new_pkt_receive[i], new_test_pkt_receive[i] );
-//                     data_error = 1'b1;
-//                   end
-//               end
-//           end
-//         if( !data_error )
-//           $display("No error with data in PACKET [%0d]",mbox_size-_receive_pkt.num() );
-//         data_error = 1'b0;
-//       end
-//   end 
-// endtask
-
-task test_channel();
-
-forever
-  begin
-    @( posedge clk_i_tb );
-    if( ast_src_if.valid == 1'b1 &&  ast_src_if.sop == 1'b1 )
-      begin
-        if( ast_src_if.channel != ast_snk_if.channel )
-          $display("Channel error, send: %0d, receive: %0d", ast_snk_if.channel, ast_src_if.channel );
-      end
-  end
-
-endtask
-
-task test_empty();
-
-logic [EMPTY_OUT_W_TB-1:0] empty_out;
-
-forever
-  begin
-    @( posedge clk_i_tb );
-    if( ast_src_if.valid == 1'b1 &&  ast_src_if.eop == 1'b1 )
-      begin
-        empty_out = WORD_OUT - ( byte_send % WORD_OUT );
-        if( empty_out != ast_src_if.empty )
-          $display("Empty error, correct: %0d, receive: %0d", empty_out, ast_src_if.empty);
-      end
-  end
 endtask
 
 task test_data( pkt_t _pkt_send,
@@ -337,24 +176,24 @@ endtask
 
 function automatic pkt_t gen_1_pkt ( int pkt_size );
 
-pkt_t new_pkt;
+pkt_t       new_pkt;
 logic [7:0] gen_random_byte;
 
 for( int i = 0; i < pkt_size; i++ )
   begin
     gen_random_byte = $urandom_range( 2**8,0 );
     new_pkt[i] = gen_random_byte;
-    // $display("Byte %0d: %x", i,gen_random_byte );
   end
 
 return new_pkt;
 
 endfunction
 
-pkt_t pkt_send;
-pkt_t pkt_receive;
+pkt_t                    pkt_send;
+pkt_t                    pkt_receive;
 logic [CHANNEL_W_TB-1:0] tx_channel;
 logic [CHANNEL_W_TB-1:0] rx_channel;
+
 initial
   begin
     
@@ -367,11 +206,12 @@ initial
     ast_send_pkt    = new( ast_snk_if );
     ast_receive_pkt = new( ast_src_if );
     set_assert_range( 2*(WORD_OUT*4)/8+5,2*(WORD_OUT*4)/8+5,0,0 );
-    // set_assert_range( 1,3,1,3 );
+
     $display("TEST CASE 1: Number of bytes = [WORD_OUT*k] = 32 * 4 = 128");
-    // byte_send = WORD_OUT*4;
+
     pkt_send   = gen_1_pkt( 128 );
-    rx_channel = 2; 
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+
     fork
       ast_send_pkt.send_pkt( pkt_send , rx_channel, 3 );
       ast_receive_pkt.receive_pkt();
@@ -393,14 +233,14 @@ initial
       $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
     
     $display("\n");
- 
+
     // // // // **********************TEST CASE 2*************************
-    // reset();
-    // byte_send = 132;
+    reset();
     pkt_send   = gen_1_pkt( 132 );
-    rx_channel = 4;
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+
     set_assert_range( 2*(132)/8+5,2*(132)/8+5,0,0 );
-    // set_assert_range( 1,3,1,3 );
+
     $display("TEST CASE 2: Number of bytes = [WORD_OUT*k + N] = 32*4 + 4 = 132");
 
     ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
@@ -420,41 +260,41 @@ initial
       $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
 
     $display("\n");
-    
+
     // // // // **********************TEST CASE 3*************************
-    // reset();
-    // byte_send = 132;
-    // pkt_send   = gen_1_pkt( WORD_IN );
-    // rx_channel = 6; 
-    // set_assert_range( 2*(WORD_IN)/8+5,2*(WORD_IN)/8+5,0,0 );
-    // // set_assert_range( 1,3,1,3 );
-    // $display("TEST CASE 3: Number of bytes = [WORD_IN] = 8");
-
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-
-    // ast_receive_pkt.tx_fifo_channel.get( tx_channel );
-    // if( tx_channel != rx_channel )
-    //   $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
-    // else
-    //   $display("Channel correct!!!");
-
-    // if( ast_receive_pkt.tx_fifo.num() != 0 )
-    //   begin
-    //     ast_receive_pkt.tx_fifo.get( pkt_receive );
-    //     test_data( pkt_send, pkt_receive );
-    //   end
-    // else
-    //   $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
-
-    // $display("\n");
+    reset();
+    pkt_send   = gen_1_pkt( WORD_IN );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
     
+    set_assert_range( 2*(WORD_IN)/8+5,2*(WORD_IN)/8+5,0,0 );
+
+    $display("TEST CASE 3: Number of bytes = [WORD_IN] = 8");
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+
+    ast_receive_pkt.tx_fifo_channel.get( tx_channel );
+    if( tx_channel != rx_channel )
+      $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
+    else
+      $display("Channel correct!!!");
+
+    if( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt_receive );
+        test_data( pkt_send, pkt_receive );
+      end
+    else
+      $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
+    
+    $display("\n");
+  
     // // // // **********************TEST CASE 4*************************
-    // reset();
-    // byte_send = 132;
+    reset();
+
     pkt_send   = gen_1_pkt( WORD_IN*1+5 );
-    rx_channel = 8; 
-    set_assert_range( 2*(WORD_IN*1+5)/8+5,2*(WORD_IN*1+5)/8+5,0,0 );
-    // set_assert_range( 1,3,1,3 );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+
+    set_assert_range( 1,3,1,3 );
     $display("TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 13");
 
     ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
@@ -474,121 +314,177 @@ initial
       $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
 
     $display("\n");
-
-    // send_byte      = new();
-    // copy_send_byte = new();
-
-    // send_word_out  = new();
-    // reset();
-    // byte_send = WORD_IN*1+5;
-    // gen_pkt( send_byte, copy_send_byte, WORD_IN*1+5, WORD_IN*1+5 );
-    // ast_send_pkt    = new( ast_snk_if, send_byte );
-    // ast_receive_pkt = new( ast_src_if, send_byte ); 
-    // set_assert_range( 2*(WORD_IN*1+5)/8+5,2*(WORD_IN*1+5)/8+5,0,0 );
-    // $display("TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 14");
-
-    // ast_send_pkt.send_pkt(3);
-
-    // output_word( copy_send_byte, send_word_out );
-    // test_data( receive_pkt, send_word_out );
-    // $display("\n");
-    
+  
     // // // // **********************TEST CASE 5*************************
-    // send_byte      = new();
-    // copy_send_byte = new();
+    reset();
+    pkt_send   = gen_1_pkt( WORD_OUT*1 );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    set_assert_range( 2*(WORD_OUT*1)/8+5,2*(WORD_OUT*1)/8+5,0,0 );
 
-    // send_word_out  = new();
-    // reset();
-    // byte_send = WORD_OUT*1;
-    // gen_pkt( send_byte, copy_send_byte, WORD_OUT*1, WORD_OUT*1 );
-    // ast_send_pkt    = new( ast_snk_if, send_byte );
-    // ast_receive_pkt = new( ast_src_if, send_byte ); 
-    // set_assert_range( 2*(WORD_OUT*1)/8+5,2*(WORD_OUT*1)/8+5,0,0 );
-    // $display("TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32");
+    $display("TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32");
 
-    // ast_send_pkt.send_pkt(3);
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
 
-    // output_word( copy_send_byte, send_word_out );
-    // test_data( receive_pkt, send_word_out );
-    // $display("\n");
-    
+    ast_receive_pkt.tx_fifo_channel.get( tx_channel );
+    if( tx_channel != rx_channel )
+      $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
+    else
+      $display("Channel correct!!!");
+
+    if( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt_receive );
+        test_data( pkt_send, pkt_receive );
+      end
+    else
+      $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
+
+    $display("\n");
+
+  
     // // // // **********************TEST CASE 6*************************
-    // send_byte      = new();
-    // copy_send_byte = new();
+    reset();
 
-    // send_word_out  = new();
-    // reset();
-    // byte_send = WORD_IN - 6;
-    // gen_pkt( send_byte, copy_send_byte,  WORD_IN - 6,  WORD_IN - 6 );
-    // ast_send_pkt    = new( ast_snk_if, send_byte );
-    // ast_receive_pkt = new( ast_src_if, send_byte ); 
-    // set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
-    // $display("TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2");
-
-    // ast_send_pkt.send_pkt(3);
-
-    // output_word( copy_send_byte, send_word_out );
-    // test_data( receive_pkt, send_word_out );
-    // $display("\n");
+    pkt_send   = gen_1_pkt( WORD_IN - 6 );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
     
+    set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
+
+    $display("TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2");
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+
+    ast_receive_pkt.tx_fifo_channel.get( tx_channel );
+    if( tx_channel != rx_channel )
+      $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
+    else
+      $display("Channel correct!!!");
+
+    if( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt_receive );
+        test_data( pkt_send, pkt_receive );
+      end
+    else
+      $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
+    
+    $display("\n");
+
     // // // // **********************TEST CASE 7*************************
-    // send_byte      = new();
-    // copy_send_byte = new();
+    reset();
+    pkt_send   = gen_1_pkt( WORD_IN*3 );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
 
-    // send_word_out  = new();
-    // reset();
-    // byte_send = WORD_IN*3;
-    // gen_pkt( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
-    // ast_send_pkt    = new( ast_snk_if, send_byte );
-    // ast_receive_pkt = new( ast_src_if, send_byte ); 
-    // set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
-    // $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3 ");
+    $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3");
 
-    // ast_send_pkt.send_pkt(3);
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
 
-    // output_word( copy_send_byte, send_word_out );
-    // test_data( receive_pkt, send_word_out );
-    // $display("\n");
-    
+    ast_receive_pkt.tx_fifo_channel.get( tx_channel );
+    if( tx_channel != rx_channel )
+      $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
+    else
+      $display("Channel correct!!!");
+
+    if( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt_receive );
+        test_data( pkt_send, pkt_receive );
+      end
+    else
+      $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
+
+    $display("\n");   
+
     // // // // **********************TEST CASE 8*************************
-    // send_byte      = new();
-    // copy_send_byte = new();
+    reset();
+    pkt_send   = gen_1_pkt( 1 );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    set_assert_range( 4,4,0,0 );
 
-    // send_word_out  = new();
-    // reset();
-    // byte_send = WORD_IN*3;
-    // gen_pkt( send_byte, copy_send_byte, WORD_IN*3, WORD_IN*3 );
-    // ast_send_pkt    = new( ast_snk_if, send_byte );
-    // ast_receive_pkt = new( ast_src_if, send_byte ); 
-    // set_assert_range( 1,3,1,3 );
-    // $display("TEST CASE 8 : Random ready ( only 1 word output )");
+    $display("TEST CASE 8: Number of bytes = 1 ");
 
-    // ast_send_pkt.send_pkt(3);
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
 
-    // output_word( copy_send_byte, send_word_out );
-    // test_data( receive_pkt, send_word_out );
-    // $display("\n");
-    
-    
+    ast_receive_pkt.tx_fifo_channel.get( tx_channel );
+    if( tx_channel != rx_channel )
+      $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
+    else
+      $display("Channel correct!!!");
+
+    if( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt_receive );
+        test_data( pkt_send, pkt_receive );
+      end
+    else
+      $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
+
+    $display("\n");  
+
     // // // // **********************TEST CASE 9*************************
-    // send_byte      = new();
-    // copy_send_byte = new();
-
-    // send_word_out  = new();
-    // reset();
-    // byte_send = WORD_OUT*3+2;
-    // gen_pkt( send_byte, copy_send_byte, WORD_OUT*3+2, WORD_OUT*3 +2);
-    // ast_send_pkt    = new( ast_snk_if, send_byte );
-    // ast_receive_pkt = new( ast_src_if, send_byte ); 
-    // set_assert_range( 1,3,1,3 );
-    // $display("TEST CASE 9 : Random ready ( many words ouput )");
-
-    // ast_send_pkt.send_pkt(3);
-
-    // output_word( copy_send_byte, send_word_out );
-    // test_data( receive_pkt, send_word_out );
-    // $display("\n");
+    reset();
+    pkt_send   = gen_1_pkt( WORD_IN*3 );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
     
+    set_assert_range( 1,3,1,3 );
+
+    $display("TEST CASE 9 : Send multiple packets ( random ready, only 1 word output )");
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+
+    ast_receive_pkt.tx_fifo_channel.get( tx_channel );
+    if( tx_channel != rx_channel )
+      $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
+    else
+      $display("Channel correct!!!");
+
+    if( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt_receive );
+        test_data( pkt_send, pkt_receive );
+      end
+    else
+      $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
+
+    $display("\n");
+  
+    // // // // **********************TEST CASE 10*************************
+    reset();
+    pkt_send   = gen_1_pkt( WORD_OUT*3+2 );
+    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+
+    set_assert_range( 1,3,1,3 );
+
+    $display("TEST CASE 10 : Send multiple packets ( random ready, 4 words output )");
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+
+    ast_receive_pkt.tx_fifo_channel.get( tx_channel );
+    if( tx_channel != rx_channel )
+      $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
+    else
+      $display("Channel correct!!!");
+
+    if( ast_receive_pkt.tx_fifo.num() != 0 )
+      begin
+        ast_receive_pkt.tx_fifo.get( pkt_receive );
+        test_data( pkt_send, pkt_receive );
+      end
+    else
+      $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
+
+    $display("\n");
+
+  
     $display("Test done!!");
     $stop();
 
