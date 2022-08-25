@@ -210,7 +210,7 @@ initial
     $display("TEST CASE 1: Number of bytes = [WORD_OUT*k] = 32 * 4 = 128");
 
     pkt_send   = gen_1_pkt( 128 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
 
     fork
       ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
@@ -235,9 +235,10 @@ initial
     $display("\n");
 
     // // // // **********************TEST CASE 2*************************
+    // // // // Use reset to make it easier to see when a new packet is sent
     reset();
     pkt_send   = gen_1_pkt( 132 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
 
     set_assert_range( 2*(132)/8+5,2*(132)/8+5,0,0 );
 
@@ -264,7 +265,7 @@ initial
     // // // // **********************TEST CASE 3*************************
     reset();
     pkt_send   = gen_1_pkt( WORD_IN );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     
     set_assert_range( 2*(WORD_IN)/8+5,2*(WORD_IN)/8+5,0,0 );
 
@@ -292,7 +293,7 @@ initial
     reset();
 
     pkt_send   = gen_1_pkt( WORD_IN*1+5 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
 
     set_assert_range( 1,3,1,3 );
     $display("TEST CASE 4: Number of bytes = [WORD_IN*k + N (k <8)] = 8*1 + 5 = 13");
@@ -318,7 +319,7 @@ initial
     // // // // **********************TEST CASE 5*************************
     reset();
     pkt_send   = gen_1_pkt( WORD_OUT*1 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     set_assert_range( 2*(WORD_OUT*1)/8+5,2*(WORD_OUT*1)/8+5,0,0 );
 
     $display("TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32");
@@ -346,7 +347,7 @@ initial
     reset();
 
     pkt_send   = gen_1_pkt( WORD_IN - 6 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     
     set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
 
@@ -373,7 +374,7 @@ initial
     // // // // **********************TEST CASE 7*************************
     reset();
     pkt_send   = gen_1_pkt( WORD_IN*3 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
 
     $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3");
@@ -399,7 +400,7 @@ initial
     // // // // **********************TEST CASE 8*************************
     reset();
     pkt_send   = gen_1_pkt( 1 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     set_assert_range( 4,4,0,0 );
 
     $display("TEST CASE 8: Number of bytes = 1 ");
@@ -425,7 +426,7 @@ initial
     // // // // **********************TEST CASE 9*************************
     reset();
     pkt_send   = gen_1_pkt( WORD_IN*3 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     
     set_assert_range( 1,3,1,3 );
 
@@ -456,7 +457,7 @@ initial
     // // // // **********************TEST CASE 10*************************
     reset();
     pkt_send   = gen_1_pkt( WORD_OUT*3+2 );
-    rx_channel = $urandom_range(2**CHANNEL_W_TB,0);
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
 
     set_assert_range( 1,3,1,3 );
 

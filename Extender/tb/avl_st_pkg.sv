@@ -35,7 +35,7 @@ endfunction
 
 `define cb @( posedge ast_if.clk );
 
-task send_pkt( input pkt_t                _rx_pkt,
+task send_pkt( input pkt_t                 _rx_pkt,
                      logic [CHANNEL_W-1:0] _channel_rx,
                      int                   _delay_between_pkt
               );
@@ -49,14 +49,15 @@ int byte_last_word;
 int number_of_word;
 int int_part, mod_part;
 
-// bit assert_valid;
 int cnt_word;
 
 logic deassert_valid;
 
 logic assert_valid;
+
 this.rx_fifo.put( _rx_pkt );
 this.rx_fifo_channel.put( _channel_rx );
+
 while( ast_if.ready != 1'b1 )
   `cb;  
 
@@ -77,7 +78,6 @@ pkt_data       = (DATA_W)'(0);
 
 if( number_of_word == 1 )
   begin
-    // pkt_data        = (DATA_W)'(0);
     assert_valid    = 1'b1;
     ast_if.valid   <= assert_valid;
     ast_if.sop     <= 1'b1;
@@ -106,60 +106,27 @@ else
         pkt_data       = (DATA_W)'(0);
         if( cnt_word == 0 )
           begin
-            // pkt_data        = (DATA_W)'(0);
             assert_valid    = 1'b1;
             ast_if.sop     <= 1'b1;
             ast_if.eop     <= 1'b0;
             ast_if.empty   <= 0;
             ast_if.valid   <= assert_valid;
             ast_if.channel <= _channel_rx;
-            // for( int j = (BYTE_WORD*cnt_word + BYTE_WORD) -1; j >= BYTE_WORD*cnt_word; j-- )
-            //   begin
-            //     pkt_data[7:0] = _rx_pkt[j];
-            //     if( j != BYTE_WORD*cnt_word )
-            //       pkt_data = pkt_data << 8;
-            //   end
-            // cnt_word++;
           end
         else if( ( cnt_word != 0 ) &&  ( cnt_word != number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
           begin
-            // pkt_data      = (DATA_W)'(0);
             assert_valid  = $urandom_range(1,0);
             ast_if.sop   <= 1'b0;
             ast_if.eop   <= 1'b0;
             ast_if.valid <= assert_valid;
-
-            // if( assert_valid == 1'b1 )
-            //   begin
-            //     for( int j = (BYTE_WORD*cnt_word + BYTE_WORD) -1; j >= BYTE_WORD*cnt_word; j-- )
-            //       begin
-            //         pkt_data[7:0] = _rx_pkt[j];
-            //         if( j != BYTE_WORD*cnt_word )
-            //           pkt_data = pkt_data << 8;
-            //       end
-            //   end
-            // cnt_word = cnt_word + assert_valid;
           end
         else if( ( cnt_word == number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
           begin
-            // byte_last_word = ( mod_part != 0 ) ? mod_part : BYTE_WORD;
             assert_valid   = 1'b1;
-            // pkt_data       = (DATA_W)'(0);
             ast_if.eop    <= 1'b1;
             ast_if.sop    <= 1'b0;
             ast_if.valid  <= assert_valid;
             ast_if.empty  <= BYTE_WORD - byte_last_word;
-
-
-            // for( int j = (BYTE_WORD*cnt_word + BYTE_WORD) -1; j >= BYTE_WORD*cnt_word; j-- )
-            //   begin
-            //     pkt_data[7:0] = _rx_pkt[j];
-            //     if( j != BYTE_WORD*cnt_word )
-            //       pkt_data = pkt_data << 8;
-            //   end
-            // for( int k = DATA_W-1; k >= byte_last_word*8; k--)
-            //   pkt_data[k] = 1'b0;
-            // cnt_word++;
           end
 
         if( assert_valid == 1'b1 )
@@ -239,34 +206,6 @@ forever
           end
       end
 
-///////////////////////////////////////////////////////////////
-    // if( ast_if.valid == 1'b1 && ast_if.sop == 1'b1 )
-    //   begin
-    //     tx_pkt  = {};
-    //     j       = 0;
-    //     this.tx_fifo_channel.put( ast_if.channel );
-    //   end
-
-    // if( ast_if.valid == 1'b1 && ast_if.eop != 1'b1 )
-    //   begin
-    //     for( int i = 0; i < BYTE_WORD - ast_if.empty; i++ )
-    //       begin
-    //         tx_pkt.push_back(data_out[7:0]);
-    //         data_out     = data_out >> 8;
-    //       end
-    //     j++;
-    //   end
-    // else if( ast_if.valid == 1'b1 && ast_if.eop == 1'b1 )
-    //   begin
-    //     for( int i = 0; i < BYTE_WORD - ast_if.empty; i++ )
-    //       begin
-    //         tx_pkt.push_back(data_out[7:0]);
-    //         data_out   = data_out >> 8;
-    //       end
-    //     this.tx_fifo.put( tx_pkt );
-    //     tx_pkt = {};
-    //     j = 0;
-    //   end
   end
 
 endtask
