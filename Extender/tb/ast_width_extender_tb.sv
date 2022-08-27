@@ -545,7 +545,6 @@ initial
     ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
     check_tx_channel();
     check_data_received();
-
     // ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     // if( tx_channel != rx_channel )
     //   $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
