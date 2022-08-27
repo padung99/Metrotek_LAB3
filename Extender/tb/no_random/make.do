@@ -1,10 +1,10 @@
 vlib work
 
 set source_file {
-  "../rtl/ast_width_extender.sv"
-  "avalon_st.sv"
-  "avl_st_pkg.sv"
-  "ast_width_extender_tb.sv"
+  "../../rtl/ast_width_extender.sv"
+  "../avalon_st.sv"
+  "../avl_st_pkg.sv"
+  "ast_width_extender_NO_random_tb.sv"
 }
 
 
