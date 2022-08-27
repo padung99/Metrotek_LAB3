@@ -334,25 +334,6 @@ initial
         $display("\n");
       end
 
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n"); 
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
     // // // // ********************Test case 2********************
     reset();
     $display("TEST 2: [dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
@@ -483,27 +464,6 @@ initial
         $display("\n");
       end
 
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-
     // // // // ********************Test case 11********************
     reset();
     $display("TEST 11: [RANDOM dir_i -- 5 packet ( 1 bytes/packet ) -- ready = 1]");
@@ -522,26 +482,6 @@ initial
         $display("\n");
       end
 
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n"); 
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 1 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
     // // // // ********************Test case 12********************
     reset();
     $display("TEST 12: 100 packets sended without interruption ( valid == 1 ) and ( ready == 1 )");
@@ -558,29 +498,6 @@ initial
         test_dir_tx_pkt();
         $display("\n");
       end
-
-    // set_assert_range( 100,100,0,0 );
-    // dir_setting( 1,100 );
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
-
-    // ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    // test_dir_tx_pkt();
-    // $display("\n");
 
     $display("Test done!!!");
     $stop();

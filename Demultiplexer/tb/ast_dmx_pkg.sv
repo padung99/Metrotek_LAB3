@@ -42,7 +42,7 @@ endfunction
 task send_pkt( input pkt_t                 _rx_pkt,
                      logic [CHANNEL_W-1:0] _channel_rx,
                      int                   _delay_between_pkt,
-                     bit _always_valid
+                     bit                   _always_valid
               );
 
 logic [DATA_W-1:0] pkt_data;
@@ -78,9 +78,6 @@ if( mod_part == 0 )
   number_of_word = int_part;
 else
   number_of_word = int_part + 1;
-
-// byte_last_word = ( mod_part != 0 ) ? mod_part : BYTE_WORD;
-
 
 
 if( number_of_word == 1 )
