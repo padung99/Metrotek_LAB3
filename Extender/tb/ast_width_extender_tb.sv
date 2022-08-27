@@ -363,7 +363,7 @@ initial
 
     $display("TEST CASE 5: Number of bytes = [WORD_OUT*k] = 32*1 = 32");
 
-    ast_send_pkt.send_pkt( pkt_send, rx_chann el, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
 
     check_tx_channel();
     check_data_received();
@@ -386,16 +386,19 @@ initial
 
   
     // // // // // **********************TEST CASE 6*************************
-    // reset();
+    reset();
 
-    // pkt_send   = gen_1_pkt( WORD_IN - 6 );
-    // rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
+    pkt_send   = gen_1_pkt( WORD_IN - 6 );
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     
-    // set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
+    set_assert_range( 2*(WORD_IN - 6)/8+5,2*(WORD_IN - 6)/8+5,0,0 );
 
-    // $display("TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2");
+    $display("TEST CASE 6: Number of bytes = [WORD_IN - k (0 < k < 8)] = 8 - 6 = 2");
 
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+
+    check_tx_channel();
+    check_data_received();
 
     // ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     // if( tx_channel != rx_channel )
@@ -411,17 +414,20 @@ initial
     // else
     //   $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
     
-    // $display("\n");
+    $display("\n");
 
     // // // // // **********************TEST CASE 7*************************
-    // reset();
-    // pkt_send   = gen_1_pkt( WORD_IN*3 );
-    // rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
-    // set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
+    reset();
+    pkt_send   = gen_1_pkt( WORD_IN*3 );
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
+    set_assert_range( 2*(WORD_IN*3)/8+5,2*(WORD_IN*3)/8+5,0,0 );
 
-    // $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3");
+    $display("TEST CASE 7: Number of bytes = [WORD_IN*k(k > 1)] = 8*3");
 
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+
+    check_tx_channel();
+    check_data_received();
 
     // ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     // if( tx_channel != rx_channel )
@@ -437,18 +443,20 @@ initial
     // else
     //   $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
 
-    // $display("\n");   
+    $display("\n");   
 
     // // // // // **********************TEST CASE 8*************************
-    // reset();
-    // pkt_send   = gen_1_pkt( 1 );
-    // rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
-    // set_assert_range( 4,4,0,0 );
+    reset();
+    pkt_send   = gen_1_pkt( 1 );
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
+    set_assert_range( 4,4,0,0 );
 
-    // $display("TEST CASE 8: Number of bytes = 1 ");
+    $display("TEST CASE 8: Number of bytes = 1 ");
 
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
 
+    check_tx_channel();
+    check_data_received();
     // ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     // if( tx_channel != rx_channel )
     //   $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
@@ -463,23 +471,36 @@ initial
     // else
     //   $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
 
-    // $display("\n");  
+    $display("\n");  
 
     // // // // // **********************TEST CASE 9*************************
-    // reset();
-    // pkt_send   = gen_1_pkt( WORD_IN*3 );
-    // rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
+    reset();
+    pkt_send   = gen_1_pkt( WORD_IN*3 );
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
     
-    // set_assert_range( 1,3,1,3 );
+    set_assert_range( 1,3,1,3 );
 
-    // $display("TEST CASE 9 : Send multiple packets ( random ready, only 1 word output )");
+    $display("TEST CASE 9 : Send multiple packets ( random ready, only 1 word output )");
 
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
 
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
     // ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     // if( tx_channel != rx_channel )
     //   $display("Channel error, send: channel %0d, received: channel %0d",rx_channel, tx_channel );
@@ -494,22 +515,36 @@ initial
     // else
     //   $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
 
-    // $display("\n");
+    $display("\n");
   
     // // // // // **********************TEST CASE 10*************************
-    // reset();
-    // pkt_send   = gen_1_pkt( WORD_OUT*3+2 );
-    // rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
+    reset();
+    pkt_send   = gen_1_pkt( WORD_OUT*3+2 );
+    rx_channel = $urandom_range( 2**CHANNEL_W_TB,0 );
 
-    // set_assert_range( 1,3,1,3 );
+    set_assert_range( 1,3,1,3 );
 
-    // $display("TEST CASE 10 : Send multiple packets ( random ready, 4 words output )");
+    $display("TEST CASE 10 : Send multiple packets ( random ready, 4 words output )");
 
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
-    // ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
+
+    ast_send_pkt.send_pkt( pkt_send, rx_channel, 3 );
+    check_tx_channel();
+    check_data_received();
 
     // ast_receive_pkt.tx_fifo_channel.get( tx_channel );
     // if( tx_channel != rx_channel )
@@ -525,7 +560,7 @@ initial
     // else
     //   $display("Sended: %0d bytes, No data received!!!", pkt_send.size());
 
-    // $display("\n");
+    $display("\n");
 
   
     $display("Test done!!");
