@@ -110,159 +110,6 @@ typedef logic [DATA_WIDTH_TB-1:0] pkt_word_t [$];
 mailbox #( pkt_t )      fifo_pkt_byte = new();
 mailbox #( pkt_word_t ) fifo_pkt_word = new();
 
-// task gen_pkt( mailbox #( pkt_t )      _fifo_pkt_byte,
-//               mailbox #( pkt_word_t ) _fifo_pkt_word,
-//               input int _min_byte,
-//                     int _max_byte
-//            );
-
-// pkt_t       new_pkt;
-// logic [7:0] new_data;
-// int         random_byte;
-// int         word_number;
-
-// logic [DATA_WIDTH_TB-1:0] word_data[$];
-
-// int int_part;
-// int mod_part;
-// int word_byte;
-
-// int byte_last_word;
-
-// logic [DATA_WIDTH_TB-1:0] tmp_data;
-
-// for( int i = 0; i < MAX_PKT; i++ )
-//   begin
-//     random_byte = $urandom_range( _min_byte,_max_byte );
-
-//     int_part  = random_byte / 8;
-//     mod_part  = random_byte % 8;
-//     word_byte = ( mod_part == 0 ) ? int_part : int_part + 1;
-
-//     for( int j = 0; j < (word_byte-1)*8; j++ )
-//       begin
-//         new_data   = $urandom_range( 2**8,0 );
-//         new_pkt[j] = new_data;
-//       end
-//     word_data = {<<8{new_pkt}}; //packing byte to word
-//     for( int j = (word_byte-1)*8; j < random_byte; j++ )
-//       begin
-//         new_data   = $urandom_range( 2**8,0 );
-//         new_pkt[j] = new_data;
-//       end
-
-//     for( int j = random_byte -1; j >= WORD_IN*(word_byte-1); j-- )
-//       begin
-//         word_data[word_byte-1][7:0] = new_pkt[j];
-        
-//         if( j != WORD_IN*(word_byte-1) )
-//           word_data[word_byte-1] = word_data[word_byte-1] << 8;
-//       end
-//       byte_last_word = random_byte - WORD_IN*(word_byte-1);
-//     for( int k = DATA_WIDTH_TB-1; k >= byte_last_word*8; k--)
-//       word_data[word_byte-1][k] = 1'b0;
-
-//     if(  word_byte > 2 )
-//       for( int i = 0; i <= ( word_byte-2 )>>1; i++ )
-//         begin
-//           tmp_data                 = word_data[i];
-//           word_data[i]             = word_data[word_byte-2-i];
-//           word_data[word_byte-2-i] = tmp_data;
-//         end
-
-//     _fifo_pkt_word.put( word_data );
-//     _fifo_pkt_byte.put( new_pkt );
-//     word_data  = {};
-//     new_pkt    = {};
-//   end
-
-// endtask
-
-// task compare_output();
-
-// pkt_word_t new_pkt_word;
-// logic [DATA_WIDTH_TB-1:0] new_word;
-// int j;
-
-// int mb_size;
-// int pkt_size;
-
-// int size_mb;
-// mb_size = fifo_pkt_word.num();
-// forever
-//   begin
-//     @( posedge clk_i_tb );
-//     while( fifo_pkt_word.num() != 0 )
-//       begin
-//         size_mb = fifo_pkt_word.num();
-//         $display("*****PACKET %0d*****", mb_size - fifo_pkt_word.num() );
-//         fifo_pkt_word.get( new_pkt_word );
-//         pkt_size = new_pkt_word.size();
-//         $display("pkt_size: %0d words", pkt_size);
-//         j = 0;
-//         while( j < pkt_size )
-//           begin
-            
-//             if( ast_snk_if.sop == 1'b1 && ast_snk_if.valid == 1'b1 )
-//               dir_tmp = dir_i_tb;
-
-//             for( int i = 0; i < TX_DIR_TB; i++ )
-//               begin
-//                 if( i == dir_tmp )
-//                   begin
-//                     if( ast_valid_o_tb[i] == 1'b1 )
-//                       begin
-//                         new_word = new_pkt_word[j];
-//                         if( new_word == ast_data_o_tb[i] )
-//                           $display("dir %0d / word %0d -- No error ", i, j );
-//                         else
-//                           $display("dir %0d / word %0d -- error ###send: %x, receive: %x", i, j, new_word, ast_data_o_tb[i] );
-//                         j++;
-//                       end
-//                   end
-//                 else
-//                   begin
-//                     if( ast_valid_o_tb[i] == 1'b1 )
-//                       begin
-//                         $display("Channel error: Data should be sended via channel %0d, not channel %0d ", dir_tmp, i);
-//                         j++;
-//                       end
-//                   end
-//               end
-//             @( posedge clk_i_tb );
-//           end
-//         $display("\n");
-//       end
-//   end
-
-// endtask
-
-// task test_channel();
-
-// forever
-//   begin
-//     @( posedge clk_i_tb );
-//     if( ast_valid_o_tb[dir_tmp] == 1'b1 &&  ast_startofpacket_o_tb[dir_tmp] == 1'b1 )
-//       begin
-//         if( ast_channel_o_tb[dir_tmp] != ast_snk_if.channel )
-//           $display("Channel error, send: %0d, receive: %0d", ast_snk_if.channel, ast_channel_o_tb[dir_tmp] );
-//       end
-//   end
-
-// endtask
-
-// task test_empty();
-
-// forever
-//   begin
-//     @( posedge clk_i_tb );
-//     if( ast_valid_o_tb[dir_tmp] == 1'b1 &&  ast_endofpacket_o_tb[dir_tmp] == 1'b1 )
-//       begin
-//         if( ast_empty_o_tb[dir_tmp] != ast_snk_if.empty )
-//           $display("Empty error, correct: %0d, receive: %0d", ast_empty_o_tb[dir_tmp], ast_snk_if.empty);
-//       end
-//   end
-// endtask
 
 generate
   for( i = 0; i < TX_DIR_TB; i++ )
@@ -408,33 +255,36 @@ else
 
 endtask
 
-task test_dir_tx_pkt( pkt_t _pkt_send,
-                      pkt_t _pkt_receive
-                    );
+task test_dir_tx_pkt();
 
 for( int i = 0; i < TX_DIR_TB; i++ )
   begin
-    if( i != dir_tmp && ( ast_receive_pkt[i].tx_fifo.num() != 0 ) )
-      $display( "data should not be sended via channel %0d", i );
-    else if( i == dir_tmp )
+    if( ast_receive_pkt[i].tx_fifo.num() != 0 )
       begin
-        if( ast_receive_pkt[dir_tmp].tx_fifo.num() == 0 )
-          $display("Data error: send: %0d, receive: %0d", _pkt_send.size(),  _pkt_receive.size());
-        else
+        if( i == dir_tmp )
           begin
-            while( ast_receive_pkt[dir_tmp].tx_fifo.num() != 0 )
+            while( ast_receive_pkt[i].tx_fifo.num() != 0 )
               begin
-                ast_receive_pkt[dir_tmp].tx_fifo.get( _pkt_receive );
-                test_data( _pkt_send, _pkt_receive );
+                ast_receive_pkt[i].tx_fifo.get( pkt_receive );
+                $display( "------tx dir: %0d------", i );
+                test_data( pkt_send, pkt_receive );
               end
           end
+        else
+          $display( "data should be sended via dir  %0d, not dir %0d", dir_tmp, i );   
+      end
+    else
+      begin
+        if( i == dir_tmp )
+          $display( "------tx dir: %0d------ \nNo packet received", i );
       end
   end
+// $display("\n");
 
 endtask
 
-pkt_t                    pkt_send;
-pkt_t                    pkt_receive;
+pkt_t                        pkt_send;
+pkt_t                        pkt_receive;
 logic [CHANNEL_WIDTH_TB-1:0] tx_channel;
 logic [CHANNEL_WIDTH_TB-1:0] rx_channel;
 
@@ -456,7 +306,6 @@ initial
     ast_receive_pkt[2] = new( ast_src_if[2] );
     ast_receive_pkt[3] = new( ast_src_if[3] );
 
-    set_assert_range( 1,3,1,3 );
     pkt_send   = gen_1_pkt( 70 );
     rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
 
@@ -474,201 +323,197 @@ initial
       tx_dir();
     join_any
 
-    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
-    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
-    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
-    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
-    $display("packet dir 0 size: %0d", ast_receive_pkt[0].tx_fifo.num());
-    $display("packet dir 1 size: %0d", ast_receive_pkt[1].tx_fifo.num());
-    $display("packet dir 2 size: %0d", ast_receive_pkt[2].tx_fifo.num());
-    $display("packet dir 3 size: %0d", ast_receive_pkt[3].tx_fifo.num());
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
-    // for( int i = 0; i < TX_DIR_TB; i++ )
-    //   begin
-    //     if( i != dir_tmp && ( ast_receive_pkt[i].tx_fifo.num() != 0 ) )
-    //       $display( "data should not be sended via channel %0d", i );
-    //     else if( i == dir_tmp )
-    //       begin
-    //         if( ast_receive_pkt[dir_tmp].tx_fifo.num() == 0 )
-    //           $display("Data error: send: %0d, receive: %0d", pkt_send.size(),  pkt_receive.size());
-    //         else
-    //           begin
-    //             while( ast_receive_pkt[dir_tmp].tx_fifo.num() != 0 )
-    //               begin
-    //                 ast_receive_pkt[dir_tmp].tx_fifo.get( pkt_receive );
-    //                 test_data( pkt_send, pkt_receive );
-    //               end
-    //           end
-    //       end
-    //   end
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
-    // while( ast_receive_pkt[dir_tmp].tx_fifo.num() != 0 )
-    //   begin
-    //     ast_receive_pkt[dir_tmp].tx_fifo.get( pkt_receive );
-    //     test_data( pkt_send, pkt_receive );
-    //     // for( int i = 0; i < pkt_receive.size(); i++ )
-    //     //   $display( "[%0d] receive: %x", i, pkt_receive[i] );
-    //   end
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
-    // ast_send_pkt    = new( ast_snk_if );
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
-    // fork
-    //   ast_send_pkt.send_pkt( 3 );
-    //   assert_ready();
-    //   gen_dir();
-    //   compare_output();
-    //   test_channel();
-    //   test_empty();
-    // join_any
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n"); 
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
     // // // // ********************Test case 2********************
-    // dir_setting( 0,3 );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    // dir_tmp = 3;
-    
-    // $display("TEST 2: [dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 2: [dir_i = 3 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
 
-    // ast_send_pkt.send_pkt( 3 );
+    pkt_send   = gen_1_pkt( 70 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
+
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 0,3 );
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
     // // // // ********************Test case 3********************
-    // dir_tmp = 2;
-    // dir_setting( 0,2 );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    
-    // $display("TEST 3: [dir_i = 2 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 3: [dir_i = 2 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
 
-    // ast_send_pkt.send_pkt( 3 );
+    pkt_send   = gen_1_pkt( 70 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
+
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 0,2 );
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
     // // // // ********************Test case 4********************
-    // dir_tmp = 1;
-    // dir_setting( 0, 1 );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    
-    // $display("TEST 4: [dir_i = 1 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 4: [dir_i = 1 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
 
-    // ast_send_pkt.send_pkt( 3 );
+    pkt_send   = gen_1_pkt( 70 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
+
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 0,1 );
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt(); 
+    $display("\n");
 
     // // // // ********************Test case 5********************
-    // dir_tmp = 0;
-    // dir_setting( 0, 0 );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    
-    // $display("TEST 5: [dir_i = 0 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 5: [dir_i = 0 -- 5 packet ( 70 bytes/packet ) -- random 'ready']");
 
-    // ast_send_pkt.send_pkt( 3 );
+    pkt_send   = gen_1_pkt( 70 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
+
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 0,0 );
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();  
+    $display("\n");
+
 
     // // // // ********************Test case 6********************
-    // dir_tmp = 3;
-    // dir_setting( 0, 3 );
-    // set_assert_range( 1,3,1,3 );
-    
-    // reset();
-    
-    // $display("TEST 6: Test data: Number of byte = 8k \n[dir_i = 3 -- 5 packet ( 64 bytes/packet ) -- random 'ready']");
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 64, 64 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 6: Test data: Number of byte = 8k \n[dir_i = 3 -- 5 packet ( 64 bytes/packet ) -- random 'ready']");
+    set_assert_range( 1,3,1,3 ); 
+    pkt_send   = gen_1_pkt( 64 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
 
-    // ast_send_pkt.send_pkt( 3 );
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 0,3 );
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();  
+    $display("\n");
 
     // // // // ********************Test case 7********************
-    // dir_setting( 1,100  );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    // dir_tmp = 0;
-    // $display("TEST 7: Test data: Number of bytes < 8 bytes \n[random dir_i -- 5 packet ( 6 bytes/packet ) -- random 'ready']");
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 6, 6 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 7: Test data: Number of bytes < 8 bytes \n[random dir_i -- 5 packet ( 6 bytes/packet ) -- random 'ready']");
+    pkt_send   = gen_1_pkt( 6 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
 
-    // ast_send_pkt.send_pkt( 3 );
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 1,100 );
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();  
+    $display("\n");
+
 
     // // // // ********************Test case 8********************
-    // dir_setting( 1, 100 );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    // dir_tmp = 0;
-    // $display("TEST 8: Test data: number of byte = 8 bytes \n[random dir_i -- 5 packet ( 8 bytes/packet ) -- random 'ready']");
-    // // // This test is used to test corner case
-    // // // when number of bytes in packet = 1 word (8 bytes)
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 8, 8 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 8: Test data: number of byte = 8 bytes \n[random dir_i -- 5 packet ( 8 bytes/packet ) -- random 'ready']");
+    pkt_send   = gen_1_pkt( 8 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
 
-    // ast_send_pkt.send_pkt( 3 );
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 1,100 );
 
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();  
+    $display("\n");
+ 
     // // // // ********************Test case 9********************
-    // dir_setting( 1, 100 );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    // dir_tmp = 0;
-    // $display("TEST 9: Test data: number of byte = 9 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
-    // // // This test is used to test corner case
-    // // // when number of bytes in packet = 9 bytes (2 words) = 1 word + 1 byte 
-    // fifo_pkt_byte = new();
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 9, 9 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    reset();
+    $display("TEST 9: Test data: number of byte = 9 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
+    pkt_send   = gen_1_pkt( 9 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
 
-    // ast_send_pkt.send_pkt( 3 );
+    set_assert_range( 1,3,1,3 );
+    dir_setting( 1,100 );
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();  
+    $display("\n");
+
 
     // // // // ********************Test case 10********************
-    // fifo_pkt_byte = new();
-    // fifo_pkt_word = new();
+    reset();
+    $display("TEST 10: [RANDOM dir_i -- 5 packet ( 70 bytes/packet ) -- ready = 1]");
+    pkt_send   = gen_1_pkt( 70 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
 
-    // dir_setting( 1, 100 );
-    // set_assert_range( 150,150,0,0 );
-    // reset();
-    // dir_tmp = 0;  
-    // $display("TEST 10: [RANDOM dir_i -- 5 packet ( 70 bytes/packet ) -- ready = 1]");
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 70, 70 );
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    set_assert_range( 100,100,0,0 );
+    dir_setting( 1,100 );
 
-    // ast_send_pkt.send_pkt( 3 );
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
-    // ast_send_pkt.send_pkt( 3 );
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
+
 
     // // // // ********************Test case 11********************
-    // dir_setting( 1, 100 );
-    // set_assert_range( 1,3,1,3 );
-    // reset();
-    // dir_tmp = 0;
-    // $display("TEST 11: Test data: number of byte = 1 bytes \n[random dir_i -- 5 packet ( 9 bytes/packet ) -- random 'ready']");
-    // // // This test is used to test corner case
-    // // // when number of bytes in packet = 1 bytes ( 1 word only )
-    // fifo_pkt_byte = new();
+    reset();
+    $display("TEST 11: [RANDOM dir_i -- 5 packet ( 1 bytes/packet ) -- ready = 1]");
+    pkt_send   = gen_1_pkt( 1 );
+    rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
 
-    // gen_pkt ( fifo_pkt_byte, fifo_pkt_word, 1, 1 );
-    
-    // ast_send_pkt = new( ast_snk_if, fifo_pkt_byte );
+    set_assert_range( 100,100,0,0 );
+    dir_setting( 1,100 );
 
-    // ast_send_pkt.send_pkt( 3 );
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
 
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
+
+    ast_send_pkt.send_pkt( pkt_send , rx_channel, 1 );
+    test_dir_tx_pkt();
+    $display("\n");
+
+    $display("Test done!!!");
     $stop();
 
 

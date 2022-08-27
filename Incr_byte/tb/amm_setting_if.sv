@@ -1,4 +1,4 @@
-interface amm_setting_if @(
+interface amm_setting_if #(
   parameter ADDR_WIDTH = 10
 )
 
