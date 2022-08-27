@@ -9,7 +9,7 @@ Test case 2: //
 
 Test case 3: //
 [dir_i = 2 -- 5 packet ( 70 bytes/packet ) -- random "ready"]
-- channel_o: 1915 ps, Здесь startofpacket но channel_o неопределен, должно быть равен 0 ( Потому, что channel_i = 0 )
+- channel_o: 1915 ps, Здесь startofpacket но channel_o неопределен, должно быть равен 0 ( Потому, что ast_channel_i = 0 )
 
 Test case 4: //
 [dir_i = 1 -- 5 packet ( 70 bytes/packet ) -- random "ready"]
