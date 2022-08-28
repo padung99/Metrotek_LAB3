@@ -12,59 +12,60 @@ virtual avalon_mm_if #(
   .DATA_WIDTH ( DATA_W )
 ) amm_if;
 
-virtual amm_setting_if #(
-  .ADDR_WIDTH ( ADDR_W )
-) setting_if;
+// virtual amm_setting_if #(
+//   .ADDR_WIDTH ( ADDR_W )
+// ) setting_if;
 
 logic  [ADDR_W-1:0] base_addr;
 logic  [ADDR_W-1:0] length;
 // bit                 run;
+logic               waitrequest;
 
 function new( virtual avalon_mm_if #(
                                     .ADDR_WIDTH ( ADDR_W ),
                                     .DATA_WIDTH ( DATA_W )
-                                    ) _amm_if,
-              
-              virtual amm_setting_if #(
-                                    .ADDR_WIDTH ( ADDR_W )
-                                  ) _setting_if
+                                    ) _amm_if
             );
 
-this.amm_if     = _amm_if;
-this.setting_if = _setting_if;
-this.base_addr  = 'X;
-this.length     = 'X;
+this.amm_if      = _amm_if;
+// this.setting_if = _setting_if;
+this.base_addr   = 'X;
+this.length      = 'X;
+this.waitrequest = 'X;
 // this.run        = 1'b0;
 
 endfunction
 
 `define cb @( posedge amm_if.clk );
 
-task setting( input _base_addr,
-                    _length
-            );
-// if( setting_if.waitrequest == 1'b0 )
-  begin
-    this.base_addr        = _base_addr;
-    this.length           = _length;
-    // this.run              = 1'b1;
-    setting_if.base_addr <= _base_addr;
-    setting_if.length    <= _length;
-    setting_if.run       <= 1'b1;
-  end
+// task setting( input _base_addr,
+//                     _length
+//             );
+// forever
+//   begin
+//   // if( setting_if.waitrequest == 1'b0 )
+//     begin
+//       this.base_addr        = _base_addr;
+//       this.length           = _length;
+//       // this.run              = 1'b1;
+//       setting_if.base_addr <= _base_addr;
+//       setting_if.length    <= _length;
+//       setting_if.run       <= 1'b1;
+//     end
 
-`cb;
+//   `cb;
 
-if( setting_if.run == 1'b1 )
-  begin
-    setting_if.run       <= 1'b0;
-    setting_if.base_addr <= '0;
-    setting_if.length    <= '0;
-  end
+//   if( setting_if.run == 1'b1 )
+//     begin
+//       setting_if.run       <= 1'b0;
+//       setting_if.base_addr <= '0;
+//       setting_if.length    <= '0;
+//     end
+//   end
 
-endtask
+// endtask
 
-task read( );
+task read();
 
 logic wait_rq;
 int cnt_length;
@@ -75,7 +76,9 @@ bit begin_read_data;
 
 while( cnt_data < this.length )
   begin
-    if( setting_if.waitrequest == 1'b1 )
+    $display("length: %0d", this.length);
+    $display("cnt_data: %0d", cnt_data);
+    if( this.waitrequest == 1'b1 )
       begin
         if( amm_if.address == this.length + this.base_addr )
           amm_if.waitrequest <= 1'b0;
@@ -84,7 +87,7 @@ while( cnt_data < this.length )
             wait_rq             = $urandom_range( 1,0 );
             amm_if.waitrequest <= wait_rq;
           end
-        if( amm_if.address == this.length + this.base_addr  && ( amm_if.read == 1'b0 ) && ( amm_if.waitrequest == 1'b0 ) )
+        if( amm_if.address == this.length + this.base_addr  && ( amm_if.read == 1'b0 ) && ( wait_rq == 1'b0 ) )
           begin_read_data = 1'b1;
 
         if( begin_read_data == 1'b1 )
