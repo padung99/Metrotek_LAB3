@@ -16,20 +16,20 @@ logic                  write;
 logic [DATA_WIDTH-1:0] writedata;
 logic [BYTE_CNT-1:0]   byteenable;
 
-modport read ( 
+modport rd ( 
   input  readdata,
          readdatavalid,
          waitrequest,
   output address,
          read
-)
+);
 
-modport write (
+modport wr (
   input  waitrequest,
   output address,
          write,
          writedata,
          byteenable
-)
+);
 
 endinterface

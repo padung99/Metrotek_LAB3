@@ -40,7 +40,7 @@ logic [DIR_SEL_WIDTH_TB-1:0] dir_tmp;
 
 initial
   forever
-    #5 clk_i_tb = !clk_i_tb;
+    #5 clk_i_tb = !clk_i_tb; 
 
 default clocking cb
   @( posedge clk_i_tb );
@@ -311,7 +311,7 @@ initial
 
     set_assert_range( 1,3,1,3 );
     dir_setting( 1,100 );
-
+    $display("###Packet 0 ");
     fork
       ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
       ast_receive_pkt[0].receive_pkt();
@@ -324,8 +324,9 @@ initial
     join_any
 
     test_dir_tx_pkt();
+    $display("\n");
 
-    for( int i = 0; i < 4; i++ )
+    for( int i = 1; i <= 4; i++ )
       begin
         rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
         ast_send_pkt.send_pkt( pkt_send, rx_channel, 1, 0 );
