@@ -1,4 +1,3 @@
-// import ast_dmx_pkg::*;
 import avl_st_pkg::*;
 
 module ast_dmx_tb;

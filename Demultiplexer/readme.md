@@ -1,0 +1,2 @@
+- This TB uses the same avalon class and avalon_st interface with Extender_tb.sv. 
+- Please check Extender/tb/avl_st_pkg.sv and Extender/tb/avalon_st_if.sv for more detail 
