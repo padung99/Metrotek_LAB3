@@ -35,16 +35,18 @@ default clocking cb
   @( posedge clk_i_tb );
 endclocking
 
-avalon_st #(
-  .DATA_W ( DATA_IN_W_TB ),
-  .CHANNEL_W ( CHANNEL_W_TB )
+avalon_st_if #(
+  .DATA_W    ( DATA_IN_W_TB  ),
+  .CHANNEL_W ( CHANNEL_W_TB  ),
+  .EMPTY_W   ( EMPTY_IN_W_TB )
 ) ast_snk_if (
   .clk( clk_i_tb )
 );
 
-avalon_st #(
-  .DATA_W    ( DATA_OUT_W_TB ),
-  .CHANNEL_W ( CHANNEL_W_TB )
+avalon_st_if #(
+  .DATA_W    ( DATA_OUT_W_TB  ),
+  .CHANNEL_W ( CHANNEL_W_TB   ),
+  .EMPTY_W   ( EMPTY_OUT_W_TB )
 ) ast_src_if (
   .clk( clk_i_tb )
 );
@@ -77,16 +79,16 @@ ast_width_extender #(
 );
 
 //Declare object
-ast_class # (
-  .DATA_W      ( DATA_IN_W_TB   ),
-  .CHANNEL_W   ( CHANNEL_W_TB   ),
-  .EMPTY_OUT_W ( EMPTY_OUT_W_TB )
+ast_control # (
+  .DATA_W    ( DATA_IN_W_TB   ),
+  .CHANNEL_W ( CHANNEL_W_TB   ),
+  .EMPTY_W   ( EMPTY_IN_W_TB  )
 ) ast_send_pkt;
 
-ast_class # (
-  .DATA_W      ( DATA_OUT_W_TB  ),
-  .CHANNEL_W   ( CHANNEL_W_TB   ),
-  .EMPTY_OUT_W ( EMPTY_OUT_W_TB )
+ast_control # (
+  .DATA_W    ( DATA_OUT_W_TB  ),
+  .CHANNEL_W ( CHANNEL_W_TB   ),
+  .EMPTY_W   ( EMPTY_OUT_W_TB )
 ) ast_receive_pkt;
 
 typedef logic [DATA_OUT_W_TB-1:0] pkt_receive_t [$];
