@@ -2,17 +2,18 @@ package avl_st_pkg;
 
 typedef logic [7:0] pkt_t [$];
 
-class ast_class #(
-  parameter DATA_W       = 32,
-  parameter CHANNEL_W    = 10,
-  parameter EMPTY_OUT_W  = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1
+class ast_control #(
+  parameter DATA_W    = 32,
+  parameter CHANNEL_W = 10,
+  parameter EMPTY_W   = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1
 );
 
 localparam BYTE_WORD = DATA_W/8;
 
-virtual avalon_st #(
+virtual avalon_st_if #(
   .DATA_W    ( DATA_W    ),
-  .CHANNEL_W ( CHANNEL_W )
+  .CHANNEL_W ( CHANNEL_W ),
+  .EMPTY_W   ( EMPTY_W   )
 ) ast_if;
 
 
@@ -22,8 +23,9 @@ mailbox #( logic [CHANNEL_W-1:0] ) tx_fifo_channel;
 mailbox #( logic [CHANNEL_W-1:0] ) rx_fifo_channel;
 
 
-function new ( virtual avalon_st #( .DATA_W    ( DATA_W    ),
-                                    .CHANNEL_W ( CHANNEL_W )
+function new ( virtual avalon_st_if #( .DATA_W    ( DATA_W    ),
+                                    .CHANNEL_W ( CHANNEL_W ),
+                                    .EMPTY_W   ( EMPTY_W   )
                                   ) _ast_if       
              );
 this.ast_if          = _ast_if;

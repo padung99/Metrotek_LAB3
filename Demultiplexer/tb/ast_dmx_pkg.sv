@@ -11,9 +11,9 @@ class ast_dmx_c #(
 localparam BYTE_WORD = DATA_W/8;
 
 virtual avalon_st_if #(
-  .DATA_WIDTH    ( DATA_W    ),
-  .CHANNEL_WIDTH ( CHANNEL_W ),
-  .EMPTY_WIDTH   ( EMPTY_W   )
+  .DATA_W    ( DATA_W    ),
+  .CHANNEL_W ( CHANNEL_W ),
+  .EMPTY_W   ( EMPTY_W   )
 ) ast_if;
 
 
@@ -24,13 +24,13 @@ mailbox #( logic [CHANNEL_W-1:0] ) rx_fifo_channel;
 
 function new(
     virtual avalon_st_if #(
-                              .DATA_WIDTH    ( DATA_W    ),
-                              .CHANNEL_WIDTH ( CHANNEL_W ),
-                              .EMPTY_WIDTH   ( EMPTY_W   )
+                              .DATA_W    ( DATA_W    ),
+                              .CHANNEL_W ( CHANNEL_W ),
+                              .EMPTY_W   ( EMPTY_W   )
                               ) _ast_if
 );
 
-this.ast_if  = _ast_if;
+this.ast_if          = _ast_if;
 this.tx_fifo         = new(); 
 this.rx_fifo         = new();
 this.tx_fifo_channel = new();

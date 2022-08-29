@@ -2,8 +2,8 @@ vlib work
 
 set source_file {
   "../rtl/ast_dmx.sv"
-  "avalon_st_if.sv"
-  "ast_dmx_pkg.sv"
+  "../../Extender/tb/avalon_st_if.sv"
+  "../../Extender/tb/avl_st_pkg.sv"
   "ast_dmx_tb.sv"
 }
 

@@ -1,4 +1,5 @@
-import ast_dmx_pkg::*;
+// import ast_dmx_pkg::*;
+import avl_st_pkg::*;
 
 module ast_dmx_tb;
 
@@ -47,29 +48,29 @@ default clocking cb
 endclocking
 
 avalon_st_if #(
-  .DATA_WIDTH    ( DATA_WIDTH_TB    ),
-  .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
-  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   )
+  .DATA_W    ( DATA_WIDTH_TB    ),
+  .CHANNEL_W ( CHANNEL_WIDTH_TB ),
+  .EMPTY_W   ( EMPTY_WIDTH_TB   )
 ) ast_snk_if (
   .clk ( clk_i_tb )
 );
 
 avalon_st_if #(
-  .DATA_WIDTH    ( DATA_WIDTH_TB    ),
-  .CHANNEL_WIDTH ( CHANNEL_WIDTH_TB ),
-  .EMPTY_WIDTH   ( EMPTY_WIDTH_TB   )
+  .DATA_W    ( DATA_WIDTH_TB    ),
+  .CHANNEL_W ( CHANNEL_WIDTH_TB ),
+  .EMPTY_W   ( EMPTY_WIDTH_TB   )
 ) ast_src_if [TX_DIR_TB-1:0] (
   .clk ( clk_i_tb )
 );
 
 
-ast_dmx_c #(
+ast_control #(
   .DATA_W     ( DATA_WIDTH_TB    ),
   .CHANNEL_W  ( CHANNEL_WIDTH_TB ),
   .EMPTY_W    ( EMPTY_WIDTH_TB   )
 ) ast_send_pkt;
 
-ast_dmx_c #(
+ast_control #(
   .DATA_W    ( DATA_WIDTH_TB    ),
   .CHANNEL_W ( CHANNEL_WIDTH_TB ),
   .EMPTY_W   ( EMPTY_WIDTH_TB   )

@@ -1,4 +1,4 @@
-interface avalon_st #( 
+interface avalon_st_if #( 
   parameter DATA_W         = 32,
   parameter CHANNEL_W      = 10,
   parameter EMPTY_W        = $clog2(DATA_W/8) ?  $clog2(DATA_W/8) : 1
