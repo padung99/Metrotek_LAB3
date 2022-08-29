@@ -2,7 +2,7 @@ import amm_pkg::*;
 
 module byte_incr_tb;
 
-parameter int DATA_WIDTH_TB = 64;
+parameter int DATA_WIDTH_TB = 32; /////
 parameter int ADDR_WIDTH_TB = 10;
 parameter int BYTE_CNT_TB   = DATA_WIDTH_TB/8;
 
@@ -31,7 +31,7 @@ avalon_mm_if #(
 ) amm_read_if (
   .clk ( clk_i_tb )
 ) ;
-
+ 
 avalon_mm_if #( 
   .ADDR_WIDTH( ADDR_WIDTH_TB ),
   .DATA_WIDTH( DATA_WIDTH_TB )
@@ -59,7 +59,7 @@ byte_inc #(
 
   .base_addr_i ( base_addr_i_tb ),
   .length_i ( length_i_tb ),
-  .run_i ( run_i_tb ),
+  .run_i ( run_i_tb ), 
   .waitrequest_o ( waitrequest_o_tb ),
 
   .amm_rd_address_o ( amm_read_if.address ),
@@ -80,6 +80,8 @@ task setting();
 
 forever
   begin
+    if( waitrequest_o_tb == 1'b1 )
+      break;
     if( waitrequest_o_tb != 1'b1 )
       begin
         base_addr_i_tb <= base_addr;
@@ -92,6 +94,9 @@ forever
         run_i_tb       <= 1'b0;
         base_addr_i_tb <= 1'b0;
         length_i_tb    <= 1'b0;
+        // repeat(10)
+        //   @( posedge clk_i_tb );
+        // break;
       end
     @( posedge clk_i_tb );
 
@@ -102,23 +107,87 @@ endtask
 initial
   begin
     srst_i_tb <= 1'b1;
-    amm_read_if.readdata <= 1'b0; ///
+    amm_read_if.readdata <= '0; ///
     amm_read_if.readdatavalid <= 1'b0; //
     amm_read_if.waitrequest <= 1'b0; ///
     @( posedge clk_i_tb );
     srst_i_tb <= 1'b0;
     amm_write_if.waitrequest <= 1'b0;
        
-    amm_read_data = new( amm_read_if );
+    // amm_read_data = new( amm_read_if );
 
     base_addr = 10'h10;
-    length    = 10'd6;
+    length    = 10'd15;
 
-    amm_read_data.waitrequest = waitrequest_o_tb;
-    amm_read_data.base_addr = base_addr;
-    amm_read_data.length    = length;
+    // amm_read_data.waitrequest = waitrequest_o_tb;
+    // amm_read_data.base_addr = base_addr;
+    // amm_read_data.length    = length;
+    setting();
+    // @( posedge clk_i_tb );
+    
+    // amm_read_if.waitrequest <= 1'b1;
+    // @( posedge clk_i_tb );
+    // amm_read_if.waitrequest <= 1'b0;
 
-      setting();
+    // repeat(5)
+    //   @( posedge clk_i_tb )
+    // while( waitrequest_o_tb != 1'b0 )
+    //   @( posedge clk_i_tb );
+    // ##6;
+    // @( posedge clk_i_tb );
+    amm_read_if.readdatavalid <= 1'b1;
+    amm_read_if.readdata <= 32'hd0;
+
+    // @( posedge clk_i_tb );
+    // amm_read_if.readdatavalid <= 1'b0;
+    // // amm_read_if.readdata <= 64'd0;
+
+    // @( posedge clk_i_tb );
+    @( posedge clk_i_tb );
+    amm_read_if.readdatavalid <= 1'b1;
+    amm_read_if.readdata <= 32'hd1;
+ 
+    // @( posedge clk_i_tb );
+    // amm_read_if.readdatavalid <= 1'b0;
+    // // amm_read_if.readdata <= 64'd0;
+
+    // @( posedge clk_i_tb );
+    @( posedge clk_i_tb );
+    amm_read_if.readdatavalid <= 1'b1;
+    amm_read_if.readdata <= 32'hd2;
+
+    // @( posedge clk_i_tb );
+    // amm_read_if.readdatavalid <= 1'b0;
+    // // amm_read_if.readdata <= 64'd0;
+
+    // @( posedge clk_i_tb );
+    @( posedge clk_i_tb );
+    amm_read_if.readdatavalid <= 1'b1;
+    amm_read_if.readdata <= 32'hd3;
+
+    // @( posedge clk_i_tb );
+    // amm_read_if.readdatavalid <= 1'b0;
+    // // amm_read_if.readdata <= 64'd0;
+
+    // @( posedge clk_i_tb );
+    @( posedge clk_i_tb );
+    amm_read_if.readdatavalid <= 1'b1;
+    amm_read_if.readdata <= 32'hd4;
+
+    // @( posedge clk_i_tb );
+    // amm_read_if.readdatavalid <= 1'b0;
+    // // amm_read_if.readdata <= 64'd0;
+ 
+    // @( posedge clk_i_tb );
+    @( posedge clk_i_tb );
+    amm_read_if.readdatavalid <= 1'b1;
+    amm_read_if.readdata <= 64'd45;
+
+    repeat(5)
+      @( posedge clk_i_tb );
+    // amm_read_if.readdatavalid <= 1'b0;
+    // amm_read_if.readdata <= 64'd0;
+
     //   amm_read_data.read();
 
 

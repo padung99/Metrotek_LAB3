@@ -288,12 +288,28 @@ pkt_t                        pkt_receive;
 logic [CHANNEL_WIDTH_TB-1:0] tx_channel;
 logic [CHANNEL_WIDTH_TB-1:0] rx_channel;
 
+task check_tx_channel();
+
+if( ast_receive_pkt[dir_tmp].tx_fifo_channel.num() > 0 )
+  begin
+    ast_receive_pkt[dir_tmp].tx_fifo_channel.get( tx_channel );
+    if( ( tx_channel != rx_channel ) && ( tx_channel !== 'X ) )
+      $display("dir %0d: Channel error, send: channel %0d, received: channel %0d",dir_tmp, rx_channel, tx_channel );
+    else if( tx_channel === 'X )
+      $display("dir %0d: ***tx channel unidentified***, send: channel %0d, received: channel %0d", dir_tmp, rx_channel, tx_channel);
+    else if( ( tx_channel === rx_channel ) && ( tx_channel !== 'X ) )
+      $display("dir %0d: Channel correct!!!, send: channel %0d, received: channel %0d", dir_tmp, rx_channel, tx_channel);
+  end
+else
+  $display("dir %0d: tx_channel error [send: %0d, no channel received]", dir_tmp,rx_channel );
+endtask
+
 initial
   begin
     for( int i = 0; i < TX_DIR_TB; i++ )
       ast_ready_i_tb[i] <= 1'b1;
     dir_i_tb  <= $urandom_range(TX_DIR_TB-1, 0);
-
+ 
     srst_i_tb <= 1'b1;
     @( posedge clk_i_tb )
     srst_i_tb <= 1'b0;
@@ -324,6 +340,7 @@ initial
     join_any
 
     test_dir_tx_pkt();
+    check_tx_channel();
     $display("\n");
 
     for( int i = 1; i <= 4; i++ )
@@ -332,6 +349,7 @@ initial
         ast_send_pkt.send_pkt( pkt_send, rx_channel, 1, 0 );
         $display("###Packet %0d ", i );
         test_dir_tx_pkt();
+        check_tx_channel();
         $display("\n");
       end
 
@@ -347,6 +365,7 @@ initial
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
     test_dir_tx_pkt();
+    check_tx_channel();
     $display("\n");
 
     // // // // ********************Test case 3********************
@@ -361,6 +380,7 @@ initial
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
     test_dir_tx_pkt();
+    check_tx_channel();
     $display("\n");
 
     // // // // ********************Test case 4********************
@@ -374,7 +394,8 @@ initial
     dir_setting( 0,1 );
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    test_dir_tx_pkt(); 
+    test_dir_tx_pkt();
+    check_tx_channel();
     $display("\n");
 
     // // // // ********************Test case 5********************
@@ -388,7 +409,8 @@ initial
     dir_setting( 0,0 );
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    test_dir_tx_pkt();  
+    test_dir_tx_pkt();
+    check_tx_channel(); 
     $display("\n");
 
 
@@ -403,7 +425,8 @@ initial
     dir_setting( 0,3 );
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    test_dir_tx_pkt();  
+    test_dir_tx_pkt();
+    check_tx_channel();
     $display("\n");
 
     // // // // ********************Test case 7********************
@@ -416,7 +439,8 @@ initial
     dir_setting( 1,100 );
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    test_dir_tx_pkt();  
+    test_dir_tx_pkt();
+    check_tx_channel();  
     $display("\n");
 
 
@@ -430,7 +454,8 @@ initial
     dir_setting( 1,100 );
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    test_dir_tx_pkt();  
+    test_dir_tx_pkt();
+    check_tx_channel(); 
     $display("\n");
  
     // // // // ********************Test case 9********************
@@ -443,7 +468,8 @@ initial
     dir_setting( 1,100 );
 
     ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-    test_dir_tx_pkt();  
+    test_dir_tx_pkt();
+    check_tx_channel();
     $display("\n");
 
 
@@ -462,6 +488,7 @@ initial
         ast_send_pkt.send_pkt( pkt_send, rx_channel, 1, 1 );
         $display("###Packet %0d ", i );
         test_dir_tx_pkt();
+        check_tx_channel();
         $display("\n");
       end
 
@@ -480,6 +507,7 @@ initial
         ast_send_pkt.send_pkt( pkt_send, rx_channel, 1, 1 );
         $display("###Packet %0d ", i );
         test_dir_tx_pkt();
+        check_tx_channel();
         $display("\n");
       end
 
@@ -497,6 +525,7 @@ initial
         ast_send_pkt.send_pkt( pkt_send, rx_channel, 1, 1 );
         $display("###Packet %0d ", i );
         test_dir_tx_pkt();
+        check_tx_channel();
         $display("\n");
       end
 

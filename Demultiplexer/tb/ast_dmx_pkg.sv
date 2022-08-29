@@ -199,7 +199,7 @@ forever
             this.tx_fifo_channel.put( ast_if.channel );
             flag_sop = 1'b1;
           end
-
+        // $display("rx_channel: %0d", ast_if.channel);
         for( int i = 0; i < BYTE_WORD - ast_if.empty; i++ )
           begin
             tx_pkt.push_back(data_out[7:0]);
