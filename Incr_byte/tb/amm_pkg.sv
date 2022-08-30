@@ -2,7 +2,7 @@ package amm_pkg;
 
 typedef logic [7:0] pkt_t [$];
 
-class amm_control_class #(
+class amm_control #(
   parameter DATA_W   = 64,
   parameter ADDR_W   = 10,
   parameter BYTE_CNT = DATA_W/8
@@ -14,6 +14,9 @@ virtual avalon_mm_if #(
   .ADDR_WIDTH ( ADDR_W ),
   .DATA_WIDTH ( DATA_W )
 ) amm_if;
+
+mailbox #( pkt_t ) read_data_fifo;
+mailbox #( pkt_t ) write_data_fifo;
 
 function new( virtual avalon_mm_if #(
                                     .ADDR_WIDTH ( ADDR_W ),
@@ -66,6 +69,12 @@ while( cnt_word <= pkt_size/BYTE_WORD )
       end
   end
   
+endtask
+
+task write_data();
+
+
+
 endtask
 
 endclass
