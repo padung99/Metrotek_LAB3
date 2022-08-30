@@ -46,6 +46,12 @@ amm_control #(
   .BYTE_CNT ( BYTE_CNT_TB   )
 ) amm_read_data;
 
+amm_control #(
+  .DATA_W   ( DATA_WIDTH_TB ),
+  .ADDR_W   ( ADDR_WIDTH_TB ),
+  .BYTE_CNT ( BYTE_CNT_TB   )
+) amm_write_data;
+
 byte_inc #(
   .DATA_WIDTH ( DATA_WIDTH_TB ),
   .ADDR_WIDTH ( ADDR_WIDTH_TB ),
@@ -189,20 +195,22 @@ initial
     srst_i_tb <= 1'b0;
     amm_write_if.waitrequest <= 1'b0;
 
-    amm_read_data = new( amm_read_if );
+    amm_read_data  = new( amm_read_if  );
+    amm_write_data = new( amm_write_if );
 
     gen_addr_length( 10'h10, 10'd15 );
     setting();
     fork
       assign_wr_wait_rq();
-      amm_read_data.read_data( gen_1_pkt( 16 ) );
+      amm_read_data.read_data( gen_1_pkt( 16 ), 0 );
+      amm_write_data.write_data();
     join_any
     wait_until_wr_done();
 
     reset();
     gen_addr_length( 10'h10, 10'd6 );
     setting();
-    amm_read_data.read_data( gen_1_pkt( 8 ) );
+    amm_read_data.read_data( gen_1_pkt( 8 ),0 );
     wait_until_wr_done();
 
 
