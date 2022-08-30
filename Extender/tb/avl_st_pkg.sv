@@ -60,6 +60,13 @@ logic assert_valid;
 int new_channel;
 logic packing_byte;
 
+logic valid_first_word;
+logic valid_middle_word;
+logic valid_last_word;
+
+logic first_word_not_ready;
+logic other_word_not_ready;
+
 this.rx_fifo.put( _rx_pkt );
 this.rx_fifo_channel.put( _channel_rx );
 
@@ -106,7 +113,11 @@ else
   begin
         while( cnt_word < number_of_word )
           begin
-            if( cnt_word == 0 )
+            valid_first_word  = ( cnt_word == 0 );
+            valid_middle_word = ( ( cnt_word != 0 ) &&  ( cnt_word != number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) );
+            valid_last_word   = ( ( cnt_word == number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) );
+
+            if( valid_first_word )
               begin
                 pkt_data        = (DATA_W)'(0);
                 assert_valid    = 1'b1;
@@ -116,7 +127,7 @@ else
                 ast_if.valid   <= 1'b1;
                 ast_if.channel <= _channel_rx;
               end
-            else if( ( cnt_word != 0 ) &&  ( cnt_word != number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
+            else if( valid_middle_word )
               begin
                 pkt_data      = (DATA_W)'(0);
                 assert_valid  = ( _always_valid ) ? 1 : $urandom_range(1,0);
@@ -124,7 +135,7 @@ else
                 ast_if.eop   <= 1'b0;
                 ast_if.valid <= assert_valid;
               end
-            else if( ( cnt_word == number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) )
+            else if( valid_last_word )
               begin
                 byte_last_word = ( mod_part != 0 ) ? mod_part : BYTE_WORD;
                 pkt_data       = (DATA_W)'(0);
@@ -135,9 +146,7 @@ else
                 ast_if.empty  <= BYTE_WORD - byte_last_word;
               end
 
-          packing_byte = ( cnt_word == 0 ) ||
-                         ( ( cnt_word == number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) ) ||
-                         ( ( cnt_word != 0 ) &&  ( cnt_word != number_of_word-1 ) &&  ( ast_if.ready == 1'b1 ) );
+          packing_byte = valid_first_word || valid_middle_word || valid_last_word;
           
           if( packing_byte && assert_valid == 1'b1 )
             begin
@@ -155,8 +164,10 @@ else
               cnt_word++;
             end
 
-          deassert_valid = ( ast_if.ready != 1'b1 && ( cnt_word != 1 ) ) ||
-                           ( ast_if.ready != 1'b1 && ( cnt_word == 1 ) && ( ast_if.valid == 1'b1 ) );
+          other_word_not_ready = ( ast_if.ready != 1'b1 && ( cnt_word != 1 ) );
+          first_word_not_ready = ( ast_if.ready != 1'b1 && ( cnt_word == 1 ) && ( ast_if.valid == 1'b1 ) );
+          
+          deassert_valid = first_word_not_ready || other_word_not_ready;
 
           if( deassert_valid )
             ast_if.valid <= 1'b0;

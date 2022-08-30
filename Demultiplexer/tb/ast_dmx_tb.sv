@@ -62,6 +62,11 @@ avalon_st_if #(
   .clk ( clk_i_tb )
 );
 
+virtual avalon_st_if #(
+  .DATA_W    ( DATA_WIDTH_TB    ),
+  .CHANNEL_W ( CHANNEL_WIDTH_TB ),
+  .EMPTY_W   ( EMPTY_WIDTH_TB   )
+) ast_src_vif [TX_DIR_TB-1:0];
 
 ast_control #(
   .DATA_W     ( DATA_WIDTH_TB    ),
@@ -290,7 +295,7 @@ logic [CHANNEL_WIDTH_TB-1:0] rx_channel;
 
 task check_tx_channel();
 
-if( ast_receive_pkt[dir_tmp].tx_fifo_channel.num() > 0 )
+if( ast_receive_pkt[dir_tmp].tx_fifo_channel.num() != 0 )
   begin
     ast_receive_pkt[dir_tmp].tx_fifo_channel.get( tx_channel );
     if( ( tx_channel != rx_channel ) && ( tx_channel !== 'X ) )
@@ -316,11 +321,14 @@ initial
 
     // // // ********************Test case 1********************
     $display("TEST 1: [Random 'dir_i' -- 5 packet ( 70 bytes/packet ) --  Random 'ready']");
-    ast_send_pkt       = new( ast_snk_if );
-    ast_receive_pkt[0] = new( ast_src_if[0] );
-    ast_receive_pkt[1] = new( ast_src_if[1] );
-    ast_receive_pkt[2] = new( ast_src_if[2] );
-    ast_receive_pkt[3] = new( ast_src_if[3] );
+    
+    ast_send_pkt = new( ast_snk_if );
+    
+    ast_src_vif  = ast_src_if;
+    foreach( ast_receive_pkt[i] )
+      begin
+        ast_receive_pkt[i] = new( ast_src_vif[i] );
+      end
 
     pkt_send   = gen_1_pkt( 70 );
     rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
@@ -328,22 +336,25 @@ initial
     set_assert_range( 1,3,1,3 );
     dir_setting( 1,100 );
     $display("###Packet 0 ");
+
     fork
-      ast_send_pkt.send_pkt( pkt_send , rx_channel, 1, 0 );
-      ast_receive_pkt[0].receive_pkt();
-      ast_receive_pkt[1].receive_pkt();
-      ast_receive_pkt[2].receive_pkt();
-      ast_receive_pkt[3].receive_pkt();
+      begin
+        foreach ( ast_receive_pkt[j] )
+          begin
+            automatic int k = j;
+            fork
+              ast_receive_pkt[k].receive_pkt();
+            join_none
+          end
+        wait fork;
+      end
+   
       assert_ready();
       gen_dir();
       tx_dir();
-    join_any
+    join_none
 
-    test_dir_tx_pkt();
-    check_tx_channel();
-    $display("\n");
-
-    for( int i = 1; i <= 4; i++ )
+    for( int i = 0; i < 5; i++ )
       begin
         rx_channel = $urandom_range( 2**CHANNEL_WIDTH_TB,0 );
         ast_send_pkt.send_pkt( pkt_send, rx_channel, 1, 0 );
@@ -537,3 +548,4 @@ initial
 
 
 endmodule
+
