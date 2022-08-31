@@ -122,11 +122,16 @@ task assign_wr_wait_rq();
 
 forever
   begin
-    @( posedge clk_i_tb );
-    repeat( 2 )
-      assert_wr_wait();
-    repeat( 2 )
+    if( waitrequest_o_tb == 1'b0 )
       deassert_wr_wait();
+    else
+      begin
+        repeat( 2 )
+          assert_wr_wait();
+        repeat( 2 )
+          deassert_wr_wait();
+      end
+    
   end
 
 endtask
@@ -174,10 +179,10 @@ cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
 
 $display("cnt_word: %0d", cnt_word);
 
-while( !( ( amm_write_if.address == base_addr + cnt_word -1 ) && amm_write_if.write && amm_write_if.waitrequest == 1'b0 ) )
+while( waitrequest_o_tb == 1'b1 )
   @( posedge clk_i_tb );
 
-@( posedge clk_i_tb );
+// @( posedge clk_i_tb );
 
 endtask
 
@@ -188,6 +193,7 @@ srst_i_tb <= 1'b1;
 srst_i_tb <= 1'b0;
 amm_read_if.readdatavalid <= 1'b0;
 amm_read_if.waitrequest <= 1'b0;
+
 endtask
 
 initial
@@ -203,13 +209,17 @@ initial
     amm_read_data  = new( amm_read_if  );
     amm_write_data = new( amm_write_if );
 
-    gen_addr_length( 10'h10, 10'd15 );
-    setting();
+    // gen_addr_length( 10'h10, 10'd15 );
+    // setting();
+
     fork
       assign_wr_wait_rq();
-      amm_read_data.read_data( gen_1_pkt( 4 ), 0 );
       amm_write_data.write_data();
-    join_any
+    join_none
+    
+    gen_addr_length( 10'h10, 10'd15 );
+    setting();
+    amm_read_data.read_data( gen_1_pkt( 4 ), 0 );
     wait_until_wr_done();
 
     reset();
