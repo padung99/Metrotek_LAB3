@@ -131,17 +131,22 @@ forever
 
 endtask
 
-function automatic pkt_t gen_1_pkt ( int pkt_size );
+function automatic pkt_t gen_1_pkt ( int number_of_word );
 
-pkt_t       new_pkt;
-logic [7:0] gen_random_byte;
+pkt_t                     new_pkt;
+logic [DATA_WIDTH_TB-1:0] gen_word;
 
-for( int i = 0; i < pkt_size; i++ )
+for( int i = 0; i < number_of_word; i++ )
   begin
-    gen_random_byte = $urandom_range( 2**8,0 );
-    new_pkt[i] = gen_random_byte;
+    gen_word = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
+    for( int j = 0; j < BYTE_WORD; j++  )
+      begin
+        new_pkt.push_back( gen_word[7:0] );
+        $display("rd_byte: %x", gen_word[7:0]);
+        gen_word = gen_word >> 8;
+      end
   end
-
+$display("\n");
 return new_pkt;
 
 endfunction
@@ -202,7 +207,7 @@ initial
     setting();
     fork
       assign_wr_wait_rq();
-      amm_read_data.read_data( gen_1_pkt( 16 ), 0 );
+      amm_read_data.read_data( gen_1_pkt( 4 ), 0 );
       amm_write_data.write_data();
     join_any
     wait_until_wr_done();
@@ -210,7 +215,7 @@ initial
     reset();
     gen_addr_length( 10'h10, 10'd6 );
     setting();
-    amm_read_data.read_data( gen_1_pkt( 8 ),0 );
+    amm_read_data.read_data( gen_1_pkt( 2 ),0 );
     wait_until_wr_done();
 
 

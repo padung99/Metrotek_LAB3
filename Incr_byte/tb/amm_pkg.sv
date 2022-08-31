@@ -89,7 +89,7 @@ pkt_t wr_pkt;
 forever 
   begin
     `cb;
-      if( amm_if.write == 1'b1 && amm_if.waitrequest == 1'b0 )
+      if( ( amm_if.write == 1'b1 ) && ( amm_if.waitrequest == 1'b0 ) && ( amm_if.writedata !== 'X ) )
         begin
           write_addr_fifo.put( amm_if.address );
           $display("address_wr: %x", amm_if.address );
@@ -102,6 +102,7 @@ forever
             end
           write_data_fifo.put( wr_pkt );
           $display("wr_fifo_size: %0d", write_data_fifo.num() );
+          $display("\n");
         end
   end
 
