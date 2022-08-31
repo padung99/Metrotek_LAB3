@@ -4,7 +4,6 @@ set source_file {
   "../rtl/byte_inc.sv"
   "amm_pkg.sv"
   "avalon_mm_if.sv"
-  "amm_setting_if.sv"
   "byte_incr_tb.sv"
 }
 
