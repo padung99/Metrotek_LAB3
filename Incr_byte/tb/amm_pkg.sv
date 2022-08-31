@@ -8,16 +8,18 @@ class amm_control #(
   parameter BYTE_CNT = DATA_W/8
 );
 
-parameter BYTE_WORD = DATA_W/8;
+parameter BYTE_WORD  = DATA_W/8;
 
 virtual avalon_mm_if #(
   .ADDR_WIDTH ( ADDR_W ),
   .DATA_WIDTH ( DATA_W )
 ) amm_if;
 
-mailbox #( pkt_t )              read_data_fifo;
-mailbox #( pkt_t )              write_data_fifo;
-mailbox #( logic [ADDR_W-1:0] ) write_addr_fifo;
+mailbox #( pkt_t )                  read_data_fifo;
+mailbox #( pkt_t )                  write_data_fifo;
+mailbox #( logic [ADDR_W-1:0] )     write_addr_fifo;
+
+logic [ADDR_W-1:0] length;
 
 function new( virtual avalon_mm_if #(
                                     .ADDR_WIDTH ( ADDR_W ),
@@ -29,6 +31,8 @@ this.amm_if          = _amm_if;
 this.read_data_fifo  = new();
 this.write_data_fifo = new();
 this.write_addr_fifo = new();
+this.length          = 'X;
+
 endfunction
 
 `define cb @( posedge amm_if.clk );
@@ -46,15 +50,12 @@ this.read_data_fifo.put( _read_data );
 
 while( cnt_word <= pkt_size/BYTE_WORD )
   begin
-    `cb;
     if( amm_if.read == 1'b1 )
       begin_reading = 1'b1;
-    // $display("1");
+
     if( begin_reading == 1'b1 )
-    // if( amm_if.read == 1'b1 &&  )
       begin
-        // $display("2");
-        amm_if.waitrequest   <= $urandom_range( 1,0 );
+        amm_if.waitrequest <= $urandom_range( 1,0 );
 
         if( _always_valid == 1'b1 )
           rd_data_valid = 1'b1;
@@ -71,7 +72,6 @@ while( cnt_word <= pkt_size/BYTE_WORD )
 
         if( rd_data_valid == 1'b1 )
           begin
-            // $display("3");
             for( int j = (BYTE_WORD*cnt_word + BYTE_WORD) -1; j >= BYTE_WORD*cnt_word; j-- )
               begin
                 pkt_data[7:0] = _read_data[j];
@@ -80,42 +80,51 @@ while( cnt_word <= pkt_size/BYTE_WORD )
               end
             cnt_word++;
             amm_if.readdata <= pkt_data;
-            // $display("data: %x", pkt_data );
           end
       end
+    `cb;
   end
-
-// `cb;
-
-// if( cnt_word >= pkt_size/BYTE_WORD )
-//   amm_if.readdatavalid <= 1'b0;
-
-
 
 endtask
 
-task write_data();
+task write_data(  );
 
 logic [DATA_W-1:0] new_data_wr;
 pkt_t wr_pkt;
-
+int cnt_byte;
 forever 
   begin
     `cb;
       if( ( amm_if.write == 1'b1 ) && ( amm_if.waitrequest == 1'b0 ) && ( amm_if.writedata !== 'X ) )
         begin
+          // $display("length --- task write_data(): %0d", this.length );
           write_addr_fifo.put( amm_if.address );
-          $display("address_wr: %x", amm_if.address );
+          // $display("address_wr: %x", amm_if.address );
           new_data_wr = amm_if.writedata;
           for( int i = 0; i < BYTE_WORD; i++ )
             begin
-              wr_pkt.push_back( new_data_wr[7:0] );
-              $display("wr_byte: %x", new_data_wr[7:0]);
-              new_data_wr = new_data_wr >> 8;
+              if( amm_if.byteenable[i] == 1'b1 )
+                begin
+                  wr_pkt.push_back( new_data_wr[7:0] );
+                  // $display("wr_byte: %x", new_data_wr[7:0]);
+                  new_data_wr = new_data_wr >> 8;
+                end
             end
-          write_data_fifo.put( wr_pkt );
-          $display("wr_fifo_size: %0d", write_data_fifo.num() );
-          $display("\n");
+          cnt_byte = cnt_byte + $countones( amm_if.byteenable );
+          // $display("cnt_byte: %0d", cnt_byte );
+
+
+          //Done writing
+          if( cnt_byte == this.length )
+            begin
+              write_data_fifo.put( wr_pkt );
+              cnt_byte = 0;
+              wr_pkt = {};
+            end
+          // write_data_fifo.put( wr_pkt );
+          // wr_pkt = {};
+          // $display("wr_fifo_size: %0d", write_data_fifo.num() );
+          // $display("\n");
         end
   end
 

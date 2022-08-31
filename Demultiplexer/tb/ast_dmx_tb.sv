@@ -346,7 +346,7 @@ initial
               ast_receive_pkt[k].receive_pkt();
             join_none
           end
-        wait fork;
+        // wait fork;
       end
    
       assert_ready();

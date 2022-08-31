@@ -2,7 +2,7 @@ import amm_pkg::*;
 
 module byte_incr_tb;
 
-parameter int DATA_WIDTH_TB = 32; /////
+parameter int DATA_WIDTH_TB = 64; /////
 parameter int ADDR_WIDTH_TB = 10;
 parameter int BYTE_CNT_TB   = DATA_WIDTH_TB/8;
 
@@ -83,6 +83,7 @@ task setting();
 
 forever
   begin
+    // $display("setting 1");
     if( waitrequest_o_tb == 1'b1 )
       break;
     if( waitrequest_o_tb != 1'b1 )
@@ -91,7 +92,7 @@ forever
         length_i_tb    <= length;
         run_i_tb       <= 1'b1;
       end
-
+    // $display("setting 2");
     if( run_i_tb == 1'b1 )
       begin
         run_i_tb       <= 1'b0;
@@ -140,18 +141,19 @@ function automatic pkt_t gen_1_pkt ( int number_of_word );
 
 pkt_t                     new_pkt;
 logic [DATA_WIDTH_TB-1:0] gen_word;
-
+int ind_power;
 for( int i = 0; i < number_of_word; i++ )
   begin
-    gen_word = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
+    gen_word[31:0] = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
+    gen_word[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1, 0);  
+    // $display("gen_word: %0d bit: %x ", $size(gen_word), gen_word);
     for( int j = 0; j < BYTE_WORD; j++  )
       begin
         new_pkt.push_back( gen_word[7:0] );
-        $display("rd_byte: %x", gen_word[7:0]);
+        // $display("rd_byte: %x", gen_word[7:0]);
         gen_word = gen_word >> 8;
       end
   end
-$display("\n");
 return new_pkt;
 
 endfunction
@@ -177,13 +179,63 @@ mod_part  = length % BYTE_WORD;
 
 cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
 
-$display("cnt_word: %0d", cnt_word);
+// $display("cnt_word: %0d", cnt_word);
 
 while( waitrequest_o_tb == 1'b1 )
   @( posedge clk_i_tb );
 
-// @( posedge clk_i_tb );
+endtask
 
+task test_data();
+
+pkt_t new_wr_pkt;
+pkt_t new_rd_pkt;
+
+$display("#####Testing data begin#####");
+while( amm_write_data.write_data_fifo.num() != 0 )
+  begin
+    amm_write_data.write_data_fifo.get( new_wr_pkt );
+    amm_read_data.read_data_fifo.get( new_rd_pkt );
+    for( int i = 0; i < length; i++ )
+      begin
+        if( ( new_wr_pkt[i] ) == ( new_rd_pkt[i] + 8'h1 ) )
+          $display("Word %0d - Byte %0d correct", i/8, i%8 );
+        else
+          $display("Word %0d - Byte %0d error, byte correct: %x, byte written: %x ", i/8, i%8, new_rd_pkt[i] + 8'h1, new_wr_pkt[i] );
+      end
+  end
+$display("\n");
+endtask
+
+task test_addr();
+
+logic  [ADDR_WIDTH_TB-1:0] wr_addr;
+logic  [ADDR_WIDTH_TB-1:0] max_addr;
+
+int int_part;
+int mod_part;
+logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
+
+cnt_addr = {(ADDR_WIDTH_TB){1'b0}};
+
+int_part  = length / BYTE_WORD;
+mod_part  = length % BYTE_WORD;
+
+cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
+
+max_addr = base_addr + cnt_word - 1;
+
+$display("#####Testing addr begin#####");
+while( amm_write_data.write_addr_fifo.num() != 0 )
+  begin
+    amm_write_data.write_addr_fifo.get( wr_addr );
+    if( wr_addr != base_addr + cnt_addr )
+      $display("Addr %0d error: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
+    else
+      $display("Addr %0d correct: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
+    cnt_addr++;
+  end
+$display("\n");
 endtask
 
 task reset();
@@ -216,18 +268,26 @@ initial
       assign_wr_wait_rq();
       amm_write_data.write_data();
     join_none
+    $display("----------Test case 1: 20 bytes-----------");
+    gen_addr_length( 10'h10, 10'd20 );
+    amm_write_data.length = 10'd20;
+    setting();
+    amm_read_data.read_data( gen_1_pkt( 3 ), 0 );
     
-    gen_addr_length( 10'h10, 10'd15 );
-    setting();
-    amm_read_data.read_data( gen_1_pkt( 4 ), 0 );
     wait_until_wr_done();
+    test_data();
+    test_addr();
 
-    reset();
+    reset(); 
+    $display("---------Test case 2: 6 bytes-------------");
     gen_addr_length( 10'h10, 10'd6 );
+    amm_write_data.length = 10'd6;
     setting();
-    amm_read_data.read_data( gen_1_pkt( 2 ),0 );
-    wait_until_wr_done();
+    amm_read_data.read_data( gen_1_pkt( 1 ),0 );
 
+    wait_until_wr_done();
+    test_data();
+    test_addr();
 
     $stop();
   end
