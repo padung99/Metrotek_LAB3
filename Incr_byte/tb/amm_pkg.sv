@@ -59,9 +59,15 @@ while( cnt_word <= pkt_size/BYTE_WORD )
         if( _always_valid == 1'b1 )
           rd_data_valid = 1'b1;
         else
-          rd_data_valid         = $urandom_range( 1,0 );
+          rd_data_valid = $urandom_range( 1,0 );
 
-        amm_if.readdatavalid <= rd_data_valid;
+        if( cnt_word == pkt_size/BYTE_WORD )
+          begin
+            amm_if.readdatavalid <= 1'b0;
+            break;
+          end
+        else
+          amm_if.readdatavalid <= rd_data_valid;
 
         if( rd_data_valid == 1'b1 )
           begin
@@ -78,7 +84,14 @@ while( cnt_word <= pkt_size/BYTE_WORD )
           end
       end
   end
-  
+
+// `cb;
+
+// if( cnt_word >= pkt_size/BYTE_WORD )
+//   amm_if.readdatavalid <= 1'b0;
+
+
+
 endtask
 
 task write_data();
