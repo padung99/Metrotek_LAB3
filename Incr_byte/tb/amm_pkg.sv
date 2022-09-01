@@ -46,6 +46,7 @@ logic              rd_data_valid;
 int cnt_word;
 logic [DATA_W-1:0] pkt_data;
 int pkt_size;
+logic wait_rq;
 
 pkt_size  = _read_data.size();
 this.read_data_fifo.put( _read_data );
@@ -67,6 +68,7 @@ while( cnt_word <= pkt_size/BYTE_WORD )
           rd_data_valid = 1'b1;
         else
           rd_data_valid = $urandom_range( 1,0 );
+
 
         if( cnt_word == pkt_size/BYTE_WORD )
           begin
@@ -99,9 +101,13 @@ task write_data();
 logic [DATA_W-1:0] new_data_wr;
 pkt_t wr_pkt;
 // int cnt_byte;
-forever 
+forever
   begin
     `cb;
+
+      if( this.cnt_byte == 0 )
+        wr_pkt = {};
+
       if( ( amm_if.write == 1'b1 ) && ( amm_if.waitrequest == 1'b0 ) && ( amm_if.writedata !== 'X ) )
         begin
           // $display("length --- task write_data(): %0d", this.length );
@@ -119,17 +125,18 @@ forever
             end
           this.cnt_byte = this.cnt_byte + $countones( amm_if.byteenable );
           // $display("cnt_byte: %0d", this.cnt_byte );
+          // $display("length: %0d", this.length );
 
 
           //Done writing
           if( this.cnt_byte == this.length )
             begin
               write_data_fifo.put( wr_pkt );
+              // $display("size: %0d", wr_pkt.size());
               this.cnt_byte = 0;
               wr_pkt = {};
             end
-          // write_data_fifo.put( wr_pkt );
-          // wr_pkt = {};
+
           // $display("wr_fifo_size: %0d", write_data_fifo.num() );
           // $display("\n");
         end
