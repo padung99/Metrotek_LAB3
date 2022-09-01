@@ -17,7 +17,10 @@ logic  [ADDR_WIDTH_TB-1:0] length_i_tb;
 
 logic  [ADDR_WIDTH_TB-1:0] base_addr;
 logic  [ADDR_WIDTH_TB-1:0] length;
-
+int                        cnt_waiting;
+int                        cnt_word;
+int                        int_part;
+int                        mod_part;
 initial
   forever
     #5 clk_i_tb = !clk_i_tb;
@@ -158,32 +161,33 @@ return new_pkt;
 
 endfunction
 
-int cnt_word;
+assign int_part  = length / BYTE_WORD;
+assign mod_part  = length % BYTE_WORD;
+
+assign cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
 
 task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                             logic  [ADDR_WIDTH_TB-1:0] _length
                     );
 
-base_addr = _base_addr;
-length    = _length;
-
+base_addr             = _base_addr;
+length                = _length;
+amm_write_data.length = length;
 endtask
 
 task wait_until_wr_done();
 
-int int_part;
-int mod_part;
-
-int_part  = length / BYTE_WORD;
-mod_part  = length % BYTE_WORD;
-
-cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
-
-// $display("cnt_word: %0d", cnt_word);
-
 while( waitrequest_o_tb == 1'b1 )
-  @( posedge clk_i_tb );
+  begin
+    @( posedge clk_i_tb );
+    cnt_waiting++;
+    if( cnt_waiting >= length )
+      break; 
+  end
 
+
+if( cnt_waiting >= length )
+  $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
 endtask
 
 task test_data();
@@ -212,18 +216,13 @@ task test_addr();
 logic  [ADDR_WIDTH_TB-1:0] wr_addr;
 logic  [ADDR_WIDTH_TB-1:0] max_addr;
 
-int int_part;
-int mod_part;
 logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
+int addr_size;
 
 cnt_addr = {(ADDR_WIDTH_TB){1'b0}};
 
-int_part  = length / BYTE_WORD;
-mod_part  = length % BYTE_WORD;
-
-cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
-
-max_addr = base_addr + cnt_word - 1;
+max_addr  = base_addr + cnt_word - 1;
+addr_size = amm_write_data.write_addr_fifo.num();
 
 $display("#####Testing addr begin#####");
 while( amm_write_data.write_addr_fifo.num() != 0 )
@@ -235,6 +234,8 @@ while( amm_write_data.write_addr_fifo.num() != 0 )
       $display("Addr %0d correct: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
     cnt_addr++;
   end
+// if( addr_size < max_addr )
+//   $display("Not enough address written, %0d more data has not been written!!!", max_addr - addr_size);
 $display("\n");
 endtask
 
@@ -243,8 +244,11 @@ task reset();
 srst_i_tb <= 1'b1;
 @( posedge clk_i_tb );
 srst_i_tb <= 1'b0;
+cnt_waiting = 0;
 amm_read_if.readdatavalid <= 1'b0;
 amm_read_if.waitrequest <= 1'b0;
+amm_write_data.cnt_byte = 0;
+@( posedge clk_i_tb );
 
 endtask
 
@@ -261,35 +265,56 @@ initial
     amm_read_data  = new( amm_read_if  );
     amm_write_data = new( amm_write_if );
 
-    // gen_addr_length( 10'h10, 10'd15 );
-    // setting();
 
-    fork
+    fork 
       assign_wr_wait_rq();
       amm_write_data.write_data();
     join_none
     $display("----------Test case 1: 20 bytes-----------");
     gen_addr_length( 10'h10, 10'd20 );
-    amm_write_data.length = 10'd20;
+    // amm_write_data.length = length;
     setting();
-    amm_read_data.read_data( gen_1_pkt( 3 ), 0 );
+    amm_read_data.read_data( gen_1_pkt( cnt_word ), 0, 0 );
     
     wait_until_wr_done();
     test_data();
     test_addr();
 
-    reset(); 
+    reset();
     $display("---------Test case 2: 6 bytes-------------");
     gen_addr_length( 10'h10, 10'd6 );
-    amm_write_data.length = 10'd6;
+    // amm_write_data.length = length;
     setting();
-    amm_read_data.read_data( gen_1_pkt( 1 ),0 );
+    amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+
+    wait_until_wr_done();
+    test_data();
+    test_addr();
+
+    reset();
+    $display("---------Test case 3: 50 bytes-------------");
+    gen_addr_length( 10'h10, 10'd50 );
+    // amm_write_data.length = length;
+    setting();
+    amm_read_data.read_data( gen_1_pkt( cnt_word ),1, 1 );
+
+    wait_until_wr_done();
+    test_data();
+    test_addr();
+
+    reset();
+    $display("---------Test case 4: 8 bytes-------------");
+    gen_addr_length( 10'h10, 10'd6 );
+    // amm_write_data.length = length;
+    setting();
+    amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
 
     wait_until_wr_done();
     test_data();
     test_addr();
 
     $stop();
+
   end
 
 endmodule
