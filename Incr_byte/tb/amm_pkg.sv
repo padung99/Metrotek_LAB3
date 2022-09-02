@@ -43,56 +43,106 @@ task read_data( input pkt_t _read_data, bit _always_valid = 0, bit _no_waiting )
 
 logic              begin_reading;
 logic              rd_data_valid;
-int cnt_word;
+int                cnt_word;
 logic [DATA_W-1:0] pkt_data;
-int pkt_size;
-logic wait_rq;
+int                pkt_size;
+logic              wait_rq;
+int                cnt_mem;
 
 pkt_size  = _read_data.size();
 this.read_data_fifo.put( _read_data );
 this.cnt_byte = 0;
-while( cnt_word <= pkt_size/BYTE_WORD )
+while( cnt_word < pkt_size/BYTE_WORD )
   begin
-    if( amm_if.read == 1'b1 )
-      begin_reading = 1'b1;
-    // $display("1");
-    if( begin_reading == 1'b1 )
-      begin
-        // $display("2");
-        if( _no_waiting == 1'b1 )
-          amm_if.waitrequest <= 1'b0;
-        else
-          amm_if.waitrequest <= $urandom_range( 1,0 );
+    rd_data_valid = 1'b0;
+    if( _no_waiting == 1'b1 )
+      wait_rq = 1'b0;
+    else
+      wait_rq = $urandom_range( 1,0 );
+    
+    amm_if.waitrequest <= wait_rq;
 
+    if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
+      begin
+        cnt_mem++;
+      end
+
+    if( cnt_mem != 0 )
+      begin
         if( _always_valid == 1'b1 )
           rd_data_valid = 1'b1;
         else
           rd_data_valid = $urandom_range( 1,0 );
 
-
-        if( cnt_word == pkt_size/BYTE_WORD )
-          begin
-            amm_if.readdatavalid <= 1'b0;
-            break;
-          end
-        else
-          amm_if.readdatavalid <= rd_data_valid;
-
         if( rd_data_valid == 1'b1 )
           begin
-            // $display("3");
             for( int j = (BYTE_WORD*cnt_word + BYTE_WORD) -1; j >= BYTE_WORD*cnt_word; j-- )
               begin
                 pkt_data[7:0] = _read_data[j];
                 if( j != BYTE_WORD*cnt_word )
                   pkt_data = pkt_data << 8;
               end
+            cnt_mem--;
             cnt_word++;
             amm_if.readdata <= pkt_data;
           end
       end
+
+    amm_if.readdatavalid <= rd_data_valid;
+    // if( cnt_word == pkt_size/BYTE_WORD )
+    //   begin
+    //     amm_if.readdatavalid <= 1'b0;
+    //     break;
+    //   end
+    // else
+    //   amm_if.readdatavalid <= rd_data_valid;
+
     `cb;
+
+    // if( amm_if.read == 1'b1 )
+    //   begin_reading = 1'b1;
+    // // $display("1");
+    // if( begin_reading == 1'b1 )
+    //   begin
+    //     // $display("2");
+    //     if( _no_waiting == 1'b1 )
+    //       amm_if.waitrequest <= 1'b0;
+    //     else
+    //       amm_if.waitrequest <= $urandom_range( 1,0 );
+
+    //     if( _always_valid == 1'b1 )
+    //       rd_data_valid = 1'b1;
+    //     else
+    //       rd_data_valid = $urandom_range( 1,0 );
+
+
+    //     if( cnt_word == pkt_size/BYTE_WORD )
+    //       begin
+    //         amm_if.readdatavalid <= 1'b0;
+    //         break;
+    //       end
+    //     else
+    //       amm_if.readdatavalid <= rd_data_valid;
+
+    //     if( rd_data_valid == 1'b1 )
+    //       begin
+    //         // $display("3");
+    //         for( int j = (BYTE_WORD*cnt_word + BYTE_WORD) -1; j >= BYTE_WORD*cnt_word; j-- )
+    //           begin
+    //             pkt_data[7:0] = _read_data[j];
+    //             if( j != BYTE_WORD*cnt_word )
+    //               pkt_data = pkt_data << 8;
+    //           end
+    //         cnt_word++;
+    //         amm_if.readdata <= pkt_data;
+    //       end
+    //   end
+    // `cb;
   end
+
+  if( cnt_word == pkt_size/BYTE_WORD )
+    amm_if.readdatavalid <= 1'b0;
+  `cb;
 
 endtask
 

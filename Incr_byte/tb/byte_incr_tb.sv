@@ -453,7 +453,7 @@ initial
 
     reset();
     $display("---------Test case 10: max bytes-------------");
-    //Error ???
+    //Error: Can't stop waitrequest_o
     gen_addr_length( 10'h0, 10'b1111111111 );
     setting();
     if( setting_error == 1'b0 )
