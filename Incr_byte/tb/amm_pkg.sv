@@ -62,10 +62,9 @@ while( cnt_word < pkt_size/BYTE_WORD )
     
     amm_if.waitrequest <= wait_rq;
 
+    //cnt_mem is used to avoid write to unread address.
     if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
-      begin
-        cnt_mem++;
-      end
+      cnt_mem++;
 
     if( cnt_mem != 0 )
       begin
@@ -89,55 +88,9 @@ while( cnt_word < pkt_size/BYTE_WORD )
       end
 
     amm_if.readdatavalid <= rd_data_valid;
-    // if( cnt_word == pkt_size/BYTE_WORD )
-    //   begin
-    //     amm_if.readdatavalid <= 1'b0;
-    //     break;
-    //   end
-    // else
-    //   amm_if.readdatavalid <= rd_data_valid;
 
     `cb;
 
-    // if( amm_if.read == 1'b1 )
-    //   begin_reading = 1'b1;
-    // // $display("1");
-    // if( begin_reading == 1'b1 )
-    //   begin
-    //     // $display("2");
-    //     if( _no_waiting == 1'b1 )
-    //       amm_if.waitrequest <= 1'b0;
-    //     else
-    //       amm_if.waitrequest <= $urandom_range( 1,0 );
-
-    //     if( _always_valid == 1'b1 )
-    //       rd_data_valid = 1'b1;
-    //     else
-    //       rd_data_valid = $urandom_range( 1,0 );
-
-
-    //     if( cnt_word == pkt_size/BYTE_WORD )
-    //       begin
-    //         amm_if.readdatavalid <= 1'b0;
-    //         break;
-    //       end
-    //     else
-    //       amm_if.readdatavalid <= rd_data_valid;
-
-    //     if( rd_data_valid == 1'b1 )
-    //       begin
-    //         // $display("3");
-    //         for( int j = (BYTE_WORD*cnt_word + BYTE_WORD) -1; j >= BYTE_WORD*cnt_word; j-- )
-    //           begin
-    //             pkt_data[7:0] = _read_data[j];
-    //             if( j != BYTE_WORD*cnt_word )
-    //               pkt_data = pkt_data << 8;
-    //           end
-    //         cnt_word++;
-    //         amm_if.readdata <= pkt_data;
-    //       end
-    //   end
-    // `cb;
   end
 
   if( cnt_word == pkt_size/BYTE_WORD )

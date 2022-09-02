@@ -23,7 +23,7 @@ int                        int_part;
 int                        mod_part;
 bit                        setting_error;
 int                        cnt_setting; 
-
+bit                        always_deassert;
 initial
   forever
     #5 clk_i_tb = !clk_i_tb;
@@ -133,20 +133,27 @@ amm_write_if.waitrequest <= 1'b0;
 
 endtask
 
-task assign_wr_wait_rq();
+task assert_wr_wait_rq( );
 
 forever
   begin
-    if( waitrequest_o_tb == 1'b0 )
-      deassert_wr_wait();
+    if( always_deassert == 1'b0 )
+      begin
+        if( waitrequest_o_tb == 1'b0 )
+          deassert_wr_wait();
+        else
+          begin
+            repeat( 2 )
+              assert_wr_wait();
+            repeat( 2 )
+              deassert_wr_wait();
+          end
+      end
     else
       begin
-        repeat( 2 )
-          assert_wr_wait();
-        repeat( 2 )
-          deassert_wr_wait();
+        // @( posedge clk_i_tb );
+        deassert_wr_wait();
       end
-    
   end
 
 endtask
@@ -304,7 +311,7 @@ initial
     setting();
 
     fork 
-      assign_wr_wait_rq();
+      assert_wr_wait_rq();
       amm_write_data.write_data();
       amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
     join_any
@@ -339,6 +346,7 @@ initial
     reset();
     $display("---------Test case 3: 50 bytes-------------");
     // Can't stop waitrequest_o
+    always_deassert = 1'b1;
     gen_addr_length( 10'h10, 10'd50 );
     setting();
     if( setting_error == 1'b0 )
@@ -355,6 +363,7 @@ initial
     reset();
     $display("---------Test case 4: 8 bytes-------------");
     //Error: waitrequest_o non equal to 1 after run_i = 1
+    always_deassert = 1'b0;
     gen_addr_length( 10'h10, 10'd8 );
     setting();
     if( setting_error == 1'b0 )
