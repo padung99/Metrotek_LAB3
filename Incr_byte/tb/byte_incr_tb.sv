@@ -472,7 +472,6 @@ initial
       $display("Setting error !!!! Can't run other tasks\n");
 
     $stop();
-
   end
 
 endmodule
