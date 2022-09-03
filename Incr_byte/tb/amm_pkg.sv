@@ -20,7 +20,8 @@ mailbox #( pkt_t )                  write_data_fifo;
 mailbox #( logic [ADDR_W-1:0] )     write_addr_fifo;
 
 logic [ADDR_W-1:0] length;
-int cnt_byte;
+int                cnt_byte;
+logic [ADDR_W-1:0] base_addr;
 
 function new( virtual avalon_mm_if #(
                                     .ADDR_WIDTH ( ADDR_W ),
@@ -34,6 +35,7 @@ this.write_data_fifo = new();
 this.write_addr_fifo = new();
 this.length          = 'X;
 this.cnt_byte        = 0;
+this.base_addr       = '0;
 
 endfunction
 
@@ -48,11 +50,14 @@ logic [DATA_W-1:0] pkt_data;
 int                pkt_size;
 logic              wait_rq;
 int                cnt_mem;
+int                total_word;
 
 pkt_size  = _read_data.size();
 this.read_data_fifo.put( _read_data );
 this.cnt_byte = 0;
-while( cnt_word < pkt_size/BYTE_WORD )
+total_word    = ( this.base_addr + pkt_size/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - this.base_addr + 1 ) : pkt_size/BYTE_WORD;
+
+while( cnt_word < total_word )
   begin
     rd_data_valid = 1'b0;
     if( _no_waiting == 1'b1 )
@@ -93,55 +98,69 @@ while( cnt_word < pkt_size/BYTE_WORD )
 
   end
 
-  if( cnt_word == pkt_size/BYTE_WORD )
+  if( cnt_word == total_word )
     amm_if.readdatavalid <= 1'b0;
   `cb;
+
+$display( "base_addr: %x, word_sended: %0d, total_word: %0d", this.base_addr, cnt_word, pkt_size/BYTE_WORD );
 
 endtask
 
 task write_data();
 
 logic [DATA_W-1:0] new_data_wr;
-pkt_t wr_pkt;
-// int cnt_byte;
+pkt_t              wr_pkt;
+int                int_part;
+int                mod_part;
+int                cnt_word;
+int                max_addr;
+
 forever
   begin
     `cb;
 
-      if( this.cnt_byte == 0 )
-        wr_pkt = {};
+    int_part  = this.length / BYTE_WORD;
+    mod_part  = this.length % BYTE_WORD;
+    cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
+    
+    max_addr  = ( this.base_addr + cnt_word > 10'h3ff ) ? 10'h3ff : this.base_addr + cnt_word - 1;
+    if( this.cnt_byte == 0 )
+      wr_pkt = {};
 
-      if( ( amm_if.write == 1'b1 ) && ( amm_if.waitrequest == 1'b0 ) && ( amm_if.writedata !== 'X ) )
-        begin
-          // $display("length --- task write_data(): %0d", this.length );
-          write_addr_fifo.put( amm_if.address );
-          // $display("address_wr: %x", amm_if.address );
-          new_data_wr = amm_if.writedata;
-          for( int i = 0; i < BYTE_WORD; i++ )
-            begin
-              if( amm_if.byteenable[i] == 1'b1 )
-                begin
-                  wr_pkt.push_back( new_data_wr[7:0] );
-                  // $display("wr_byte: %x", new_data_wr[7:0]);
-                  new_data_wr = new_data_wr >> 8;
-                end
-            end
-          this.cnt_byte = this.cnt_byte + $countones( amm_if.byteenable );
-          // $display("cnt_byte: %0d", this.cnt_byte );
-          // $display("length: %0d", this.length );
+    if( ( amm_if.write == 1'b1 ) && ( amm_if.waitrequest == 1'b0 ) && ( amm_if.writedata !== 'X ) )
+      begin
+        // $display("length --- task write_data(): %0d", this.length );
+        write_addr_fifo.put( amm_if.address );
+        // $display("address_wr: %x", amm_if.address );
+        new_data_wr = amm_if.writedata;
+        for( int i = 0; i < BYTE_WORD; i++ )
+          begin
+            if( amm_if.byteenable[i] == 1'b1 )
+              begin
+                wr_pkt.push_back( new_data_wr[7:0] );
+                // $display("wr_byte: %x", new_data_wr[7:0]);
+                new_data_wr = new_data_wr >> 8;
+              end
+          end
+        this.cnt_byte = this.cnt_byte + $countones( amm_if.byteenable );
+        // $display("cnt_byte: %0d", this.cnt_byte );
+        // $display("cnt_word: %0d", cnt_word );
+        // $display("length: %0d", this.length );
+        // $display("max_addr: %x", max_addr );
+        // $display("base_addr: %x", base_addr );
+        
+        if( amm_if.address == max_addr )
+        //Done writing
+        // if( this.cnt_byte == this.length )
+          begin
+            write_data_fifo.put( wr_pkt );
+            // $display("size: %0d", wr_pkt.size());
+            this.cnt_byte = 0;
+            wr_pkt = {};
+          end
 
-
-          //Done writing
-          if( this.cnt_byte == this.length )
-            begin
-              write_data_fifo.put( wr_pkt );
-              // $display("size: %0d", wr_pkt.size());
-              this.cnt_byte = 0;
-              wr_pkt = {};
-            end
-
-          // $display("wr_fifo_size: %0d", write_data_fifo.num() );
-          // $display("\n");
+        // $display("wr_fifo_size: %0d", write_data_fifo.num() );
+        // $display("\n");
         end
   end 
 
