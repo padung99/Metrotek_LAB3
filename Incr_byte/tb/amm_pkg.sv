@@ -75,7 +75,7 @@ while( cnt_word < total_word )
       begin
         if( _always_valid == 1'b1 )
           rd_data_valid = 1'b1;
-        else
+        else 
           rd_data_valid = $urandom_range( 1,0 );
 
         if( rd_data_valid == 1'b1 )
@@ -149,9 +149,8 @@ forever
         // $display("max_addr: %x", max_addr );
         // $display("base_addr: %x", base_addr );
         
-        if( amm_if.address == max_addr )
         //Done writing
-        // if( this.cnt_byte == this.length )
+        if( amm_if.address == max_addr )
           begin
             write_data_fifo.put( wr_pkt );
             // $display("size: %0d", wr_pkt.size());

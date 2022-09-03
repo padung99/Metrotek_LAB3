@@ -162,7 +162,7 @@ logic [DATA_WIDTH_TB-1:0] gen_word;
 int ind_power;
 for( int i = 0; i < number_of_word; i++ )
   begin
-    gen_word[31:0] = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
+    gen_word[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
     gen_word[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1, 0);  
     // $display("gen_word: %0d bit: %x ", $size(gen_word), gen_word);
     for( int j = 0; j < BYTE_WORD; j++  )
