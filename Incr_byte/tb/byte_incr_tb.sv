@@ -239,7 +239,7 @@ while( amm_write_data.write_data_fifo.num() != 0 )
       end
   end
 
-if( new_wr_pkt.size() != byte_read ) 
+if( new_wr_pkt.size() != byte_read )
   $display("Error: %0d bytes have not been written to memory", byte_read - new_wr_pkt.size() );
 
 
@@ -520,6 +520,23 @@ initial
     if( setting_error == 1'b0 )
       begin
         amm_read_data.read_data( gen_1_pkt( cnt_word,0, 64'h2f1eff16ff12ffee),0, 0 );
+
+        wait_until_wr_done();
+        test_data();
+        test_addr();
+      end
+    else
+      $display("Setting error !!!! Can't run other tasks\n");
+
+    // // // ***********************Testcase 14*******************************
+    reset();
+    $display("---------Testcase 14: add to full mem -------------");
+    
+    gen_addr_length( 10'h0, 10'b1111111111 );
+    setting();
+    if( setting_error == 1'b0 )
+      begin
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0),0, 0 );
 
         wait_until_wr_done();
         test_data();
