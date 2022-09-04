@@ -529,7 +529,7 @@ initial
     // // // ***********************Testcase 13*******************************
     reset();
     $display("---------Testcase 13: overload  byte ( +1 to ff )-------------");
-    // // Error: data is unidentified, ff + 1 = 00, not xx
+    // // Error: wr_data is unidentified, ff + 1 = 00, not xx
     gen_addr_length( 10'h10, 10'd7 ); //1111111100
     setting();
     if( setting_error == 1'b0 )
