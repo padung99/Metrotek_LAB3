@@ -174,11 +174,10 @@ for( int i = 0; i < _number_of_word; i++ )
         gen_word[31:0]  = _select_word[31:0];
         gen_word[63:32] = _select_word[63:32];
       end
-    // $display("gen_word: %0d bit: %x ", $size(gen_word), gen_word);
+
     for( int j = 0; j < BYTE_WORD; j++  )
       begin
         new_pkt.push_back( gen_word[7:0] );
-        // $display("rd_byte: %x", gen_word[7:0]);
         gen_word = gen_word >> 8;
       end
   end
@@ -231,7 +230,6 @@ while( amm_write_data.write_data_fifo.num() != 0 )
     amm_write_data.write_data_fifo.get( new_wr_pkt );
     amm_read_data.read_data_fifo.get( new_rd_pkt );
 
-    $display("rd_size: %0d, wr_size: %0d", new_rd_pkt.size(), new_wr_pkt.size() );
     for( int i = 0; i < new_wr_pkt.size(); i++ )
       begin
         if( ( new_wr_pkt[i] ) == ( new_rd_pkt[i] + 8'h1 ) )
@@ -297,13 +295,6 @@ endtask
 
 initial
   begin
-    // srst_i_tb <= 1'b1;
-    // amm_read_if.readdata <= '0; 
-    // amm_read_if.readdatavalid <= 1'b0;
-    // amm_read_if.waitrequest <= 1'b0;
-    // @( posedge clk_i_tb );
-    // srst_i_tb <= 1'b0;
-    // amm_write_if.waitrequest <= 1'b0;
 
     amm_read_data  = new( amm_read_if  );
     amm_write_data = new( amm_write_if );
@@ -351,7 +342,7 @@ initial
     // // // ***********************Testcase 3*******************************
     reset();
     $display("---------Testcase 3: 50 bytes-------------");
-    // Can't stop waitrequest_o
+
     always_deassert = 1'b1;
     gen_addr_length( 10'h10, 10'd50 );
     setting();
@@ -369,7 +360,7 @@ initial
     // // // ***********************Testcase 4*******************************
     reset();
     $display("---------Testcase 4: 8 bytes-------------");
-    //Error: waitrequest_o non equal to 1 after run_i = 1
+
     always_deassert = 1'b0;
     gen_addr_length( 10'h10, 10'd8 );
     setting();
@@ -387,8 +378,7 @@ initial
     // // // ***********************Testcase 5*******************************
     reset();
     $display("---------Testcase 5: 16 bytes-------------");
-    //byte_cnt error on last word written byteerror: 00000000, result here should be 11111111
-    //This error will make wrong data receving data in mailbox write_data_fifo --> 1 word has lost
+    
     gen_addr_length( 10'h10, 10'd16 );
     setting();
     if( setting_error == 1'b0 )
@@ -405,8 +395,7 @@ initial
     // // // ***********************Testcase 6*******************************
     reset();
     $display("---------Testcase 6: 24 bytes-------------");
-    //byte_cnt error on last word written byteerror: 00000000, result here should be 11111111
-    //This error will make wrong data receving data in mailbox write_data_fifo --> 1 word has lost
+    
     gen_addr_length( 10'h10, 10'd24 );
     setting();
     if( setting_error == 1'b0 )
@@ -474,9 +463,7 @@ initial
     // // // ***********************Testcase 10*******************************
     reset();
     $display("---------Testcase 10: add bytes beyond the maximum address-------------");
-    //byte_cnt error on last word 1f, result here should be ff
-    //This error will make wrong data receving data in mailbox write_data_fifo --> 3 bytes have lost
-
+    
     gen_addr_length( 10'h3fc, 10'd45 ); //1111111100
     setting();
     if( setting_error == 1'b0 )
@@ -494,7 +481,7 @@ initial
     reset();
     $display("---------Testcase 11: add bytes until maximum address-------------");
 
-    gen_addr_length( 10'h3fc, 10'd29 ); //1111111100
+    gen_addr_length( 10'h3fc, 10'd29 ); 
     setting();
     if( setting_error == 1'b0 )
       begin
@@ -510,10 +497,8 @@ initial
     // // // ***********************Testcase 12*******************************
     reset();
     $display("---------Testcase 12: add bytes beyond the maximum address by 1 byte-------------");
-    //byte_cnt error on last word written byteerror: 00000000, result here should be 11111111
-    //This error will make wrong data receving data in mailbox write_data_fifo --> 1 word has lost
     
-    gen_addr_length( 10'h3fc, 10'd33 ); //1111111100
+    gen_addr_length( 10'h3fc, 10'd33 ); 
     setting();
     if( setting_error == 1'b0 )
       begin
@@ -529,8 +514,8 @@ initial
     // // // ***********************Testcase 13*******************************
     reset();
     $display("---------Testcase 13: overload  byte ( +1 to ff )-------------");
-    // // Error: wr_data is unidentified, ff + 1 = 00, not xx
-    gen_addr_length( 10'h10, 10'd7 ); //1111111100
+    
+    gen_addr_length( 10'h10, 10'd7 ); 
     setting();
     if( setting_error == 1'b0 )
       begin
