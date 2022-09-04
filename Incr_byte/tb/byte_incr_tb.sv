@@ -2,7 +2,7 @@ import amm_pkg::*;
 
 module byte_incr_tb;
 
-parameter int DATA_WIDTH_TB = 64; /////
+parameter int DATA_WIDTH_TB = 64; 
 parameter int ADDR_WIDTH_TB = 10;
 parameter int BYTE_CNT_TB   = DATA_WIDTH_TB/8;
 
@@ -90,7 +90,7 @@ task setting();
 
 forever
   begin
-    // $display("setting 1");
+
     if( waitrequest_o_tb == 1'b1 )
       break;
     if( waitrequest_o_tb != 1'b1 )
@@ -99,7 +99,7 @@ forever
         length_i_tb    <= length;
         run_i_tb       <= 1'b1;
       end
-    // $display("setting 2");
+
     if( run_i_tb == 1'b1 )
       begin
         run_i_tb       <= 1'b0;
@@ -264,7 +264,7 @@ $display("#####Testing addr begin#####");
 while( amm_write_data.write_addr_fifo.num() != 0 ) 
   begin
     amm_write_data.write_addr_fifo.get( wr_addr );
-    if( wr_addr != base_addr + cnt_addr )
+    if( wr_addr != ( base_addr + cnt_addr ) )
       $display("Addr %0d error: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
     else
       $display("Addr %0d correct: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
@@ -325,7 +325,7 @@ initial
 
     // // // ***********************Testcase 2*******************************
     reset();
-    $display("---------Testcase 2: 6 bytes-------------");
+    $display("---------Testcase 2: Read 6 bytes-------------");
     gen_addr_length( 10'h10, 10'd6 );
     setting();
     if( setting_error == 1'b0 )
@@ -341,7 +341,7 @@ initial
 
     // // // ***********************Testcase 3*******************************
     reset();
-    $display("---------Testcase 3: 50 bytes-------------");
+    $display("---------Testcase 3: Read 50 bytes-------------");
 
     always_deassert = 1'b1;
     gen_addr_length( 10'h10, 10'd50 );
@@ -359,7 +359,7 @@ initial
 
     // // // ***********************Testcase 4*******************************
     reset();
-    $display("---------Testcase 4: 8 bytes-------------");
+    $display("---------Testcase 4: Read 8 bytes-------------");
 
     always_deassert = 1'b0;
     gen_addr_length( 10'h10, 10'd8 );
@@ -377,7 +377,7 @@ initial
 
     // // // ***********************Testcase 5*******************************
     reset();
-    $display("---------Testcase 5: 16 bytes-------------");
+    $display("---------Testcase 5: Read 16 bytes-------------");
     
     gen_addr_length( 10'h10, 10'd16 );
     setting();
@@ -394,7 +394,7 @@ initial
 
     // // // ***********************Testcase 6*******************************
     reset();
-    $display("---------Testcase 6: 24 bytes-------------");
+    $display("---------Testcase 6: Read 24 bytes-------------");
     
     gen_addr_length( 10'h10, 10'd24 );
     setting();
@@ -411,7 +411,7 @@ initial
 
     // // // ***********************Testcase 7*******************************
     reset();
-    $display("---------Testcase 7: 30 bytes-------------");
+    $display("---------Testcase 7: Read 30 bytes-------------");
 
     gen_addr_length( 10'h10, 10'd30 );
     setting();
@@ -428,7 +428,7 @@ initial
 
     // // // ***********************Testcase 8*******************************
     reset();
-    $display("---------Testcase 8: 4 bytes-------------");
+    $display("---------Testcase 8: Read 4 bytes-------------");
 
     gen_addr_length( 10'h10, 10'd4 );
     setting();
@@ -445,7 +445,7 @@ initial
 
     // // // ***********************Testcase 9*******************************
     reset();
-    $display("---------Testcase 9: 1 bytes-------------");
+    $display("---------Testcase 9: Read 1 bytes-------------");
 
     gen_addr_length( 10'h10, 10'd1 );
     setting();
