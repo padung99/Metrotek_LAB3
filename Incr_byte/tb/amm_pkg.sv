@@ -51,11 +51,18 @@ int                pkt_size;
 logic              wait_rq;
 int                cnt_mem;
 int                total_word;
+pkt_t              tmp_pkt;
 
-pkt_size  = _read_data.size();
-this.read_data_fifo.put( _read_data );
-this.cnt_byte = 0;
+pkt_size      = _read_data.size();
 total_word    = ( this.base_addr + pkt_size/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - this.base_addr + 1 ) : pkt_size/BYTE_WORD;
+this.read_data_fifo.put( _read_data );
+
+for( int i = 0; i < total_word*BYTE_WORD; i++ )
+  begin
+    tmp_pkt[i] = _read_data[i];
+    if( i == ( total_word*BYTE_WORD - 1 ) )
+      this.read_data_fifo.put( tmp_pkt );
+  end
 
 while( cnt_word < total_word )
   begin

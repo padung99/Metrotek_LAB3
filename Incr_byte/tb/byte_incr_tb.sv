@@ -155,15 +155,25 @@ forever
 
 endtask
 
-function automatic pkt_t gen_1_pkt ( int number_of_word );
+function automatic pkt_t gen_1_pkt ( int                        _number_of_word,
+                                     bit                        _random_word,
+                                     logic [DATA_WIDTH_TB-1:0 ] _select_word );
 
 pkt_t                     new_pkt;
 logic [DATA_WIDTH_TB-1:0] gen_word;
-int ind_power;
-for( int i = 0; i < number_of_word; i++ )
+
+for( int i = 0; i < _number_of_word; i++ )
   begin
-    gen_word[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
-    gen_word[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1, 0);  
+    if( _random_word == 1'b1 )
+      begin
+        gen_word[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
+        gen_word[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
+      end
+    else
+      begin
+        gen_word[31:0]  = _select_word[31:0];
+        gen_word[63:32] = _select_word[63:32];
+      end
     // $display("gen_word: %0d bit: %x ", $size(gen_word), gen_word);
     for( int j = 0; j < BYTE_WORD; j++  )
       begin
@@ -184,7 +194,6 @@ assign cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
 task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                             logic  [ADDR_WIDTH_TB-1:0] _length
                     );
-// $display("gen_addr_length");
 base_addr                = _base_addr;
 length                   = _length;
 amm_write_data.length    = length;
@@ -212,22 +221,29 @@ task test_data();
 
 pkt_t new_wr_pkt;
 pkt_t new_rd_pkt;
+int   max_byte_read;
+int   byte_read;
 
+byte_read = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
 $display("#####Testing data begin#####");
 while( amm_write_data.write_data_fifo.num() != 0 )
   begin
     amm_write_data.write_data_fifo.get( new_wr_pkt );
     amm_read_data.read_data_fifo.get( new_rd_pkt );
 
-    for( int i = 0; i < new_wr_pkt.size(); i++ ) //Error here
+    $display("rd_size: %0d, wr_size: %0d", new_rd_pkt.size(), new_wr_pkt.size() );
+    for( int i = 0; i < new_wr_pkt.size(); i++ )
       begin
-        // $display("wr_data: %x, rd_data: %x", new_wr_pkt[i], new_rd_pkt[i]);
         if( ( new_wr_pkt[i] ) == ( new_rd_pkt[i] + 8'h1 ) )
           $display("Word %0d --- Byte %0d correct", i/8, i%8 );
         else
           $display("Word %0d --- Byte %0d error, byte correct: %x, byte written: %x ", i/8, i%8, new_rd_pkt[i] + 8'h1, new_wr_pkt[i] );
       end
   end
+
+if( new_wr_pkt.size() != byte_read ) 
+  $display("Error: %0d bytes have not been written to memory", byte_read - new_wr_pkt.size() );
+
 
 $display("\n");
 endtask
@@ -269,10 +285,11 @@ amm_read_if.readdatavalid     <= 1'b0;
 amm_read_if.waitrequest       <= 1'b0;
 amm_write_data.write_data_fifo = new();
 amm_read_data.read_data_fifo   = new();
+amm_write_data.cnt_byte        = 0;
 cnt_waiting                    = 0;
 setting_error                  = 1'b0;
 cnt_setting                    = 0;
-amm_write_data.cnt_byte        = 0;
+
 
 @( posedge clk_i_tb );
 
@@ -299,7 +316,7 @@ initial
     fork 
       assert_wr_wait_rq();
       amm_write_data.write_data();
-      amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+      amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
     join_any
 
     // // // ***********************Testcase 1*******************************
@@ -322,7 +339,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
         wait_until_wr_done();
         test_data();
@@ -340,7 +357,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),1, 1 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),1, 1 );
 
         wait_until_wr_done();
         test_data();
@@ -358,7 +375,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
         wait_until_wr_done();
         test_data();
@@ -376,7 +393,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
         wait_until_wr_done();
         test_data();
@@ -394,7 +411,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
         wait_until_wr_done();
         test_data();
@@ -411,7 +428,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
         wait_until_wr_done();
         test_data();
@@ -428,7 +445,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
         wait_until_wr_done();
         test_data();
@@ -445,7 +462,7 @@ initial
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
         wait_until_wr_done();
         test_data();
@@ -456,13 +473,68 @@ initial
 
     // // // ***********************Testcase 10*******************************
     reset();
-    $display("---------Testcase 10: max address-------------");
+    $display("---------Testcase 10: add bytes beyond the maximum address-------------");
+    //byte_cnt error on last word 1f, result here should be ff
+    //This error will make wrong data receving data in mailbox write_data_fifo --> 3 bytes have lost
 
     gen_addr_length( 10'h3fc, 10'd45 ); //1111111100
     setting();
     if( setting_error == 1'b0 )
       begin
-        amm_read_data.read_data( gen_1_pkt( cnt_word ),0, 0 );
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
+
+        wait_until_wr_done();
+        test_data();
+        test_addr();
+      end
+    else
+      $display("Setting error !!!! Can't run other tasks\n");
+
+    // // // ***********************Testcase 11*******************************
+    reset();
+    $display("---------Testcase 11: add bytes until maximum address-------------");
+
+    gen_addr_length( 10'h3fc, 10'd29 ); //1111111100
+    setting();
+    if( setting_error == 1'b0 )
+      begin
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
+
+        wait_until_wr_done();
+        test_data();
+        test_addr();
+      end
+    else
+      $display("Setting error !!!! Can't run other tasks\n");
+
+    // // // ***********************Testcase 12*******************************
+    reset();
+    $display("---------Testcase 12: add bytes beyond the maximum address by 1 byte-------------");
+    //byte_cnt error on last word written byteerror: 00000000, result here should be 11111111
+    //This error will make wrong data receving data in mailbox write_data_fifo --> 1 word has lost
+    
+    gen_addr_length( 10'h3fc, 10'd33 ); //1111111100
+    setting();
+    if( setting_error == 1'b0 )
+      begin
+        amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
+
+        wait_until_wr_done();
+        test_data();
+        test_addr();
+      end
+    else
+      $display("Setting error !!!! Can't run other tasks\n");
+
+    // // // ***********************Testcase 13*******************************
+    reset();
+    $display("---------Testcase 13: overload  byte ( +1 to ff )-------------");
+    // // Error: data is unidentified, ff + 1 = 00, not xx
+    gen_addr_length( 10'h10, 10'd7 ); //1111111100
+    setting();
+    if( setting_error == 1'b0 )
+      begin
+        amm_read_data.read_data( gen_1_pkt( cnt_word,0, 64'h2f1eff16ff12ffee),0, 0 );
 
         wait_until_wr_done();
         test_data();
