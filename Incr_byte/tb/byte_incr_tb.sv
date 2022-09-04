@@ -462,7 +462,7 @@ initial
 
     // // // ***********************Testcase 10*******************************
     reset();
-    $display("---------Testcase 10: add bytes beyond the maximum address-------------");
+    $display("---------Testcase 10: add bytes exceeded the maximum address-------------");
     
     gen_addr_length( 10'h3fc, 10'd45 ); //1111111100
     setting();
@@ -496,7 +496,7 @@ initial
 
     // // // ***********************Testcase 12*******************************
     reset();
-    $display("---------Testcase 12: add bytes beyond the maximum address by 1 byte-------------");
+    $display("---------Testcase 12: add bytes exceeded the maximum address by 1 byte-------------");
     
     gen_addr_length( 10'h3fc, 10'd33 ); 
     setting();
