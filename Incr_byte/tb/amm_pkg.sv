@@ -139,53 +139,6 @@ forever
 
 endtask
 
-// task write_data();
-
-// logic [DATA_W-1:0] new_data_wr;
-// pkt_t              wr_pkt;
-// int                int_part;
-// int                mod_part;
-// int                cnt_word;
-// int                max_addr;
-
-// forever
-//   begin
-//     `cb;
-
-//     int_part  = this.length / BYTE_WORD;
-//     mod_part  = this.length % BYTE_WORD;
-//     cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
-    
-//     max_addr  = ( this.base_addr + cnt_word > 10'h3ff ) ? 10'h3ff : this.base_addr + cnt_word - 1;
-//     if( this.cnt_byte == 0 )
-//       wr_pkt = {};
-
-//     if( ( amm_if.write == 1'b1 ) && ( amm_if.waitrequest == 1'b0 ) && ( amm_if.writedata !== 'X ) )
-//       begin
-//         write_addr_fifo.put( amm_if.address );
-//         new_data_wr = amm_if.writedata;
-//         for( int i = 0; i < BYTE_WORD; i++ )
-//           begin
-//             if( amm_if.byteenable[i] == 1'b1 )
-//               begin
-//                 wr_pkt.push_back( new_data_wr[7:0] );
-//                 new_data_wr = new_data_wr >> 8;
-//               end
-//           end
-//         this.cnt_byte = this.cnt_byte + $countones( amm_if.byteenable );
-      
-//         //Done writing
-//         if( amm_if.address == max_addr )
-//           begin
-//             write_data_fifo.put( wr_pkt );
-//             this.cnt_byte = 0;
-//             wr_pkt = {};
-//           end
-//         end
-//   end 
-
-// endtask
-
 endclass
 
 endpackage

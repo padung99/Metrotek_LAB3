@@ -341,42 +341,26 @@ initial
     $display("----------Testcase 1: 20 bytes-----------");
     test_data();
     test_addr();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     wait_until_wr_done();
-
-    //     test_data();
-    //     // test_addr();
-    //     // @( posedge clk_i_tb );
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
 
 
     // // // // ***********************Testcase 2*******************************
-    $display("---------Testcase 2: Write until max address-------------");
     reset();
+    $display("---------Testcase 2: Write until max address-------------");
     gen_addr_length( 10'h3fc, 10'd45 );
     setting();
     stop_rd();
     test_data();
     test_addr();
-    // reset();
-    
-    // gen_addr_length( 10'h10, 10'd6 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks");
 
     // // // // ***********************Testcase 3*******************************
+    reset();
+    $display("---------Testcase 3: 4 bytes-------------");
+    gen_addr_length( 10'h10, 10'd4 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
     // reset();
     // $display("---------Testcase 3: Read 50 bytes-------------");
 
