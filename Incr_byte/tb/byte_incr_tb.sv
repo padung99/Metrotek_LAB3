@@ -254,40 +254,40 @@ while( amm_write_data.write_data_fifo.num() != 0 )
     //   end
   end
 
-// if( new_wr_pkt.size() != byte_read )
-//   $display("Error: %0d bytes have not been written to memory", byte_read - new_wr_pkt.size() );
+if( wr_byte_size != byte_read )
+  $display("Error: %0d bytes have not been written to memory", byte_read - wr_byte_size );
 
 
 $display("\n");
 endtask
 
-// task test_addr();
+task test_addr();
 
-// logic  [ADDR_WIDTH_TB-1:0] wr_addr;
-// logic  [ADDR_WIDTH_TB-1:0] max_addr;
+logic  [ADDR_WIDTH_TB-1:0] wr_addr;
+logic  [ADDR_WIDTH_TB-1:0] max_addr;
 
-// logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
-// int addr_size;
+logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
+int addr_size;
 
-// cnt_addr = {(ADDR_WIDTH_TB){1'b0}};
+cnt_addr = {(ADDR_WIDTH_TB){1'b0}};
 
-// max_addr  = base_addr + cnt_word - 1;
-// addr_size = amm_write_data.write_addr_fifo.num();
+max_addr  = base_addr + cnt_word - 1;
+addr_size = amm_write_data.write_addr_fifo.num();
 
 
-// $display("#####Testing addr begin#####");
-// while( amm_write_data.write_addr_fifo.num() != 0 ) 
-//   begin
-//     amm_write_data.write_addr_fifo.get( wr_addr );
-//     if( wr_addr != ( base_addr + cnt_addr ) )
-//       $display("Addr %0d error: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
-//     else
-//       $display("Addr %0d correct: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
-//     cnt_addr++;
-//   end
+$display("#####Testing addr begin#####");
+while( amm_write_data.write_addr_fifo.num() != 0 ) 
+  begin
+    amm_write_data.write_addr_fifo.get( wr_addr );
+    if( wr_addr != ( base_addr + cnt_addr ) )
+      $display("Addr %0d error: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
+    else
+      $display("Addr %0d correct: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
+    cnt_addr++;
+  end
 
-// $display("\n");
-// endtask
+$display("\n");
+endtask
 
 task reset();
 
@@ -327,7 +327,7 @@ initial
 
     
     reset();
-    gen_addr_length( 10'h3fc, 10'd45 );
+    gen_addr_length( 10'h10, 10'd20 );
     setting();
 
     fork
@@ -340,6 +340,7 @@ initial
     // // // ***********************Testcase 1*******************************
     $display("----------Testcase 1: 20 bytes-----------");
     test_data();
+    test_addr();
     // if( setting_error == 1'b0 )
     //   begin
     //     wait_until_wr_done();
@@ -353,13 +354,15 @@ initial
 
 
     // // // // ***********************Testcase 2*******************************
+    $display("---------Testcase 2: Write until max address-------------");
     reset();
-    gen_addr_length( 10'h10, 10'd20 );
+    gen_addr_length( 10'h3fc, 10'd45 );
     setting();
     stop_rd();
     test_data();
+    test_addr();
     // reset();
-    // $display("---------Testcase 2: Read 6 bytes-------------");
+    
     // gen_addr_length( 10'h10, 10'd6 );
     // setting();
     // if( setting_error == 1'b0 )

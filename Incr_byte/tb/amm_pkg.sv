@@ -77,8 +77,7 @@ forever
     amm_if.waitrequest <= wait_rq;
 
     // // CHECK READ REQUEST // //
-    // check if there is a transfer to read data,
-    // read address will be pushed into mailbox
+    // check if there is a read transaction
     if( TYPE_RQ == "read" )
       begin
         if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
@@ -96,13 +95,13 @@ forever
             else
               rd_data_valid = $urandom_range( 1,0 );
 
-            if( rd_data_valid == 1'b1 ) 
+            if( rd_data_valid == 1'b1 )
               begin
                 cnt_mem--;
                 // read_addr_fifo.get( rd_addr );
                 pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
                 pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
-                new_data_rd = pkt_rd_data;
+                new_data_rd        = pkt_rd_data;
                 for( int i = 0; i < BYTE_WORD; i++ )
                   begin
                     read_data_fifo.put( new_data_rd[7:0] );
@@ -119,7 +118,7 @@ forever
       begin
          `cb;
          new_data_wr = ( DATA_W )'(0);
-        // // CHECK WRITE REQUEST // // need to use byteenable
+        // // CHECK WRITE REQUEST // //
         if( amm_if.waitrequest == 1'b0 && amm_if.write == 1'b1 && ( amm_if.writedata !== 'X ) )
           begin
             write_addr_fifo.put( amm_if.address );
@@ -136,7 +135,6 @@ forever
       end
     else
       $display("parameter TYPE_RQ error!!!!");
-
   end
 
 endtask
