@@ -221,35 +221,45 @@ endtask
 //   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
 // endtask
 
-// task test_data();
+task test_data();
 
-// pkt_t new_wr_pkt;
-// pkt_t new_rd_pkt;
-// int   max_byte_read;
-// int   byte_read;
+logic [7:0] new_wr_pkt;
+logic [7:0] new_rd_pkt;
+int   max_byte_read;
+int   byte_read;
+int   wr_byte_size;
 
-// byte_read = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
-// $display("#####Testing data begin#####");
-// while( amm_write_data.write_data_fifo.num() != 0 )
-//   begin
-//     amm_write_data.write_data_fifo.get( new_wr_pkt );
-//     amm_read_data.read_data_fifo.get( new_rd_pkt );
+wr_byte_size = amm_write_data.write_data_fifo.num();
+byte_read = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
+$display("#####Testing data begin#####");
+while( amm_write_data.write_data_fifo.num() != 0 )
+  begin
+    amm_write_data.write_data_fifo.get( new_wr_pkt );
+    amm_read_data.read_data_fifo.get( new_rd_pkt );
 
-//     for( int i = 0; i < new_wr_pkt.size(); i++ )
-//       begin
-//         if( ( new_wr_pkt[i] ) == ( new_rd_pkt[i] + 8'h1 ) )
-//           $display("Word %0d --- Byte %0d correct", i/8, i%8 );
-//         else
-//           $display("Word %0d --- Byte %0d error, byte correct: %x, byte written: %x ", i/8, i%8, new_rd_pkt[i] + 8'h1, new_wr_pkt[i] );
-//       end
-//   end
+    if( new_wr_pkt == ( new_rd_pkt + 1 ) )
+      begin
+        $display("Byte %0d correct --- read: %x, write: %x", wr_byte_size -amm_write_data.write_data_fifo.num(),  new_rd_pkt, new_wr_pkt);
+      end
+    else
+      begin
+        $display("Byte %0d error --- read: %x, write: %x", wr_byte_size -amm_write_data.write_data_fifo.num(),  new_rd_pkt, new_wr_pkt);
+      end
+    // for( int i = 0; i < new_wr_pkt.size(); i++ )
+    //   begin
+    //     if( ( new_wr_pkt[i] ) == ( new_rd_pkt[i] + 8'h1 ) )
+    //       $display("Word %0d --- Byte %0d correct", i/8, i%8 );
+    //     else
+    //       $display("Word %0d --- Byte %0d error, byte correct: %x, byte written: %x ", i/8, i%8, new_rd_pkt[i] + 8'h1, new_wr_pkt[i] );
+    //   end
+  end
 
 // if( new_wr_pkt.size() != byte_read )
 //   $display("Error: %0d bytes have not been written to memory", byte_read - new_wr_pkt.size() );
 
 
-// $display("\n");
-// endtask
+$display("\n");
+endtask
 
 // task test_addr();
 
@@ -329,7 +339,7 @@ initial
 
     // // // ***********************Testcase 1*******************************
     $display("----------Testcase 1: 20 bytes-----------");
-
+    test_data();
     // if( setting_error == 1'b0 )
     //   begin
     //     wait_until_wr_done();
@@ -347,6 +357,7 @@ initial
     gen_addr_length( 10'h10, 10'd20 );
     setting();
     stop_rd();
+    test_data();
     // reset();
     // $display("---------Testcase 2: Read 6 bytes-------------");
     // gen_addr_length( 10'h10, 10'd6 );
