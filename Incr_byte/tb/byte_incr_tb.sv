@@ -119,73 +119,6 @@ forever
 
 endtask
 
-// task assert_wr_wait();
-
-// @( posedge clk_i_tb )
-// amm_write_if.waitrequest <= 1'b1;
-
-// endtask
-
-// task deassert_wr_wait();
-
-// @( posedge clk_i_tb )
-// amm_write_if.waitrequest <= 1'b0;
-
-// endtask
-
-// task assert_wr_wait_rq( );
-
-// forever
-//   begin
-//     if( always_deassert == 1'b0 )
-//       begin
-//         if( waitrequest_o_tb == 1'b0 )
-//           deassert_wr_wait();
-//         else
-//           begin
-//             repeat( 2 )
-//               assert_wr_wait();
-//             repeat( 2 )
-//               deassert_wr_wait();
-//           end
-//       end
-//     else
-//       deassert_wr_wait();
-
-//   end
-
-// endtask
-
-// function automatic pkt_t gen_1_pkt ( int                        _number_of_word,
-//                                      bit                        _random_word,
-//                                      logic [DATA_WIDTH_TB-1:0 ] _select_word );
-
-// pkt_t                     new_pkt;
-// logic [DATA_WIDTH_TB-1:0] gen_word;
-
-// for( int i = 0; i < _number_of_word; i++ )
-//   begin
-//     if( _random_word == 1'b1 )
-//       begin
-//         gen_word[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
-//         gen_word[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1, 0);
-//       end
-//     else
-//       begin
-//         gen_word[31:0]  = _select_word[31:0];
-//         gen_word[63:32] = _select_word[63:32];
-//       end
-
-//     for( int j = 0; j < BYTE_WORD; j++  )
-//       begin
-//         new_pkt.push_back( gen_word[7:0] );
-//         gen_word = gen_word >> 8;
-//       end
-//   end
-// return new_pkt;
-
-// endfunction
-
 assign int_part  = length / BYTE_WORD;
 assign mod_part  = length % BYTE_WORD;
 
@@ -228,13 +161,6 @@ while( amm_write_data.write_data_fifo.num() != 0 )
       begin
         $display("Byte %0d error --- read: %x, write: %x", wr_byte_size -amm_write_data.write_data_fifo.num(),  new_rd_pkt, new_wr_pkt);
       end
-    // for( int i = 0; i < new_wr_pkt.size(); i++ )
-    //   begin
-    //     if( ( new_wr_pkt[i] ) == ( new_rd_pkt[i] + 8'h1 ) )
-    //       $display("Word %0d --- Byte %0d correct", i/8, i%8 );
-    //     else
-    //       $display("Word %0d --- Byte %0d error, byte correct: %x, byte written: %x ", i/8, i%8, new_rd_pkt[i] + 8'h1, new_wr_pkt[i] );
-    //   end
   end
 
 if( wr_byte_size != byte_read )
@@ -322,9 +248,13 @@ if( cnt_waiting >= 10*cnt_word )
 // forever
 //   begin
 //     @( posedge clk_i_tb );
+//     // cnt_waiting++;
 //     if( waitrequest_o_tb == 1'b0 )
 //       break;
 //   end
+
+// if( cnt_waiting >= 10*cnt_word )
+//   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
 
 endtask
 
@@ -340,10 +270,9 @@ initial
     setting();
 
     fork
-      // assert_wr_wait_rq();
       amm_write_data.send_rq( 0 );
       amm_read_data.send_rq( 0 );
-      amm_read_data.response_rd_rq( 0, 1 );
+      amm_read_data.response_rd_rq( 0, 5 );
       stop_rd();
     join_any
 
@@ -362,22 +291,6 @@ initial
     test_data();
     test_addr();
 
-    // reset();
-    // $display("---------Testcase 3: Read 50 bytes-------------");
-
-    // always_deassert = 1'b1;
-    // gen_addr_length( 10'h10, 10'd50 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),1, 1 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 3*******************************
     reset();
@@ -396,36 +309,7 @@ initial
     stop_rd();
     test_data();
     test_addr();
-    // always_deassert = 1'b0;
-    // gen_addr_length( 10'h10, 10'd8 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
-
-    // // // // ***********************Testcase 5*******************************
-    // reset();
-    // $display("---------Testcase 5: Read 16 bytes-------------");
-    
-    // gen_addr_length( 10'h10, 10'd16 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 5*******************************
     reset();
@@ -444,18 +328,7 @@ initial
     stop_rd();
     test_data();
     test_addr();
-    // gen_addr_length( 10'h10, 10'd24 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 7*******************************
     reset();
@@ -465,21 +338,7 @@ initial
     stop_rd();
     test_data();
     test_addr();
-    // reset();
-    // $display("---------Testcase 7: Read 30 bytes-------------");
 
-    // gen_addr_length( 10'h10, 10'd30 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 8*******************************
     reset();
@@ -489,31 +348,16 @@ initial
     stop_rd();
     test_data();
     test_addr();
-    // reset();
-    // $display("---------Testcase 8: Read 4 bytes-------------");
 
-    // gen_addr_length( 10'h10, 10'd4 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
 
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
-
-    // // // // ***********************Testcase 9*******************************
-    // // THIS TEST SHOULD BE CHECKED AGAIN
-    // reset();
-    // $display("---------Testcase 9: add bytes until maximum address -------------");
-    // gen_addr_length( 10'h3fc, 10'd29 );
-    // setting();
-    // stop_rd();
-    // test_data();
-    // test_addr();
+    // // // ***********************Testcase 9*******************************
+    reset();
+    $display("---------Testcase 9: add bytes until maximum address -------------");
+    gen_addr_length( 10'h3fc, 10'd29 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
 
 
     // // // // ***********************Testcase 10*******************************
@@ -533,53 +377,6 @@ initial
     stop_rd();
     test_data();
     test_addr();
-
-    // gen_addr_length( 10'h3fc, 10'd33 ); 
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
-
-    // // // // ***********************Testcase 13*******************************
-    // reset();
-    // $display("---------Testcase 13: overload  byte ( +1 to ff )-------------");
-    
-    // gen_addr_length( 10'h10, 10'd7 ); 
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,0, 64'h2f1eff16ff12ffee),0, 0 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
-
-    // // // // ***********************Testcase 14*******************************
-    // reset();
-    // $display("---------Testcase 14: add to full mem -------------");
-    
-    // gen_addr_length( 10'h0, 10'b1111111111 );
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0),0, 0 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
 
     $stop();
   end
