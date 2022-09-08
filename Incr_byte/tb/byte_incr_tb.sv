@@ -24,9 +24,9 @@ int                        int_part;
 int                        mod_part;
 bit                        setting_error;
 int                        cnt_setting;
-bit                        always_deassert;
+// bit                        always_deassert;
 
-bit                        always_valid;
+// bit                        always_valid;
 
 
 initial
@@ -130,8 +130,8 @@ assign cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
 task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                             logic  [ADDR_WIDTH_TB-1:0] _length
                     );
-base_addr                = _base_addr;
-length                   = _length;
+base_addr = _base_addr;
+length    = _length;
 
 endtask
 
@@ -141,12 +141,12 @@ task test_data();
 logic [7:0] new_wr_pkt;
 logic [7:0] new_rd_pkt;
 // int   max_byte_read;
-int   byte_read;
-int   wr_byte_size;
+int         byte_read;
+int         wr_byte_size;
 
 wr_byte_size = amm_write_data.write_data_fifo.num();
-byte_read = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
-$display("wr_byte_size: %0d, byte_read: %0d", wr_byte_size, byte_read );
+byte_read    = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
+// $display("wr_byte_size: %0d, byte_read: %0d", wr_byte_size, byte_read );
 $display("#####Testing data begin#####");
 while( amm_write_data.write_data_fifo.num() != 0 )
   begin
@@ -173,15 +173,15 @@ endtask
 task test_addr();
 
 logic  [ADDR_WIDTH_TB-1:0] wr_addr;
-logic  [ADDR_WIDTH_TB-1:0] max_addr;
+// logic  [ADDR_WIDTH_TB-1:0] max_addr;
 
 logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
-int addr_size;
+// int addr_size;
 
 cnt_addr = {(ADDR_WIDTH_TB){1'b0}};
 
-max_addr  = base_addr + cnt_word - 1;
-addr_size = amm_write_data.write_addr_fifo.num();
+// max_addr  = base_addr + cnt_word - 1;
+// addr_size = amm_write_data.write_addr_fifo.num();
 
 
 $display("#####Testing addr begin#####");
@@ -221,21 +221,6 @@ cnt_setting                    = 0;
 
 endtask
 
-// task wait_until_wr_done();
-
-
-// while( waitrequest_o_tb == 1'b1 )
-//   begin
-//     @( posedge clk_i_tb );
-//     cnt_waiting++;
-//     if( cnt_waiting >= 10*cnt_word ) 
-//       break;
-//   end
-
-// if( cnt_waiting >= 10*cnt_word )
-//   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
-// endtask
-
 task stop_rd();
 
 while( waitrequest_o_tb == 1'b1 )
@@ -252,7 +237,7 @@ if( cnt_waiting >= 20*cnt_word )
 endtask
 
 task  setting_response( input int                       _delay,
-                             logic [DATA_WIDTH_TB-1:0] _random_word
+                              logic [DATA_WIDTH_TB-1:0] _random_word
                      );
 amm_read_data.delay        = _delay;
 amm_read_data.random_word  = _random_word;
