@@ -223,7 +223,7 @@ task test_data();
 
 logic [7:0] new_wr_pkt;
 logic [7:0] new_rd_pkt;
-int   max_byte_read;
+// int   max_byte_read;
 int   byte_read;
 int   wr_byte_size;
 
@@ -274,7 +274,7 @@ addr_size = amm_write_data.write_addr_fifo.num();
 
 
 $display("#####Testing addr begin#####");
-while( amm_write_data.write_addr_fifo.num() != 0 ) 
+while( amm_write_data.write_addr_fifo.num() != 0 )
   begin
     amm_write_data.write_addr_fifo.get( wr_addr );
     if( wr_addr != ( base_addr + cnt_addr ) )
@@ -325,41 +325,41 @@ initial
 
     
     reset();
-    gen_addr_length( 10'h10, 10'd20 );
+    gen_addr_length( 10'h10, 10'd100 );
     setting();
 
     fork
       // assert_wr_wait_rq();
-      amm_write_data.send_rq( 0 );
-      amm_read_data.send_rq( 0 );
-      amm_read_data.response_rd_rq( 0 );
+      amm_write_data.send_rq( 1 );
+      amm_read_data.send_rq( 1 );
+      amm_read_data.response_rd_rq( 1, 6 );
       stop_rd();
     join_any
 
     // // // ***********************Testcase 1*******************************
     $display("----------Testcase 1: 20 bytes-----------");
-    test_data();
+    test_data(); 
     test_addr();
 
 
-    // // // // ***********************Testcase 2*******************************
-    reset();
-    $display("---------Testcase 2: Write until max address-------------");
-    gen_addr_length( 10'h3fc, 10'd45 );
-    setting();
-    stop_rd();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 2*******************************
+    // reset();
+    // $display("---------Testcase 2: Write until max address-------------");
+    // gen_addr_length( 10'h3fc, 10'd45 );
+    // setting();
+    // stop_rd();
+    // test_data();
+    // test_addr();
 
 
-    // // // // ***********************Testcase 3*******************************
-    reset();
-    $display("---------Testcase 3: 4 bytes-------------");
-    gen_addr_length( 10'h10, 10'd4 );
-    setting();
-    stop_rd();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 3*******************************
+    // reset();
+    // $display("---------Testcase 3: 4 bytes-------------");
+    // gen_addr_length( 10'h10, 10'd4 );
+    // setting();
+    // stop_rd();
+    // test_data();
+    // test_addr();
     // reset();
     // $display("---------Testcase 3: Read 50 bytes-------------");
 
