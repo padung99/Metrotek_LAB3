@@ -61,9 +61,7 @@ forever
       end
     else if( amm_if.read === 'x )
       begin
-         `cb;
-         new_data_wr = ( DATA_W )'(0);
-        
+         new_data_wr = ( DATA_W )'(0); 
         // // CHECK WRITE REQUEST // //
         if( amm_if.waitrequest == 1'b0 && amm_if.write == 1'b1 && ( amm_if.writedata !== 'X ) )
           begin
@@ -78,6 +76,7 @@ forever
                   end
               end
           end
+        `cb;
       end
   end
 

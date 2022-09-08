@@ -186,10 +186,10 @@ endtask
 
 // endfunction
 
-// assign int_part  = length / BYTE_WORD;
-// assign mod_part  = length % BYTE_WORD;
+assign int_part  = length / BYTE_WORD;
+assign mod_part  = length % BYTE_WORD;
 
-// assign cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
+assign cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
 
 task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                             logic  [ADDR_WIDTH_TB-1:0] _length
@@ -201,23 +201,8 @@ length                   = _length;
 // amm_write_data.base_addr = base_addr;
 // amm_read_data.base_addr  = base_addr;
 
-
 endtask
 
-// task wait_until_wr_done();
-
-
-// while( waitrequest_o_tb == 1'b1 )
-//   begin
-//     @( posedge clk_i_tb );
-//     cnt_waiting++;
-//     if( cnt_waiting >= 10*cnt_word ) 
-//       break;
-//   end
-
-// if( cnt_waiting >= 10*cnt_word )
-//   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
-// endtask
 
 task test_data();
 
@@ -306,16 +291,43 @@ cnt_setting                    = 0;
 
 endtask
 
+// task wait_until_wr_done();
+
+
+// while( waitrequest_o_tb == 1'b1 )
+//   begin
+//     @( posedge clk_i_tb );
+//     cnt_waiting++;
+//     if( cnt_waiting >= 10*cnt_word ) 
+//       break;
+//   end
+
+// if( cnt_waiting >= 10*cnt_word )
+//   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
+// endtask
+
 task stop_rd();
 
-forever
+while( waitrequest_o_tb == 1'b1 )
   begin
     @( posedge clk_i_tb );
-    if( waitrequest_o_tb == 1'b0 )
+    cnt_waiting++;
+    if( cnt_waiting >= 10*cnt_word ) 
       break;
   end
 
+if( cnt_waiting >= 10*cnt_word )
+  $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
+
+// forever
+//   begin
+//     @( posedge clk_i_tb );
+//     if( waitrequest_o_tb == 1'b0 )
+//       break;
+//   end
+
 endtask
+
 
 initial
   begin
@@ -350,15 +362,6 @@ initial
     test_data();
     test_addr();
 
-
-    // // // // // ***********************Testcase 3*******************************
-    // reset();
-    // $display("---------Testcase 3: 4 bytes-------------");
-    // gen_addr_length( 10'h10, 10'd4 );
-    // setting();
-    // stop_rd();
-    // test_data();
-    // test_addr();
     // reset();
     // $display("---------Testcase 3: Read 50 bytes-------------");
 
@@ -376,10 +379,23 @@ initial
     // else
     //   $display("Setting error !!!! Can't run other tasks\n");
 
-    // // // // ***********************Testcase 4*******************************
-    // reset();
-    // $display("---------Testcase 4: Read 8 bytes-------------");
+    // // // // ***********************Testcase 3*******************************
+    reset();
+    $display("---------Testcase 3: 4 bytes-------------");
+    gen_addr_length( 10'h10, 10'd4 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
 
+    // // // // ***********************Testcase 4*******************************
+    reset();
+    $display("---------Testcase 4: 8 bytes-------------");
+    gen_addr_length( 10'h10, 10'd8 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
     // always_deassert = 1'b0;
     // gen_addr_length( 10'h10, 10'd8 );
     // setting();
@@ -411,10 +427,23 @@ initial
     // else
     //   $display("Setting error !!!! Can't run other tasks\n");
 
+    // // // // ***********************Testcase 5*******************************
+    reset();
+    $display("---------Testcase 5: 16 bytes-------------");
+    gen_addr_length( 10'h10, 10'd16 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
+
     // // // // ***********************Testcase 6*******************************
-    // reset();
-    // $display("---------Testcase 6: Read 24 bytes-------------");
-    
+    reset();
+    $display("---------Testcase 6: 24 bytes-------------");
+    gen_addr_length( 10'h10, 10'd24 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
     // gen_addr_length( 10'h10, 10'd24 );
     // setting();
     // if( setting_error == 1'b0 )
@@ -429,6 +458,13 @@ initial
     //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 7*******************************
+    reset();
+    $display("---------Testcase 7: 30 bytes-------------");
+    gen_addr_length( 10'h10, 10'd30 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
     // reset();
     // $display("---------Testcase 7: Read 30 bytes-------------");
 
@@ -446,6 +482,13 @@ initial
     //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 8*******************************
+    reset();
+    $display("---------Testcase 8: 1 byte-------------");
+    gen_addr_length( 10'h10, 10'd1 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
     // reset();
     // $display("---------Testcase 8: Read 4 bytes-------------");
 
@@ -463,60 +506,34 @@ initial
     //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 9*******************************
+    // // THIS TEST SHOULD BE CHECKED AGAIN
     // reset();
-    // $display("---------Testcase 9: Read 1 bytes-------------");
-
-    // gen_addr_length( 10'h10, 10'd1 );
+    // $display("---------Testcase 9: add bytes until maximum address -------------");
+    // gen_addr_length( 10'h3fc, 10'd29 );
     // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
+    // stop_rd();
+    // test_data();
+    // test_addr();
 
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
 
     // // // // ***********************Testcase 10*******************************
-    // reset();
-    // $display("---------Testcase 10: add bytes exceeded the maximum address-------------");
-    
-    // gen_addr_length( 10'h3fc, 10'd45 ); //1111111100
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
+    reset();
+    $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes ) -------------");
+    gen_addr_length( 10'h3fc, 10'd33 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
 
     // // // // ***********************Testcase 11*******************************
-    // reset();
-    // $display("---------Testcase 11: add bytes until maximum address-------------");
+    reset();
+    $display("---------Testcase 11: add form 0 to full mem ");
+    gen_addr_length( 10'h0, 10'b1111111111 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
 
-    // gen_addr_length( 10'h3fc, 10'd29 ); 
-    // setting();
-    // if( setting_error == 1'b0 )
-    //   begin
-    //     amm_read_data.read_data( gen_1_pkt( cnt_word,1, 0 ),0, 0 );
-
-    //     wait_until_wr_done();
-    //     test_data();
-    //     test_addr();
-    //   end
-    // else
-    //   $display("Setting error !!!! Can't run other tasks\n");
-
-    // // // // ***********************Testcase 12*******************************
-    // reset();
-    // $display("---------Testcase 12: add bytes exceeded the maximum address by 1 byte-------------");
-    
     // gen_addr_length( 10'h3fc, 10'd33 ); 
     // setting();
     // if( setting_error == 1'b0 )
