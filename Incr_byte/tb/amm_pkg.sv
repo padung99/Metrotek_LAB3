@@ -88,7 +88,7 @@ task response_rd_rq( input bit _always_valid = 0, int _delay );
 logic              rd_data_valid;
 logic [DATA_W-1:0] new_data_rd;
 logic [DATA_W-1:0] pkt_rd_data;
-int                cnt_mem;
+// int                cnt_mem;
 int                cnt_delay [$];
 forever
   begin
@@ -97,7 +97,7 @@ forever
       begin
       if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
        begin
-         cnt_mem++;
+        //  cnt_mem++;
          cnt_delay.push_front(0);
        end
 
@@ -106,14 +106,14 @@ forever
           cnt_delay[i]++;
         end
       
-      for( int i = 0; i < cnt_delay.size(); i++)
+      for( int i = 0; i < cnt_delay.size(); i++ )
         begin
-          if( cnt_delay[i] == _delay && cnt_delay.size() != 0  )
+          if( cnt_delay[i] == _delay  && cnt_delay.size() != 0  )
             begin
               rd_data_valid = 1'b1;
               if( rd_data_valid == 1'b1 )
                 begin
-                  cnt_mem--;
+                  // cnt_mem--;
                   pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
                   pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
                   new_data_rd        = pkt_rd_data;

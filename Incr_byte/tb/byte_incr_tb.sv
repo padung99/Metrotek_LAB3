@@ -322,17 +322,16 @@ initial
 
     amm_read_data  = new( amm_read_if  );
     amm_write_data = new( amm_write_if );
-
-    
+  
     reset();
-    gen_addr_length( 10'h10, 10'd100 );
+    gen_addr_length( 10'h10, 10'd30 );
     setting();
 
     fork
       // assert_wr_wait_rq();
-      amm_write_data.send_rq( 1 );
-      amm_read_data.send_rq( 1 );
-      amm_read_data.response_rd_rq( 1, 6 );
+      amm_write_data.send_rq( 0 );
+      amm_read_data.send_rq( 0 );
+      amm_read_data.response_rd_rq( 0, 1 );
       stop_rd();
     join_any
 
@@ -342,14 +341,14 @@ initial
     test_addr();
 
 
-    // // // // // ***********************Testcase 2*******************************
-    // reset();
-    // $display("---------Testcase 2: Write until max address-------------");
-    // gen_addr_length( 10'h3fc, 10'd45 );
-    // setting();
-    // stop_rd();
-    // test_data();
-    // test_addr();
+    // // // // ***********************Testcase 2*******************************
+    reset();
+    $display("---------Testcase 2: Write until max address-------------");
+    gen_addr_length( 10'h3fc, 10'd45 );
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
 
 
     // // // // // ***********************Testcase 3*******************************
