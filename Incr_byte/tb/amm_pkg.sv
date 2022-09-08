@@ -87,8 +87,8 @@ task response_rd_rq( input bit _always_valid = 0, int _delay );
 logic              rd_data_valid;
 logic [DATA_W-1:0] new_data_rd;
 logic [DATA_W-1:0] pkt_rd_data;
-// int                cnt_mem;
 int                cnt_delay [$];
+
 forever
   begin
     rd_data_valid = 1'b0;
@@ -96,7 +96,6 @@ forever
       begin
       if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
        begin
-        //  cnt_mem++;
          cnt_delay.push_front(0);
        end
 
@@ -112,7 +111,6 @@ forever
               rd_data_valid = 1'b1;
               if( rd_data_valid == 1'b1 )
                 begin
-                  // cnt_mem--;
                   pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
                   pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
                   new_data_rd        = pkt_rd_data;
@@ -130,37 +128,6 @@ forever
       amm_if.readdatavalid <= rd_data_valid;
 
       `cb;
-      //   // // CHECK READ REQUEST // //
-      //   // check if there is a read request
-      //   if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
-      //     cnt_mem++;
-
-      //   // // RESPONSE TO READ REQUEST // //
-      //   // transmit data back if there is address read out
-      //   if( cnt_mem != 0 )
-      //     begin
-      //       if( _always_valid == 1'b1 )
-      //         rd_data_valid = 1'b1;
-      //       else
-      //         rd_data_valid = $urandom_range( 1,0 );
-
-      //       if( rd_data_valid == 1'b1 )
-      //         begin
-      //           cnt_mem--;
-      //           pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
-      //           pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
-      //           new_data_rd        = pkt_rd_data;
-      //           for( int i = 0; i < BYTE_WORD; i++ )
-      //             begin
-      //               read_data_fifo.put( new_data_rd[7:0] );
-      //               new_data_rd = new_data_rd >> 8;
-      //             end
-
-      //           amm_if.readdata <= pkt_rd_data;
-      //         end
-      //     end
-      //   amm_if.readdatavalid <= rd_data_valid;
-      // `cb;
       end
   end
 
