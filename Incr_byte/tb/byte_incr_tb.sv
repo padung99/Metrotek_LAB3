@@ -51,15 +51,13 @@ avalon_mm_if #(
 amm_control #(
   .DATA_W   ( DATA_WIDTH_TB ),
   .ADDR_W   ( ADDR_WIDTH_TB ),
-  .BYTE_CNT ( BYTE_CNT_TB   ),
-  .TYPE_RQ  ( "read"        )
+  .BYTE_CNT ( BYTE_CNT_TB   )
 ) amm_read_data;
 
 amm_control #(
   .DATA_W   ( DATA_WIDTH_TB ),
   .ADDR_W   ( ADDR_WIDTH_TB ),
-  .BYTE_CNT ( BYTE_CNT_TB   ),
-  .TYPE_RQ  ( "write"       )
+  .BYTE_CNT ( BYTE_CNT_TB   )
 ) amm_write_data;
 
 byte_inc #(
@@ -332,8 +330,9 @@ initial
 
     fork
       // assert_wr_wait_rq();
-      amm_write_data.send_rq( 0, 0 );
-      amm_read_data.send_rq( 0, 0 );
+      amm_write_data.send_rq( 0 );
+      amm_read_data.send_rq( 0 );
+      amm_read_data.response_rd_rq( 0 );
       stop_rd();
     join_any
 

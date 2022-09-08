@@ -5,8 +5,7 @@ typedef logic [7:0] byte_t;
 class amm_control #(
   parameter DATA_W   = 64,
   parameter ADDR_W   = 10,
-  parameter BYTE_CNT = DATA_W/8,
-  parameter TYPE_RQ  = "read"
+  parameter BYTE_CNT = DATA_W/8
 );
 
 parameter BYTE_WORD  = DATA_W/8;
@@ -46,7 +45,7 @@ endfunction
 
 `define cb @( posedge amm_if.clk );
 
-task send_rq( input bit _always_valid = 0, bit _no_waiting );
+task send_rq( input bit _no_waiting );
 
 logic              rd_data_valid;
 byte_t              rd_byte;
@@ -75,21 +74,110 @@ forever
       wait_rq = $urandom_range( 1,0 );
     
     amm_if.waitrequest <= wait_rq;
-
+    // $display("1");
     // // CHECK READ REQUEST // //
-    // check if there is a read transaction
-    if( TYPE_RQ == "read" )
+    // check if there is a read request
+    if( amm_if.write === 'x )
       begin
+        // `cb;
+        // $display("2");
         if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
           begin
-            cnt_mem++;
+            // cnt_mem++;
             read_addr_fifo.put( amm_if.address );
           end
 
         // // RESPONSE TO READ REQUEST // //
         // transmit data back if there is address read out
+        // if( cnt_mem != 0 )
+        //   begin
+        //     if( _always_valid == 1'b1 )
+        //       rd_data_valid = 1'b1;
+        //     else
+        //       rd_data_valid = $urandom_range( 1,0 );
+
+        //     if( rd_data_valid == 1'b1 )
+        //       begin
+        //         cnt_mem--;
+        //         // read_addr_fifo.get( rd_addr );
+        //         pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
+        //         pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
+        //         new_data_rd        = pkt_rd_data;
+        //         for( int i = 0; i < BYTE_WORD; i++ )
+        //           begin
+        //             read_data_fifo.put( new_data_rd[7:0] );
+        //             new_data_rd = new_data_rd >> 8;
+        //           end
+
+        //         amm_if.readdata <= pkt_rd_data;
+        //       end
+        //   end
+        // amm_if.readdatavalid <= rd_data_valid;
+        `cb;
+      end
+    else if( amm_if.read === 'x )
+      begin
+         `cb;
+        //  $display("3");
+         new_data_wr = ( DATA_W )'(0);
+        // // CHECK WRITE REQUEST // //
+        if( amm_if.waitrequest == 1'b0 && amm_if.write == 1'b1 && ( amm_if.writedata !== 'X ) )
+          begin
+            write_addr_fifo.put( amm_if.address );
+            new_data_wr = amm_if.writedata;
+            for( int i = 0; i < BYTE_WORD; i++ )
+              begin
+                if( amm_if.byteenable[i] == 1'b1 )
+                  begin
+                    write_data_fifo.put( new_data_wr[7:0] );
+                    new_data_wr = new_data_wr >> 8;
+                  end
+              end
+          end
+      end
+    // `cb;
+  end
+
+endtask
+
+task response_rd_rq( input bit _always_valid = 0 );
+
+logic               rd_data_valid;
+byte_t              rd_byte;
+byte_t              wr_byte;
+
+logic [DATA_W-1:0] new_data_rd;
+logic [DATA_W-1:0] new_data_wr;
+
+logic [DATA_W-1:0] pkt_rd_data;
+
+logic              wait_rq;
+int                cnt_mem;
+
+int                int_part;
+int                mod_part;
+int                cnt_word;
+logic [ADDR_W-1:0] max_addr;
+logic [ADDR_W-1:0] rd_addr;
+
+forever
+  begin
+    // $display("4");
+    rd_data_valid = 1'b0;
+    if( amm_if.write === 'x )
+      begin
+        // $display("5");
+        if( amm_if.waitrequest == 1'b0 && amm_if.read == 1'b1 )
+          begin
+            cnt_mem++;
+            // read_addr_fifo.put( amm_if.address );
+          end
+
+        // // RESPONSE TO READ REQUEST // //
+        // transmit data back if there is address read out
         if( cnt_mem != 0 )
-          begin 
+          begin
+            // $display("6");
             if( _always_valid == 1'b1 )
               rd_data_valid = 1'b1;
             else
@@ -112,29 +200,9 @@ forever
               end
           end
         amm_if.readdatavalid <= rd_data_valid;
-        `cb;
+        // $display("7");
+      `cb;
       end
-    else if( TYPE_RQ == "write" )
-      begin
-         `cb;
-         new_data_wr = ( DATA_W )'(0);
-        // // CHECK WRITE REQUEST // //
-        if( amm_if.waitrequest == 1'b0 && amm_if.write == 1'b1 && ( amm_if.writedata !== 'X ) )
-          begin
-            write_addr_fifo.put( amm_if.address );
-            new_data_wr = amm_if.writedata;
-            for( int i = 0; i < BYTE_WORD; i++ )
-              begin
-                if( amm_if.byteenable[i] == 1'b1 )
-                  begin
-                    write_data_fifo.put( new_data_wr[7:0] );
-                    new_data_wr = new_data_wr >> 8;
-                  end
-              end
-          end
-      end
-    else
-      $display("parameter TYPE_RQ error!!!!");
   end
 
 endtask
