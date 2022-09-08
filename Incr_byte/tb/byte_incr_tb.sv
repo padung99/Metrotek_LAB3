@@ -196,10 +196,10 @@ task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                     );
 base_addr                = _base_addr;
 length                   = _length;
-amm_write_data.length    = length;
-amm_read_data.length     = length;
-amm_write_data.base_addr = base_addr;
-amm_read_data.base_addr  = base_addr;
+// amm_write_data.length    = length;
+// amm_read_data.length     = length;
+// amm_write_data.base_addr = base_addr;
+// amm_read_data.base_addr  = base_addr;
 
 
 endtask
@@ -296,7 +296,7 @@ amm_read_if.readdatavalid     <= 1'b0;
 amm_read_if.waitrequest       <= 1'b0;
 amm_write_data.write_data_fifo = new();
 amm_read_data.read_data_fifo   = new();
-amm_write_data.cnt_byte        = 0;
+
 cnt_waiting                    = 0;
 setting_error                  = 1'b0;
 cnt_setting                    = 0;
