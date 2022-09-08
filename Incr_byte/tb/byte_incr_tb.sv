@@ -26,6 +26,9 @@ bit                        setting_error;
 int                        cnt_setting;
 bit                        always_deassert;
 
+bit                        always_valid;
+
+
 initial
   forever
     #5 clk_i_tb = !clk_i_tb;
@@ -129,10 +132,6 @@ task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                     );
 base_addr                = _base_addr;
 length                   = _length;
-// amm_write_data.length    = length;
-// amm_read_data.length     = length;
-// amm_write_data.base_addr = base_addr;
-// amm_read_data.base_addr  = base_addr;
 
 endtask
 
@@ -147,6 +146,7 @@ int   wr_byte_size;
 
 wr_byte_size = amm_write_data.write_data_fifo.num();
 byte_read = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
+$display("wr_byte_size: %0d, byte_read: %0d", wr_byte_size, byte_read );
 $display("#####Testing data begin#####");
 while( amm_write_data.write_data_fifo.num() != 0 )
   begin
@@ -205,8 +205,12 @@ srst_i_tb <= 1'b1;
 srst_i_tb                     <= 1'b0;
 amm_read_if.readdatavalid     <= 1'b0;
 amm_read_if.waitrequest       <= 1'b0;
+
 amm_write_data.write_data_fifo = new();
 amm_read_data.read_data_fifo   = new();
+
+amm_write_data.write_addr_fifo = new();
+amm_read_data.read_addr_fifo   = new();
 
 cnt_waiting                    = 0;
 setting_error                  = 1'b0;
@@ -238,26 +242,22 @@ while( waitrequest_o_tb == 1'b1 )
   begin
     @( posedge clk_i_tb );
     cnt_waiting++;
-    if( cnt_waiting >= 10*cnt_word ) 
+    if( cnt_waiting >= 10*cnt_word )
       break;
   end
 
-if( cnt_waiting >= 10*cnt_word )
+if( cnt_waiting >= 20*cnt_word )
   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
-
-// forever
-//   begin
-//     @( posedge clk_i_tb );
-//     // cnt_waiting++;
-//     if( waitrequest_o_tb == 1'b0 )
-//       break;
-//   end
-
-// if( cnt_waiting >= 10*cnt_word )
-//   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
 
 endtask
 
+task  setting_response( input int                       _delay,
+                             logic [DATA_WIDTH_TB-1:0] _random_word
+                     );
+amm_read_data.delay        = _delay;
+amm_read_data.random_word  = _random_word;
+
+endtask
 
 initial
   begin
@@ -266,13 +266,14 @@ initial
     amm_write_data = new( amm_write_if );
   
     reset();
-    gen_addr_length( 10'h10, 10'd30 );
+    gen_addr_length( 10'h10, 10'd20 );
+    setting_response( 5, ( DATA_WIDTH_TB )'(0) );
     setting();
 
     fork
       amm_write_data.send_rq( 0 );
       amm_read_data.send_rq( 0 );
-      amm_read_data.response_rd_rq( 0, 5 );
+      amm_read_data.response_rd_rq();
       stop_rd();
     join_any
 
@@ -290,7 +291,7 @@ initial
     stop_rd();
     test_data();
     test_addr();
-
+    ##10;
 
     // // // // ***********************Testcase 3*******************************
     reset();
@@ -300,6 +301,7 @@ initial
     stop_rd();
     test_data();
     test_addr();
+
 
     // // // // ***********************Testcase 4*******************************
     reset();
@@ -352,7 +354,7 @@ initial
 
     // // // ***********************Testcase 9*******************************
     reset();
-    $display("---------Testcase 9: add bytes until maximum address -------------");
+    $display("---------Testcase 9: add bytes until maximum address ( 29 bytes ) -------------");
     gen_addr_length( 10'h3fc, 10'd29 );
     setting();
     stop_rd();
@@ -371,7 +373,20 @@ initial
 
     // // // // ***********************Testcase 11*******************************
     reset();
-    $display("---------Testcase 11: add form 0 to full mem ");
+    $display("---------Testcase 11: test overload byte ( 0xff + 0x01 = 0x00 )-------------");
+    setting_response( 5, 64'h5624ff5863ff1f2e );
+    gen_addr_length( 10'h10, 10'd7 );
+    
+    setting();
+    stop_rd();
+    test_data();
+    test_addr();
+
+
+    // // // // ***********************Testcase 12*******************************
+    reset();
+    setting_response( 5, 0 );
+    $display("---------Testcase 12: add bytes from addr 0 to max addr ");
     gen_addr_length( 10'h0, 10'b1111111111 );
     setting();
     stop_rd();

@@ -18,7 +18,8 @@ mailbox #( logic [ADDR_W-1:0] ) read_addr_fifo;
 
 mailbox #( logic [7:0] )        write_data_fifo;
 mailbox #( logic [ADDR_W-1:0] ) write_addr_fifo;
-
+logic [DATA_W-1:0]              random_word;
+int                             delay;
 
 function new( virtual avalon_mm_if #(
                                     .ADDR_WIDTH ( ADDR_W ),
@@ -31,7 +32,8 @@ this.read_data_fifo  = new();
 this.read_addr_fifo  = new();
 this.write_data_fifo = new();
 this.write_addr_fifo = new();
-
+this.random_word     = '0;
+this.delay           = 0;
 endfunction
 
 `define cb @( posedge amm_if.clk );
@@ -50,7 +52,7 @@ forever
       wait_rq = $urandom_range( 1,0 );
     
     amm_if.waitrequest <= wait_rq;
-
+    // $display("1");
     // // CHECK READ REQUEST // //
     // check if there is a read request
     if( amm_if.write === 'x )
@@ -61,10 +63,13 @@ forever
       end
     else if( amm_if.read === 'x )
       begin
-         new_data_wr = ( DATA_W )'(0); 
+        // $display("2");
+        `cb;
+        new_data_wr = ( DATA_W )'(0); 
         // // CHECK WRITE REQUEST // //
         if( amm_if.waitrequest == 1'b0 && amm_if.write == 1'b1 && ( amm_if.writedata !== 'X ) )
           begin
+            // $display("3");
             write_addr_fifo.put( amm_if.address );
             new_data_wr = amm_if.writedata;
             for( int i = 0; i < BYTE_WORD; i++ )
@@ -76,13 +81,13 @@ forever
                   end
               end
           end
-        `cb;
+
       end
   end
 
 endtask
 
-task response_rd_rq( input bit _always_valid = 0, int _delay );
+task response_rd_rq();
 
 logic              rd_data_valid;
 logic [DATA_W-1:0] new_data_rd;
@@ -106,13 +111,21 @@ forever
       
       for( int i = 0; i < cnt_delay.size(); i++ )
         begin
-          if( cnt_delay[i] == _delay  && cnt_delay.size() != 0  )
+          if( cnt_delay[i] == this.delay  && cnt_delay.size() != 0  )
             begin
               rd_data_valid = 1'b1;
               if( rd_data_valid == 1'b1 )
                 begin
-                  pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
-                  pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
+                  if( this.random_word == ( DATA_W )'(0) )
+                    begin
+                      pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
+                      pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
+                    end
+                  else
+                    begin
+                      pkt_rd_data[63:32] = random_word[63:32];
+                      pkt_rd_data[31:0]  = random_word[31:0];
+                    end
                   new_data_rd        = pkt_rd_data;
                   for( int i = 0; i < BYTE_WORD; i++ )
                     begin
@@ -122,7 +135,6 @@ forever
 
                   amm_if.readdata <= pkt_rd_data;
                 end
-              //  cnt_delay.delete(i);
             end
         end
       amm_if.readdatavalid <= rd_data_valid;
