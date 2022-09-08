@@ -52,7 +52,7 @@ forever
       wait_rq = $urandom_range( 1,0 );
     
     amm_if.waitrequest <= wait_rq;
-    // $display("1");
+
     // // CHECK READ REQUEST // //
     // check if there is a read request
     if( amm_if.write === 'x )
@@ -63,13 +63,12 @@ forever
       end
     else if( amm_if.read === 'x )
       begin
-        // $display("2");
         `cb;
         new_data_wr = ( DATA_W )'(0); 
+
         // // CHECK WRITE REQUEST // //
         if( amm_if.waitrequest == 1'b0 && amm_if.write == 1'b1 && ( amm_if.writedata !== 'X ) )
           begin
-            // $display("3");
             write_addr_fifo.put( amm_if.address );
             new_data_wr = amm_if.writedata;
             for( int i = 0; i < BYTE_WORD; i++ )
@@ -111,6 +110,7 @@ forever
       
       for( int i = 0; i < cnt_delay.size(); i++ )
         begin
+          // // Response to read request after delay // // 
           if( cnt_delay[i] == this.delay  && cnt_delay.size() != 0  )
             begin
               rd_data_valid = 1'b1;
@@ -123,9 +123,9 @@ forever
                     end
                   else
                     begin
-                      pkt_rd_data[63:32] = random_word[63:32];
-                      pkt_rd_data[31:0]  = random_word[31:0];
+                      pkt_rd_data = random_word;
                     end
+
                   new_data_rd        = pkt_rd_data;
                   for( int i = 0; i < BYTE_WORD; i++ )
                     begin

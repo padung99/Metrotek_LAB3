@@ -24,9 +24,6 @@ int                        int_part;
 int                        mod_part;
 bit                        setting_error;
 int                        cnt_setting;
-// bit                        always_deassert;
-
-// bit                        always_valid;
 
 
 initial
@@ -140,13 +137,12 @@ task test_data();
 
 logic [7:0] new_wr_pkt;
 logic [7:0] new_rd_pkt;
-// int   max_byte_read;
 int         byte_read;
 int         wr_byte_size;
 
 wr_byte_size = amm_write_data.write_data_fifo.num();
 byte_read    = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
-// $display("wr_byte_size: %0d, byte_read: %0d", wr_byte_size, byte_read );
+
 $display("#####Testing data begin#####");
 while( amm_write_data.write_data_fifo.num() != 0 )
   begin
@@ -173,15 +169,10 @@ endtask
 task test_addr();
 
 logic  [ADDR_WIDTH_TB-1:0] wr_addr;
-// logic  [ADDR_WIDTH_TB-1:0] max_addr;
-
 logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
-// int addr_size;
+
 
 cnt_addr = {(ADDR_WIDTH_TB){1'b0}};
-
-// max_addr  = base_addr + cnt_word - 1;
-// addr_size = amm_write_data.write_addr_fifo.num();
 
 
 $display("#####Testing addr begin#####");
@@ -221,7 +212,7 @@ cnt_setting                    = 0;
 
 endtask
 
-task stop_rd();
+task stop_rq();
 
 while( waitrequest_o_tb == 1'b1 )
   begin
@@ -259,7 +250,7 @@ initial
       amm_write_data.send_rq( 0 );
       amm_read_data.send_rq( 0 );
       amm_read_data.response_rd_rq();
-      stop_rd();
+      stop_rq();
     join_any
 
     // // // ***********************Testcase 1*******************************
@@ -273,7 +264,7 @@ initial
     $display("---------Testcase 2: Write until max address-------------");
     gen_addr_length( 10'h3fc, 10'd45 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
     ##10;
@@ -283,7 +274,7 @@ initial
     $display("---------Testcase 3: 4 bytes-------------");
     gen_addr_length( 10'h10, 10'd4 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -293,7 +284,7 @@ initial
     $display("---------Testcase 4: 8 bytes-------------");
     gen_addr_length( 10'h10, 10'd8 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -303,7 +294,7 @@ initial
     $display("---------Testcase 5: 16 bytes-------------");
     gen_addr_length( 10'h10, 10'd16 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -312,7 +303,7 @@ initial
     $display("---------Testcase 6: 24 bytes-------------");
     gen_addr_length( 10'h10, 10'd24 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -322,7 +313,7 @@ initial
     $display("---------Testcase 7: 30 bytes-------------");
     gen_addr_length( 10'h10, 10'd30 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -332,7 +323,7 @@ initial
     $display("---------Testcase 8: 1 byte-------------");
     gen_addr_length( 10'h10, 10'd1 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -342,7 +333,7 @@ initial
     $display("---------Testcase 9: add bytes until maximum address ( 29 bytes ) -------------");
     gen_addr_length( 10'h3fc, 10'd29 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -352,7 +343,7 @@ initial
     $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes ) -------------");
     gen_addr_length( 10'h3fc, 10'd33 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -363,7 +354,7 @@ initial
     gen_addr_length( 10'h10, 10'd7 );
     
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
@@ -374,7 +365,7 @@ initial
     $display("---------Testcase 12: add bytes from addr 0 to max addr ");
     gen_addr_length( 10'h0, 10'b1111111111 );
     setting();
-    stop_rd();
+    stop_rq();
     test_data();
     test_addr();
 
