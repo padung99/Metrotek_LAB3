@@ -2,7 +2,7 @@ import amm_pkg::*;
 
 module byte_incr_tb;
 
-parameter int DATA_WIDTH_TB = 64; 
+parameter int DATA_WIDTH_TB = 64;
 parameter int ADDR_WIDTH_TB = 10;
 parameter int BYTE_CNT_TB   = DATA_WIDTH_TB/8;
 
@@ -18,12 +18,12 @@ logic  [ADDR_WIDTH_TB-1:0] length_i_tb;
 
 logic  [ADDR_WIDTH_TB-1:0] base_addr;
 logic  [ADDR_WIDTH_TB-1:0] length;
-int                        cnt_waiting;
-int                        cnt_word;
+int                        timeout_waiting;
+int                        total_word;
 int                        int_part;
 int                        mod_part;
 bit                        setting_error;
-int                        cnt_setting;
+int                        timeout_setting;
 
 
 initial
@@ -108,8 +108,8 @@ forever
         length_i_tb    <= 1'b0;
       end
     @( posedge clk_i_tb );
-    cnt_setting++;
-    if( cnt_setting >= 5 )
+    timeout_setting++;
+    if( timeout_setting >= 5 )
       begin
         $display("waitrequest_o_tb error");
         setting_error = 1'b1;
@@ -122,7 +122,7 @@ endtask
 assign int_part  = length / BYTE_WORD;
 assign mod_part  = length % BYTE_WORD;
 
-assign cnt_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
+assign total_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
 
 task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                             logic  [ADDR_WIDTH_TB-1:0] _length
@@ -203,9 +203,9 @@ amm_read_data.read_data_fifo   = new();
 amm_write_data.write_addr_fifo = new();
 amm_read_data.read_addr_fifo   = new();
 
-cnt_waiting                    = 0;
+timeout_waiting                = 0;
 setting_error                  = 1'b0;
-cnt_setting                    = 0;
+timeout_setting                = 0;
 
 
 @( posedge clk_i_tb );
@@ -217,12 +217,12 @@ task stop_rq();
 while( waitrequest_o_tb == 1'b1 )
   begin
     @( posedge clk_i_tb );
-    cnt_waiting++;
-    if( cnt_waiting >= 10*cnt_word )
+    timeout_waiting++;
+    if( timeout_waiting >= 10*total_word )
       break;
   end
 
-if( cnt_waiting >= 20*cnt_word )
+if( timeout_waiting >= 20*total_word )
   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
 
 endtask

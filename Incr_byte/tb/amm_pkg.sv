@@ -64,7 +64,7 @@ forever
     else if( amm_if.read === 'x )
       begin
         `cb;
-        new_data_wr = ( DATA_W )'(0); 
+        new_data_wr = ( DATA_W )'(0);
 
         // // CHECK WRITE REQUEST // //
         if( amm_if.waitrequest == 1'b0 && amm_if.write == 1'b1 && ( amm_if.writedata !== 'X ) )
@@ -103,13 +103,14 @@ forever
          cnt_delay.push_front(0);
        end
 
-      for( int i = 0; i < cnt_delay.size(); i++ )
-        begin
-          cnt_delay[i]++;
-        end
+      // for( int i = 0; i < cnt_delay.size(); i++ )
+      //   begin
+      //     cnt_delay[i]++;
+      //   end
       
       for( int i = 0; i < cnt_delay.size(); i++ )
         begin
+          cnt_delay[i]++;
           // // Response to read request after delay // // 
           if( cnt_delay[i] == this.delay  && cnt_delay.size() != 0  )
             begin
@@ -118,8 +119,14 @@ forever
                 begin
                   if( this.random_word == ( DATA_W )'(0) )
                     begin
-                      pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
-                      pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
+                      for( int i = 0; i < BYTE_WORD; i++ )
+                        begin
+                          pkt_rd_data[31:0] = $urandom_range( 2**DATA_W-1,0 );
+                          if( i != ( BYTE_WORD - 1 ) )
+                            pkt_rd_data = pkt_rd_data << 32;
+                        end
+                      // pkt_rd_data[63:32] = $urandom_range( 2**DATA_W-1,0 );
+                      // pkt_rd_data[31:0]  = $urandom_range( 2**DATA_W-1,0 );
                     end
                   else
                     begin

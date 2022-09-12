@@ -3,8 +3,7 @@
 - amm_wr_data_o: 295 ps, wr_data не идентифицирован, 0xff + 0x01 = 0x00, а не xx -->
 
 Testcase 2:
-[base_addr =  0x3fc, length =  45 bytes -- amm_rd_waitrequest = 1'b0 -- amm_wr_waitrequest = random -- readdatavalid = random]
-- amm_wr_data_o: 295 ps, wr_data не идентифицирован, 0xff + 0x01 = 0x00, а не xx 
+[base_addr =  0x3fc, length =  45 bytes -- amm_rd_waitrequest = 1'b0 -- amm_wr_waitrequest = random -- readdatavalid = random] 
 - amm_wr_byteenable_o: 385 ps, ошибка в последнем слове 0x1f, результат здесь должен быть 0xff Эта ошибка приведет к неправильному приему данных в write_data_fifo ==> потеряно 3 байта.
 
 Testcase 4:
@@ -18,10 +17,6 @@ Testcase 5:
 Testcase 6: 
 [ base_addr =  0x10, length = 24 bytes -- amm_rd_waitrequest = random -- amm_wr_waitrequest = random -- readdatavalid = random ]
 - amm_wr_byteenable_o: 1115 ps, тут amm_wr_byteenable_o не должен быть = 0x00, а должен быть = 0xff, Эта ошибка приведет к неправильному приему данных в write_data fifo ==> потеряно 1 слово ( 8 bytes )
-
-Testcase 7:
-[ base_addr =  0x10, length = 30 bytes -- amm_rd_waitrequest = random -- amm_wr_waitrequest = random -- readdatavalid = random ]
-- amm_wr_data_o: 1315 ps, wr_data не идентифицирован, 0xff + 0x01 = 0x00, а не xx 
 
 Testcase 10:
 [ base_addr =  0x3fc, length = 33 bytes -- amm_rd_waitrequest = random -- amm_wr_waitrequest = random -- readdatavalid = random  ]
