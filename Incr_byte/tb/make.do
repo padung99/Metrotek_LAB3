@@ -3,9 +3,9 @@ vlib work
 set source_file {
   "../rtl/byte_inc.sv"
   "amm_pkg.sv"
-  "../bfm_master/synthesis/submodules/verbosity_pkg.sv"
-  "../bfm_master/synthesis/submodules/avalon_mm_pkg.sv"
-  "../bfm_master/synthesis/submodules/avalon_utilities_pkg.sv"
+  "../bfm_slave/synthesis/submodules/verbosity_pkg.sv"
+  "../bfm_slave/synthesis/submodules/avalon_mm_pkg.sv"
+  "../bfm_slave/synthesis/submodules/avalon_utilities_pkg.sv"
 
   "../bfm_master/synthesis/submodules/altera_avalon_mm_master_bfm.sv"
   "../bfm_master/synthesis/bfm_master.v"
@@ -28,7 +28,6 @@ foreach files $source_file {
 set fbasename [file rootname [file tail [lindex $source_file end]]]
 
 vsim $fbasename
-
 add log -r /*
 
 add wave -hex -r *

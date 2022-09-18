@@ -1,3 +1,4 @@
+`timescale 1 ps / 1 ps
 import amm_pkg::*;
 
 module byte_incr_tb;
@@ -82,45 +83,20 @@ amm_control #(
   .BYTE_CNT ( BYTE_CNT_TB   )
 ) amm_write_data;
 
-// byte_inc #(
-//   .DATA_WIDTH ( DATA_WIDTH_TB ),
-//   .ADDR_WIDTH ( ADDR_WIDTH_TB ),
-//   .BYTE_CNT   ( BYTE_CNT_TB   )
-// ) dut (
-//   .clk_i                  ( clk_i_tb                  ),
-//   .srst_i                 ( srst_i_tb                 ),
-
-//   .base_addr_i            ( base_addr_i_tb            ),
-//   .length_i               ( length_i_tb               ),
-//   .run_i                  ( run_i_tb                  ), 
-//   .waitrequest_o          ( waitrequest_o_tb          ),
-
-//   .amm_rd_address_o       ( amm_read_if.address       ),
-//   .amm_rd_read_o          ( amm_read_if.read          ),
-//   .amm_rd_readdata_i      ( amm_read_if.readdata      ),
-//   .amm_rd_readdatavalid_i ( amm_read_if.readdatavalid ),
-//   .amm_rd_waitrequest_i   ( amm_read_if.waitrequest   ),
-
-//   .amm_wr_address_o       ( amm_write_if.address      ),
-//   .amm_wr_write_o         ( amm_write_if.write        ),
-//   .amm_wr_writedata_o     ( amm_write_if.writedata    ),
-//   .amm_wr_byteenable_o    ( amm_write_if.byteenable   ),
-//   .amm_wr_waitrequest_i   ( amm_write_if.waitrequest  )
-// );
 
 // assign avs_rd_address_tb         = amm_read_if.address; //
 // assign avs_read_tb               = amm_read_if.read; //
 
-// assign amm_rd_readdata_i_tb      = amm_read_if.readdata; //
-// assign amm_rd_readdatavalid_i_tb = amm_read_if.readdatavalid; //
-// assign amm_rd_waitrequest_i_tb   = amm_read_if.waitrequest; //
+assign amm_rd_readdata_i_tb      = amm_read_if.readdata; //
+assign amm_rd_readdatavalid_i_tb = amm_read_if.readdatavalid; //
+assign amm_rd_waitrequest_i_tb   = amm_read_if.waitrequest; //
 
 // assign avs_wr_address_tb         = amm_write_if.address; //
 // assign avs_write_tb              = amm_write_if.write; //
 // assign avs_writedata_tb          = amm_write_if.writedata; //
 // assign avs_byteenable_tb         = amm_write_if.byteenable;
 
-// assign amm_wr_waitrequest_i_tb   = amm_write_if.waitrequest; //
+assign amm_wr_waitrequest_i_tb   = amm_write_if.waitrequest; //
 
 byte_inc #(
   .DATA_WIDTH ( DATA_WIDTH_TB ),
@@ -132,11 +108,14 @@ byte_inc #(
 
   .base_addr_i            ( base_addr_i_tb            ),
   .length_i               ( length_i_tb               ),
-  .run_i                  ( run_i_tb                  ), 
+  .run_i                  ( run_i_tb                  ),
   .waitrequest_o          ( waitrequest_o_tb          ),
 
   .amm_rd_address_o       ( amm_read_if.address       ), // output 
   .amm_rd_read_o          ( amm_read_if.read          ), // output
+  // .amm_rd_readdata_i      ( amm_rd_readdata_i_tb      ), // input
+  // .amm_rd_readdatavalid_i ( amm_rd_readdatavalid_i_tb ), // input
+  // .amm_rd_waitrequest_i   ( amm_rd_waitrequest_i_tb   ), // input
   .amm_rd_readdata_i      ( amm_read_if.readdata      ), // input
   .amm_rd_readdatavalid_i ( amm_read_if.readdatavalid ), // input
   .amm_rd_waitrequest_i   ( amm_read_if.waitrequest   ), // input
@@ -146,44 +125,163 @@ byte_inc #(
   .amm_wr_writedata_o     ( amm_write_if.writedata    ), // output
   .amm_wr_byteenable_o    ( amm_write_if.byteenable   ), // output
   .amm_wr_waitrequest_i   ( amm_write_if.waitrequest   ) // input
+  // .amm_wr_waitrequest_i   ( amm_wr_waitrequest_i_tb   ) // input
 );
 
-assign avs_rd_waitrequest_tb = amm_read_if.waitrequest;
-assign avs_wr_waitrequest_tb = amm_write_if.waitrequest;
-
-bfm_slave #(
-  .DATA_W   ( DATA_WIDTH_TB ),
-  .ADDR_W   ( ADDR_WIDTH_TB ),
-  .BYTE_CNT ( BYTE_CNT_TB   )
-) slave_read (
-  .clk               ( clk_i_tb                  ),
-  .reset             ( srst_i_tb                 ),
-  .avs_address       ( amm_read_if.address       ), // input 
-  .avs_readdata      ( avs_readdata_tb      ), // output
-  .avs_writedata     (), 
-  .avs_waitrequest   ( avs_rd_waitrequest_tb   ), // output
-  .avs_write         (), 
-  .avs_read          ( amm_read_if.read          ), // input 
-  .avs_byteenable    (), 
-  .avs_readdatavalid ( avs_readdatavalid_tb )  // output
+altera_avalon_mm_slave_bfm #(
+  .AV_ADDRESS_W               (ADDR_WIDTH_TB),
+  .AV_SYMBOL_W                (8),
+  .AV_NUMSYMBOLS              (8),
+  .AV_BURSTCOUNT_W            (3),
+  .AV_READRESPONSE_W          (8),
+  .AV_WRITERESPONSE_W         (8),
+  .USE_READ                   (1),
+  .USE_WRITE                  (1),
+  .USE_ADDRESS                (1),
+  .USE_BYTE_ENABLE            (1),
+  .USE_BURSTCOUNT             (0),
+  .USE_READ_DATA              (1),
+  .USE_READ_DATA_VALID        (1),
+  .USE_WRITE_DATA             (1),
+  .USE_BEGIN_TRANSFER         (0),
+  .USE_BEGIN_BURST_TRANSFER   (0),
+  .USE_WAIT_REQUEST           (1),
+  .USE_TRANSACTIONID          (0),
+  .USE_WRITERESPONSE          (0),
+  .USE_READRESPONSE           (0),
+  .USE_CLKEN                  (0),
+  .AV_BURST_LINEWRAP          (1),
+  .AV_BURST_BNDR_ONLY         (1),
+  .AV_MAX_PENDING_READS       (1),
+  .AV_MAX_PENDING_WRITES      (0),
+  .AV_FIX_READ_LATENCY        (0),
+  .AV_READ_WAIT_TIME          (1),
+  .AV_WRITE_WAIT_TIME         (0),
+  .REGISTER_WAITREQUEST       (0),
+  .AV_REGISTERINCOMINGSIGNALS (0),
+  .VHDL_ID                    (0)
+) mm_slave_bfm_0 (
+  .clk                      (clk_i_tb),               //       clk.clk
+  .reset                    (srst_i_tb),             // clk_reset.reset
+  .avs_writedata            (),     //        s0.writedata
+  .avs_readdata             (amm_read_if.readdata),      //          .readdata
+  .avs_address              (amm_read_if.address),       //          .address
+  .avs_waitrequest          (amm_read_if.waitrequest),   //          .waitrequest
+  .avs_write                (),         //          .write
+  .avs_read                 (amm_read_if.read),          //          .read
+  .avs_byteenable           (),    //          .byteenable
+  .avs_readdatavalid        (amm_read_if.readdatavalid), //          .readdatavalid
+  .avs_begintransfer        (1'b0),              // (terminated)
+  .avs_beginbursttransfer   (1'b0),              // (terminated)
+  .avs_burstcount           (3'b001),            // (terminated)
+  .avs_arbiterlock          (1'b0),              // (terminated)
+  .avs_lock                 (1'b0),              // (terminated)
+  .avs_debugaccess          (1'b0),              // (terminated)
+  .avs_transactionid        (8'b00000000),       // (terminated)
+  .avs_readid               (),                  // (terminated)
+  .avs_writeid              (),                  // (terminated)
+  .avs_clken                (1'b1),              // (terminated)
+  .avs_response             (),                  // (terminated)
+  .avs_writeresponserequest (1'b0),              // (terminated)
+  .avs_writeresponsevalid   (),                  // (terminated)
+  .avs_readresponse         (),                  // (terminated)
+  .avs_writeresponse        ()                   // (terminated)
 );
 
-bfm_slave #(
-  .DATA_W   ( DATA_WIDTH_TB ),
-  .ADDR_W   ( ADDR_WIDTH_TB ),
-  .BYTE_CNT ( BYTE_CNT_TB   )
-) slave_write (
-  .clk               ( clk_i_tb                 ),
-  .reset             ( srst_i_tb                ),
-  .avs_address       ( amm_write_if.address     ), // input
-  .avs_readdata      (), 
-  .avs_writedata     ( amm_write_if.writedata   ), // input
-  .avs_waitrequest   ( avs_wr_waitrequest_tb ), // output
-  .avs_write         ( amm_write_if.write       ), // input
-  .avs_read          (),
-  .avs_byteenable    ( amm_write_if.byteenable  ), // input
-  .avs_readdatavalid ()
+altera_avalon_mm_slave_bfm #(
+  .AV_ADDRESS_W               (ADDR_WIDTH_TB),
+  .AV_SYMBOL_W                (8),
+  .AV_NUMSYMBOLS              (8),
+  .AV_BURSTCOUNT_W            (3),
+  .AV_READRESPONSE_W          (8),
+  .AV_WRITERESPONSE_W         (8),
+  .USE_READ                   (1),
+  .USE_WRITE                  (1),
+  .USE_ADDRESS                (1),
+  .USE_BYTE_ENABLE            (1),
+  .USE_BURSTCOUNT             (0),
+  .USE_READ_DATA              (1),
+  .USE_READ_DATA_VALID        (1),
+  .USE_WRITE_DATA             (1),
+  .USE_BEGIN_TRANSFER         (0),
+  .USE_BEGIN_BURST_TRANSFER   (0),
+  .USE_WAIT_REQUEST           (1),
+  .USE_TRANSACTIONID          (0),
+  .USE_WRITERESPONSE          (0),
+  .USE_READRESPONSE           (0),
+  .USE_CLKEN                  (0),
+  .AV_BURST_LINEWRAP          (1),
+  .AV_BURST_BNDR_ONLY         (1),
+  .AV_MAX_PENDING_READS       (1),
+  .AV_MAX_PENDING_WRITES      (0),
+  .AV_FIX_READ_LATENCY        (0),
+  .AV_READ_WAIT_TIME          (1),
+  .AV_WRITE_WAIT_TIME         (0),
+  .REGISTER_WAITREQUEST       (0),
+  .AV_REGISTERINCOMINGSIGNALS (0),
+  .VHDL_ID                    (0)
+) mm_slave_bfm_1 (
+  .clk                      (clk_i_tb),               //       clk.clk
+  .reset                    (srst_i_tb),             // clk_reset.reset
+  .avs_writedata            (amm_write_if.writedata),     //        s0.writedata
+  .avs_readdata             (),      //          .readdata
+  .avs_address              (amm_write_if.address),       //          .address
+  .avs_waitrequest          (amm_write_if.waitrequest),   //          .waitrequest
+  .avs_write                (amm_write_if.write),         //          .write
+  .avs_read                 (amm_read_if.read),          //          .read
+  .avs_byteenable           (amm_write_if.byteenable),    //          .byteenable
+  .avs_readdatavalid        (), //          .readdatavalid
+  .avs_begintransfer        (1'b0),              // (terminated)
+  .avs_beginbursttransfer   (1'b0),              // (terminated)
+  .avs_burstcount           (3'b001),            // (terminated)
+  .avs_arbiterlock          (1'b0),              // (terminated)
+  .avs_lock                 (1'b0),              // (terminated)
+  .avs_debugaccess          (1'b0),              // (terminated)
+  .avs_transactionid        (8'b00000000),       // (terminated)
+  .avs_readid               (),                  // (terminated)
+  .avs_writeid              (),                  // (terminated)
+  .avs_clken                (1'b1),              // (terminated)
+  .avs_response             (),                  // (terminated)
+  .avs_writeresponserequest (1'b0),              // (terminated)
+  .avs_writeresponsevalid   (),                  // (terminated)
+  .avs_readresponse         (),                  // (terminated)
+  .avs_writeresponse        ()                   // (terminated)
 );
+
+
+// bfm_slave #(
+//   .DATA_W   ( DATA_WIDTH_TB ),
+//   .ADDR_W   ( ADDR_WIDTH_TB ),
+//   .BYTE_CNT ( BYTE_CNT_TB   )
+// ) slave_read (
+//   .clk               ( clk_i_tb             ),
+//   .reset             ( srst_i_tb            ),
+//   .avs_address       ( amm_read_if.address  ), // input 
+//   .avs_readdata      ( amm_read_if.readdata ), // output
+//   .avs_writedata     (), 
+//   .avs_waitrequest   ( amm_read_if.waitrequest ), // output
+//   .avs_write         (), 
+//   .avs_read          ( amm_read_if.read      ), // input 
+//   .avs_byteenable    (), 
+//   .avs_readdatavalid ( amm_read_if.readdatavalid  )  // output
+// );
+
+// bfm_slave #(
+//   .DATA_W   ( DATA_WIDTH_TB ),
+//   .ADDR_W   ( ADDR_WIDTH_TB ),
+//   .BYTE_CNT ( BYTE_CNT_TB   )
+// ) slave_write (
+//   .clk               ( clk_i_tb                 ),
+//   .reset             ( srst_i_tb                ),
+//   .avs_address       ( amm_write_if.address     ), // input
+//   .avs_readdata      (),
+//   .avs_writedata     ( amm_write_if.writedata   ), // input
+//   .avs_waitrequest   ( amm_write_if.waitrequest ), // output
+//   .avs_write         ( amm_write_if.write       ), // input
+//   .avs_read          (),
+//   .avs_byteenable    ( amm_write_if.byteenable ), // input
+//   .avs_readdatavalid ()
+// );
 
 
 task setting();
@@ -293,8 +391,10 @@ task reset();
 srst_i_tb <= 1'b1;
 @( posedge clk_i_tb );
 srst_i_tb                     <= 1'b0;
-amm_read_if.readdatavalid     <= 1'b0;
-amm_read_if.waitrequest       <= 1'b0;
+
+// amm_read_if.readdatavalid     <= 1'b0;
+// amm_read_if.waitrequest       <= 1'b0;
+
 
 amm_write_data.write_data_fifo = new();
 amm_read_data.read_data_fifo   = new();
@@ -348,10 +448,12 @@ initial
     fork
       amm_write_data.send_rq( 0 );
       amm_read_data.send_rq( 0 );
-      amm_read_data.response_rd_rq();
+      // amm_read_data.response_rd_rq();
       stop_rq();
     join_any
-
+    mm_slave_bfm_0.init();
+    mm_slave_bfm_1.init();
+    mm_slave_bfm_0.set_response_data(64'h5624ff5863ff1f2e,0);
     // // // ***********************Testcase 1*******************************
     $display("----------Testcase 1: 20 bytes-----------");
     test_data(); 
@@ -472,3 +574,21 @@ initial
   end
 
 endmodule
+
+// module tb;
+
+// module1 dut( .signalA(  ), .signalB(  ), .... );
+
+// class ABC;
+
+// function automatic void method1( arg1, arg2, ... )
+
+// //do sth
+
+// endfunction
+
+// dut.method1()
+
+// endclass
+
+// endmodule
