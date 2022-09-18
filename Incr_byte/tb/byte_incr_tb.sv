@@ -198,9 +198,10 @@ initial
     setting_response( 5, ( DATA_WIDTH_TB )'(0) );
     setting();
     fork
-      amm_write_data.send_rq( 0 );
-      amm_read_data.send_rq( 0 );
+      amm_write_data.send_rq(0);
+      amm_read_data.send_rq(0);
       amm_read_data.response_rd_rq();
+
       stop_rq();
     join_any
     // // // ***********************Testcase 1*******************************
@@ -303,21 +304,20 @@ initial
     setting_response( 5, 64'h5624ff5863ff1f2e );
     gen_addr_length( 10'h10, 10'd7 );
 
-  setting();
+    setting();
     stop_rq();
     test_data();
     test_addr();
 
-
-    // // // // // ***********************Testcase 12*******************************
-    // reset();
-    // setting_response( 5, 0 );
-    // $display("---------Testcase 12: add bytes from addr 0 to max addr ");
-    // gen_addr_length( 10'h0, 10'b1111111111 );
-    // setting();
-    // stop_rq();
-    // test_data();
-    // test_addr();
+    // // // // ***********************Testcase 12*******************************
+    reset();
+    setting_response( 5, 0 );
+    $display("---------Testcase 12: add bytes from addr 0 to max addr ");
+    gen_addr_length( 10'h0, 10'b1111111111 );
+    setting();
+    stop_rq();
+    test_data();
+    test_addr();
   
     $stop();
   end
