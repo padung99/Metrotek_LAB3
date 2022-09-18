@@ -25,6 +25,28 @@ int                        mod_part;
 bit                        setting_error;
 int                        timeout_setting;
 
+logic [ADDR_WIDTH_TB-1:0] amm_rd_address_o_tb;
+logic                  amm_rd_read_o_tb;
+logic  [DATA_WIDTH_TB-1:0] amm_rd_readdata_i_tb;
+logic                   amm_rd_readdatavalid_i_tb;
+logic                   amm_rd_waitrequest_i_tb;
+
+logic [ADDR_WIDTH_TB-1:0] amm_wr_address_o_tb;
+logic                  amm_wr_write_o_tb;
+logic [DATA_WIDTH_TB-1:0] amm_wr_writedata_o_tb;
+logic [BYTE_CNT_TB-1:0]   amm_wr_byteenable_o_tb;
+logic                   amm_wr_waitrequest_i_tb;
+
+logic [ADDR_WIDTH_TB-1:0]   avs_rd_address_tb;
+logic [ADDR_WIDTH_TB-1:0]   avs_wr_address_tb;
+
+logic  [DATA_WIDTH_TB-1:0]   avs_readdata_tb;
+logic [DATA_WIDTH_TB-1:0]   avs_writedata_tb;
+logic                 avs_rd_waitrequest_tb;
+logic                 avs_wr_waitrequest_tb;
+logic                avs_write_tb;
+logic                avs_read_tb;
+logic [BYTE_CNT_TB-1:0] avs_byteenable_tb;
 
 initial
   forever
@@ -60,6 +82,46 @@ amm_control #(
   .BYTE_CNT ( BYTE_CNT_TB   )
 ) amm_write_data;
 
+// byte_inc #(
+//   .DATA_WIDTH ( DATA_WIDTH_TB ),
+//   .ADDR_WIDTH ( ADDR_WIDTH_TB ),
+//   .BYTE_CNT   ( BYTE_CNT_TB   )
+// ) dut (
+//   .clk_i                  ( clk_i_tb                  ),
+//   .srst_i                 ( srst_i_tb                 ),
+
+//   .base_addr_i            ( base_addr_i_tb            ),
+//   .length_i               ( length_i_tb               ),
+//   .run_i                  ( run_i_tb                  ), 
+//   .waitrequest_o          ( waitrequest_o_tb          ),
+
+//   .amm_rd_address_o       ( amm_read_if.address       ),
+//   .amm_rd_read_o          ( amm_read_if.read          ),
+//   .amm_rd_readdata_i      ( amm_read_if.readdata      ),
+//   .amm_rd_readdatavalid_i ( amm_read_if.readdatavalid ),
+//   .amm_rd_waitrequest_i   ( amm_read_if.waitrequest   ),
+
+//   .amm_wr_address_o       ( amm_write_if.address      ),
+//   .amm_wr_write_o         ( amm_write_if.write        ),
+//   .amm_wr_writedata_o     ( amm_write_if.writedata    ),
+//   .amm_wr_byteenable_o    ( amm_write_if.byteenable   ),
+//   .amm_wr_waitrequest_i   ( amm_write_if.waitrequest  )
+// );
+
+// assign avs_rd_address_tb         = amm_read_if.address; //
+// assign avs_read_tb               = amm_read_if.read; //
+
+// assign amm_rd_readdata_i_tb      = amm_read_if.readdata; //
+// assign amm_rd_readdatavalid_i_tb = amm_read_if.readdatavalid; //
+// assign amm_rd_waitrequest_i_tb   = amm_read_if.waitrequest; //
+
+// assign avs_wr_address_tb         = amm_write_if.address; //
+// assign avs_write_tb              = amm_write_if.write; //
+// assign avs_writedata_tb          = amm_write_if.writedata; //
+// assign avs_byteenable_tb         = amm_write_if.byteenable;
+
+// assign amm_wr_waitrequest_i_tb   = amm_write_if.waitrequest; //
+
 byte_inc #(
   .DATA_WIDTH ( DATA_WIDTH_TB ),
   .ADDR_WIDTH ( ADDR_WIDTH_TB ),
@@ -73,17 +135,54 @@ byte_inc #(
   .run_i                  ( run_i_tb                  ), 
   .waitrequest_o          ( waitrequest_o_tb          ),
 
-  .amm_rd_address_o       ( amm_read_if.address       ),
-  .amm_rd_read_o          ( amm_read_if.read          ),
-  .amm_rd_readdata_i      ( amm_read_if.readdata      ),
-  .amm_rd_readdatavalid_i ( amm_read_if.readdatavalid ),
-  .amm_rd_waitrequest_i   ( amm_read_if.waitrequest   ),
+  .amm_rd_address_o       ( amm_read_if.address       ), // output 
+  .amm_rd_read_o          ( amm_read_if.read          ), // output
+  .amm_rd_readdata_i      ( amm_read_if.readdata      ), // input
+  .amm_rd_readdatavalid_i ( amm_read_if.readdatavalid ), // input
+  .amm_rd_waitrequest_i   ( amm_read_if.waitrequest   ), // input
 
-  .amm_wr_address_o       ( amm_write_if.address      ),
-  .amm_wr_write_o         ( amm_write_if.write        ),
-  .amm_wr_writedata_o     ( amm_write_if.writedata    ),
-  .amm_wr_byteenable_o    ( amm_write_if.byteenable   ),
-  .amm_wr_waitrequest_i   ( amm_write_if.waitrequest  )
+  .amm_wr_address_o       ( amm_write_if.address      ), // output
+  .amm_wr_write_o         ( amm_write_if.write        ), // output
+  .amm_wr_writedata_o     ( amm_write_if.writedata    ), // output
+  .amm_wr_byteenable_o    ( amm_write_if.byteenable   ), // output
+  .amm_wr_waitrequest_i   ( amm_write_if.waitrequest   ) // input
+);
+
+assign avs_rd_waitrequest_tb = amm_read_if.waitrequest;
+assign avs_wr_waitrequest_tb = amm_write_if.waitrequest;
+
+bfm_slave #(
+  .DATA_W   ( DATA_WIDTH_TB ),
+  .ADDR_W   ( ADDR_WIDTH_TB ),
+  .BYTE_CNT ( BYTE_CNT_TB   )
+) slave_read (
+  .clk               ( clk_i_tb                  ),
+  .reset             ( srst_i_tb                 ),
+  .avs_address       ( amm_read_if.address       ), // input 
+  .avs_readdata      ( avs_readdata_tb      ), // output
+  .avs_writedata     (), 
+  .avs_waitrequest   ( avs_rd_waitrequest_tb   ), // output
+  .avs_write         (), 
+  .avs_read          ( amm_read_if.read          ), // input 
+  .avs_byteenable    (), 
+  .avs_readdatavalid ( avs_readdatavalid_tb )  // output
+);
+
+bfm_slave #(
+  .DATA_W   ( DATA_WIDTH_TB ),
+  .ADDR_W   ( ADDR_WIDTH_TB ),
+  .BYTE_CNT ( BYTE_CNT_TB   )
+) slave_write (
+  .clk               ( clk_i_tb                 ),
+  .reset             ( srst_i_tb                ),
+  .avs_address       ( amm_write_if.address     ), // input
+  .avs_readdata      (), 
+  .avs_writedata     ( amm_write_if.writedata   ), // input
+  .avs_waitrequest   ( avs_wr_waitrequest_tb ), // output
+  .avs_write         ( amm_write_if.write       ), // input
+  .avs_read          (),
+  .avs_byteenable    ( amm_write_if.byteenable  ), // input
+  .avs_readdatavalid ()
 );
 
 
@@ -259,115 +358,115 @@ initial
     test_addr();
 
 
-    // // // // ***********************Testcase 2*******************************
-    reset();
-    $display("---------Testcase 2: Write until max address-------------");
-    gen_addr_length( 10'h3fc, 10'd45 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-    ##10;
+    // // // // // ***********************Testcase 2*******************************
+    // reset();
+    // $display("---------Testcase 2: Write until max address-------------");
+    // gen_addr_length( 10'h3fc, 10'd45 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
+    // ##10;
 
-    // // // // ***********************Testcase 3*******************************
-    reset();
-    $display("---------Testcase 3: 4 bytes-------------");
-    gen_addr_length( 10'h10, 10'd4 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-
-    // // // // ***********************Testcase 4*******************************
-    reset();
-    $display("---------Testcase 4: 8 bytes-------------");
-    gen_addr_length( 10'h10, 10'd8 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 3*******************************
+    // reset();
+    // $display("---------Testcase 3: 4 bytes-------------");
+    // gen_addr_length( 10'h10, 10'd4 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
 
-    // // // // ***********************Testcase 5*******************************
-    reset();
-    $display("---------Testcase 5: 16 bytes-------------");
-    gen_addr_length( 10'h10, 10'd16 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-    // // // // ***********************Testcase 6*******************************
-    reset();
-    $display("---------Testcase 6: 24 bytes-------------");
-    gen_addr_length( 10'h10, 10'd24 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 4*******************************
+    // reset();
+    // $display("---------Testcase 4: 8 bytes-------------");
+    // gen_addr_length( 10'h10, 10'd8 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
 
-    // // // // ***********************Testcase 7*******************************
-    reset();
-    $display("---------Testcase 7: 30 bytes-------------");
-    gen_addr_length( 10'h10, 10'd30 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 5*******************************
+    // reset();
+    // $display("---------Testcase 5: 16 bytes-------------");
+    // gen_addr_length( 10'h10, 10'd16 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
+
+    // // // // // ***********************Testcase 6*******************************
+    // reset();
+    // $display("---------Testcase 6: 24 bytes-------------");
+    // gen_addr_length( 10'h10, 10'd24 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
 
-    // // // // ***********************Testcase 8*******************************
-    reset();
-    $display("---------Testcase 8: 1 byte-------------");
-    gen_addr_length( 10'h10, 10'd1 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 7*******************************
+    // reset();
+    // $display("---------Testcase 7: 30 bytes-------------");
+    // gen_addr_length( 10'h10, 10'd30 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
 
-    // // // ***********************Testcase 9*******************************
-    reset();
-    $display("---------Testcase 9: add bytes until maximum address ( 29 bytes ) -------------");
-    gen_addr_length( 10'h3fc, 10'd29 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 8*******************************
+    // reset();
+    // $display("---------Testcase 8: 1 byte-------------");
+    // gen_addr_length( 10'h10, 10'd1 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
 
-    // // // // ***********************Testcase 10*******************************
-    reset();
-    $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes ) -------------");
-    gen_addr_length( 10'h3fc, 10'd33 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // // // // ***********************Testcase 9*******************************
+    // reset();
+    // $display("---------Testcase 9: add bytes until maximum address ( 29 bytes ) -------------");
+    // gen_addr_length( 10'h3fc, 10'd29 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
-    // // // // ***********************Testcase 11*******************************
-    reset();
-    $display("---------Testcase 11: test overload byte ( 0xff + 0x01 = 0x00 )-------------");
-    setting_response( 5, 64'h5624ff5863ff1f2e );
-    gen_addr_length( 10'h10, 10'd7 );
+
+    // // // // // ***********************Testcase 10*******************************
+    // reset();
+    // $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes ) -------------");
+    // gen_addr_length( 10'h3fc, 10'd33 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
+
+    // // // // // ***********************Testcase 11*******************************
+    // reset();
+    // $display("---------Testcase 11: test overload byte ( 0xff + 0x01 = 0x00 )-------------");
+    // setting_response( 5, 64'h5624ff5863ff1f2e );
+    // gen_addr_length( 10'h10, 10'd7 );
     
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
 
-    // // // // ***********************Testcase 12*******************************
-    reset();
-    setting_response( 5, 0 );
-    $display("---------Testcase 12: add bytes from addr 0 to max addr ");
-    gen_addr_length( 10'h0, 10'b1111111111 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
+    // // // // // ***********************Testcase 12*******************************
+    // reset();
+    // setting_response( 5, 0 );
+    // $display("---------Testcase 12: add bytes from addr 0 to max addr ");
+    // gen_addr_length( 10'h0, 10'b1111111111 );
+    // setting();
+    // stop_rq();
+    // test_data();
+    // test_addr();
 
     $stop();
   end

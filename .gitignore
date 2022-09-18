@@ -2,3 +2,6 @@ work/
 *.wlf
 *.txt
 *.vstf
+bfm_master/
+bfm_slave/
+ug_avalon_verification/
