@@ -1,9 +1,13 @@
 import amm_pkg::*;
+
 module byte_incr_tb;
+
 parameter int DATA_WIDTH_TB = 64;
 parameter int ADDR_WIDTH_TB = 10;
 parameter int BYTE_CNT_TB   = DATA_WIDTH_TB/8;
 parameter     BYTE_WORD     = DATA_WIDTH_TB/8;
+
+
 logic                      srst_i_tb;
 bit                        clk_i_tb;
 logic                      run_i_tb;
@@ -23,15 +27,17 @@ int                        timeout_setting;
 initial
   forever
     #5 clk_i_tb = !clk_i_tb;
+
 default clocking cb
   @( posedge clk_i_tb );
 endclocking
+
 avalon_mm_if #( 
   .ADDR_WIDTH ( ADDR_WIDTH_TB ),
   .DATA_WIDTH ( DATA_WIDTH_TB )
 ) amm_read_if (
   .clk ( clk_i_tb )
-) ;
+);
  
 avalon_mm_if #( 
   .ADDR_WIDTH ( ADDR_WIDTH_TB ),
@@ -104,15 +110,18 @@ forever
       end
   end
 endtask
+
 assign int_part  = length / BYTE_WORD;
 assign mod_part  = length % BYTE_WORD;
 assign total_word  = ( mod_part == 0 ) ? int_part : int_part + 1;
+
 task gen_addr_length( input logic  [ADDR_WIDTH_TB-1:0] _base_addr,
                             logic  [ADDR_WIDTH_TB-1:0] _length
                     );
 base_addr = _base_addr;
 length    = _length;
 endtask
+
 task test_data();
 logic [7:0] new_wr_pkt;
 logic [7:0] new_rd_pkt;
@@ -138,6 +147,7 @@ if( wr_byte_size != byte_read )
   $display("Error: %0d bytes have not been written to memory", byte_read - wr_byte_size );
 $display("\n");
 endtask
+
 task test_addr();
 logic  [ADDR_WIDTH_TB-1:0] wr_addr;
 logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
@@ -154,6 +164,7 @@ while( amm_write_data.write_addr_fifo.num() != 0 )
   end
 $display("\n");
 endtask
+
 task reset();
 srst_i_tb <= 1'b1;
 @( posedge clk_i_tb );
@@ -188,6 +199,7 @@ task  setting_response( input int                       _delay,
 amm_read_data.delay        = _delay;
 amm_read_data.random_word  = _random_word;
 endtask
+
 initial
   begin
     amm_read_data  = new( amm_read_if  );
