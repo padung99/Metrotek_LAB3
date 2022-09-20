@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pinplan
+ variation_name="mm_slave_bfm_0"
+ megafunction_name="ALTERA_AVALON_MM_SLAVE_BFM"
+ specifies="all_ports">
+ <global>
+  <pin name="clk" direction="input" scope="external" />
+  <pin name="reset" direction="input" scope="external" />
+  <pin name="avs_writedata[63..0]" direction="input" scope="external" />
+  <pin name="avs_readdata[63..0]" direction="output" scope="external" />
+  <pin name="avs_address[9..0]" direction="input" scope="external" />
+  <pin name="avs_waitrequest" direction="output" scope="external" />
+  <pin name="avs_write" direction="input" scope="external" />
+  <pin name="avs_read" direction="input" scope="external" />
+  <pin name="avs_byteenable[7..0]" direction="input" scope="external" />
+  <pin name="avs_readdatavalid" direction="output" scope="external" />
+ </global>
+</pinplan>

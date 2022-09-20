@@ -1,4 +1,15 @@
+// import bfm_pkg::*;
 import amm_pkg::*;
+
+`include "../amm_bfm_slave/synthesis/submodules/verbosity_pkg.sv"
+`include "../amm_bfm_slave/synthesis/submodules/avalon_mm_pkg.sv"
+`include "../amm_bfm_slave/synthesis/submodules/avalon_utilities_pkg.sv"
+
+import verbosity_pkg::*;
+import avalon_mm_pkg::*;
+import avalon_utilities_pkg::*;
+
+`include "../amm_bfm_slave/synthesis/amm_bfm_slave.v"
 
 module byte_incr_tb;
 
@@ -68,20 +79,45 @@ byte_inc #(
   .run_i                  ( run_i_tb                  ), 
   .waitrequest_o          ( waitrequest_o_tb          ),
 
-  .amm_rd_address_o       ( amm_read_if.address       ),
-  .amm_rd_read_o          ( amm_read_if.read          ),
-  .amm_rd_readdata_i      ( amm_read_if.readdata      ),
-  .amm_rd_readdatavalid_i ( amm_read_if.readdatavalid ),
-  .amm_rd_waitrequest_i   ( amm_read_if.waitrequest   ),
+  .amm_rd_address_o       ( amm_read_if.address       ), //output
+  .amm_rd_read_o          ( amm_read_if.read          ), //output
+  .amm_rd_readdata_i      ( amm_read_if.readdata      ), //input
+  .amm_rd_readdatavalid_i ( amm_read_if.readdatavalid ), //input
+  .amm_rd_waitrequest_i   ( amm_read_if.waitrequest   ), //input
 
-  .amm_wr_address_o       ( amm_write_if.address      ),
-  .amm_wr_write_o         ( amm_write_if.write        ),
-  .amm_wr_writedata_o     ( amm_write_if.writedata    ),
-  .amm_wr_byteenable_o    ( amm_write_if.byteenable   ),
-  .amm_wr_waitrequest_i   ( amm_write_if.waitrequest  )
+  .amm_wr_address_o       ( amm_write_if.address      ), //output
+  .amm_wr_write_o         ( amm_write_if.write        ), //output
+  .amm_wr_writedata_o     ( amm_write_if.writedata    ), //output
+  .amm_wr_byteenable_o    ( amm_write_if.byteenable   ), //output
+  .amm_wr_waitrequest_i   ( amm_write_if.waitrequest  )  //input
 
 );
 
+amm_bfm_slave slave1 (
+  .clk               ( clk_i_tb                  ), //input               
+  .reset             ( srst_i_tb                 ), //input    
+  .avs_writedata     (),
+  .avs_readdata      ( amm_read_if.readdata      ), //output     
+  .avs_address       ( amm_read_if.address       ), //input
+  .avs_waitrequest   ( amm_read_if.waitrequest   ), //output
+  .avs_write         (),         
+  .avs_read          ( amm_read_if.read          ), //input       
+  .avs_byteenable    (),    
+  .avs_readdatavalid ( amm_read_if.readdatavalid )  //output
+);
+
+`define SLV_BFM_1 slave1.mm_slave_bfm_0
+`define VERBOSITY VERBOSITY_INFO
+// test bench parameters
+`define WAIT_TIME 1  //change to reflect the number of cycles for waitrequest to assert
+`define READ_LATENCY 0  //the read latency of the slave BFM
+`define INDEX_ZERO 0  //always refer to index zero for non-bursting transactions
+`define BURST_COUNT 1  //burst count is one for non-bursting transactions
+
+logic [DATA_WIDTH_TB-1:0] internal_mem [2**ADDR_WIDTH_TB-1:0];
+logic [DATA_WIDTH_TB-1:0] data;
+logic [ADDR_WIDTH_TB-1:0] address;
+Request_t request;
 
 task setting();
 forever
@@ -169,8 +205,8 @@ task reset();
 srst_i_tb <= 1'b1;
 @( posedge clk_i_tb );
 srst_i_tb                     <= 1'b0;
-amm_read_if.readdatavalid     <= 1'b0;
-amm_read_if.waitrequest       <= 1'b0;
+// amm_read_if.readdatavalid     <= 1'b0;
+// amm_read_if.waitrequest       <= 1'b0;
 amm_write_data.write_data_fifo = new();
 amm_read_data.read_data_fifo   = new();
 amm_write_data.write_addr_fifo = new();
@@ -200,137 +236,199 @@ amm_read_data.delay        = _delay;
 amm_read_data.random_word  = _random_word;
 endtask
 
+task slave_set_and_push_response ( input logic [DATA_WIDTH_TB-1] data,
+                                         int                     latency
+                                 );
+
+`SLV_BFM_1.set_response_data(data, `INDEX_ZERO);  
+`SLV_BFM_1.set_response_latency(latency, `INDEX_ZERO);
+`SLV_BFM_1.set_response_burst_size(`BURST_COUNT);
+`SLV_BFM_1.push_response();
+
+endtask
+
+task slave_pop_and_get_command ( output Request_t request,
+                                        logic [ADDR_WIDTH_TB-1:0] address,
+                                        logic [DATA_WIDTH_TB-1:0] data
+                               );
+
+`SLV_BFM_1.pop_command();  
+request = `SLV_BFM_1.get_command_request();
+address = `SLV_BFM_1.get_command_address();    
+data    = `SLV_BFM_1.get_command_data(`INDEX_ZERO);   
+endtask
+
+
+task wait_master_rq();
+
+forever
+  begin
+    slave_pop_and_get_command( request, address, data );
+    if (request == REQ_READ)
+      begin
+        // data = internal_mem[address];
+        data[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
+        data[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
+        slave_set_and_push_response(data, `READ_LATENCY);
+      end
+  @( posedge clk_i_tb );
+  end
+
+endtask
+
 initial
   begin
-    amm_read_data  = new( amm_read_if  );
-    amm_write_data = new( amm_write_if );
-  
-    reset();
+    srst_i_tb <= 1'b1;
+    @( posedge clk_i_tb );
+    srst_i_tb <= 1'b0;
+    amm_write_if.waitrequest <= 1'b0;
+    // amm_read_if.waitrequest <= 1'b0;
     gen_addr_length( 10'h10, 10'd20 );
-    setting_response( 5, ( DATA_WIDTH_TB )'(0) );
+    // setting_response( 5, ( DATA_WIDTH_TB )'(0) );
     setting();
-    fork
-      amm_write_data.send_rq(0);
-      amm_read_data.send_rq(0);
-      amm_read_data.response_rd_rq();
+    // ##15;
+    set_verbosity(`VERBOSITY);
 
-      stop_rq();
-    join_any
-    // // // ***********************Testcase 1*******************************
-    $display("----------Testcase 1: 20 bytes-----------");
-    test_data(); 
-    test_addr();
+    `SLV_BFM_1.init();   
+    `SLV_BFM_1.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);  
+ 
+    wait_master_rq();
 
-
-    // // // // ***********************Testcase 2*******************************
-    reset();
-    $display("---------Testcase 2: Write until max address-------------");
-    gen_addr_length( 10'h3fc, 10'd45 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-    ##10;
-
-    // // // // ***********************Testcase 3*******************************
-    reset();
-    $display("---------Testcase 3: 4 bytes-------------");
-    gen_addr_length( 10'h10, 10'd4 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-
-    // // // // ***********************Testcase 4*******************************
-    reset();
-    $display("---------Testcase 4: 8 bytes-------------");
-    gen_addr_length( 10'h10, 10'd8 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-
-    // // // // ***********************Testcase 5*******************************
-    reset();
-    $display("---------Testcase 5: 16 bytes-------------");
-    gen_addr_length( 10'h10, 10'd16 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-    // // // // ***********************Testcase 6*******************************
-    reset();
-    $display("---------Testcase 6: 24 bytes-------------");
-    gen_addr_length( 10'h10, 10'd24 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-
-    // // // // ***********************Testcase 7*******************************
-    reset();
-    $display("---------Testcase 7: 30 bytes-------------");
-    gen_addr_length( 10'h10, 10'd30 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-
-    // // // // ***********************Testcase 8*******************************
-    reset();
-    $display("---------Testcase 8: 1 byte-------------");
-    gen_addr_length( 10'h10, 10'd1 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-
-    // // // ***********************Testcase 9*******************************
-    reset();
-    $display("---------Testcase 9: add bytes until maximum address ( 29 bytes ) -------------");
-    gen_addr_length( 10'h3fc, 10'd29 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-
-    // // // // ***********************Testcase 10*******************************
-    reset();
-    $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes ) -------------");
-    gen_addr_length( 10'h3fc, 10'd33 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-    // // // // ***********************Testcase 11*******************************
-    reset();
-    $display("---------Testcase 11: test overload byte ( 0xff + 0x01 = 0x00 )-------------");
-    setting_response( 5, 64'h5624ff5863ff1f2e );
-    gen_addr_length( 10'h10, 10'd7 );
-
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-
-    // // // // ***********************Testcase 12*******************************
-    reset();
-    setting_response( 5, 0 );
-    $display("---------Testcase 12: add bytes from addr 0 to max addr ");
-    gen_addr_length( 10'h0, 10'b1111111111 );
-    setting();
-    stop_rq();
-    test_data();
-    test_addr();
-  
     $stop();
   end
+
+
+// initial
+//   begin
+//     amm_read_data  = new( amm_read_if  );
+//     amm_write_data = new( amm_write_if );
+//     // `SLV_BFM_1.set_response_data(64'h5624ff5863ff1f2e, 0);
+//     // reset();
+//     // gen_addr_length( 10'h10, 10'd20 );
+//     // setting_response( 5, ( DATA_WIDTH_TB )'(0) );
+//     // setting();
+//     // fork
+//     //   amm_write_data.send_rq(0);
+//     //   amm_read_data.send_rq(0);
+//     //   amm_read_data.response_rd_rq();
+
+//     //   stop_rq();
+//     // join_any
+//     // // // // ***********************Testcase 1*******************************
+//     // $display("----------Testcase 1: 20 bytes-----------");
+//     // test_data(); 
+//     // test_addr();
+
+
+//     // // // // // ***********************Testcase 2*******************************
+//     // reset();
+//     // $display("---------Testcase 2: Write until max address-------------");
+//     // gen_addr_length( 10'h3fc, 10'd45 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+//     // ##10;
+
+//     // // // // // ***********************Testcase 3*******************************
+//     // reset();
+//     // $display("---------Testcase 3: 4 bytes-------------");
+//     // gen_addr_length( 10'h10, 10'd4 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+
+//     // // // // // ***********************Testcase 4*******************************
+//     // reset();
+//     // $display("---------Testcase 4: 8 bytes-------------");
+//     // gen_addr_length( 10'h10, 10'd8 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+
+//     // // // // // ***********************Testcase 5*******************************
+//     // reset();
+//     // $display("---------Testcase 5: 16 bytes-------------");
+//     // gen_addr_length( 10'h10, 10'd16 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+//     // // // // // ***********************Testcase 6*******************************
+//     // reset();
+//     // $display("---------Testcase 6: 24 bytes-------------");
+//     // gen_addr_length( 10'h10, 10'd24 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+
+//     // // // // // ***********************Testcase 7*******************************
+//     // reset();
+//     // $display("---------Testcase 7: 30 bytes-------------");
+//     // gen_addr_length( 10'h10, 10'd30 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+
+//     // // // // // ***********************Testcase 8*******************************
+//     // reset();
+//     // $display("---------Testcase 8: 1 byte-------------");
+//     // gen_addr_length( 10'h10, 10'd1 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+
+//     // // // // ***********************Testcase 9*******************************
+//     // reset();
+//     // $display("---------Testcase 9: add bytes until maximum address ( 29 bytes ) -------------");
+//     // gen_addr_length( 10'h3fc, 10'd29 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+
+//     // // // // // ***********************Testcase 10*******************************
+//     // reset();
+//     // $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes ) -------------");
+//     // gen_addr_length( 10'h3fc, 10'd33 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+//     // // // // // ***********************Testcase 11*******************************
+//     // reset();
+//     // $display("---------Testcase 11: test overload byte ( 0xff + 0x01 = 0x00 )-------------");
+//     // setting_response( 5, 64'h5624ff5863ff1f2e );
+//     // gen_addr_length( 10'h10, 10'd7 );
+
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+
+//     // // // // // ***********************Testcase 12*******************************
+//     // reset();
+//     // setting_response( 5, 0 );
+//     // $display("---------Testcase 12: add bytes from addr 0 to max addr ");
+//     // gen_addr_length( 10'h0, 10'b1111111111 );
+//     // setting();
+//     // stop_rq();
+//     // test_data();
+//     // test_addr();
+  
+//     $stop();
+//   end
 endmodule

@@ -1,0 +1,16 @@
+Info: Starting: Create HDL design files for synthesis
+Info: qsys-generate E:\FPGAProject\Lab3_metrotek\Incr_byte\amm_bfm_slave\amm_bfm_slave.qsys --synthesis=VERILOG --output-directory=E:\FPGAProject\Lab3_metrotek\Incr_byte\amm_bfm_slave\synthesis --family="Cyclone V" --part=5CEBA2F17A7
+Progress: Loading amm_bfm_slave/amm_bfm_slave.qsys
+Progress: Reading input file
+Progress: Adding mm_slave_bfm_0 [altera_avalon_mm_slave_bfm 18.1]
+Info: altera_avalon_mm_slave_bfm: Preferred Simulation Language is set to None.
+Progress: Parameterizing module mm_slave_bfm_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+Info: amm_bfm_slave: Generating amm_bfm_slave "amm_bfm_slave" for QUARTUS_SYNTH
+Info: mm_slave_bfm_0: "amm_bfm_slave" instantiated altera_avalon_mm_slave_bfm "mm_slave_bfm_0"
+Info: amm_bfm_slave: Done "amm_bfm_slave" with 2 modules, 5 files
+Info: qsys-generate succeeded.
+Info: Finished: Create HDL design files for synthesis

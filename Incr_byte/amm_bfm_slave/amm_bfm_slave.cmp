@@ -1,0 +1,15 @@
+	component amm_bfm_slave is
+		port (
+			clk               : in  std_logic                     := 'X';             -- clk
+			reset             : in  std_logic                     := 'X';             -- reset
+			avs_writedata     : in  std_logic_vector(63 downto 0) := (others => 'X'); -- writedata
+			avs_readdata      : out std_logic_vector(63 downto 0);                    -- readdata
+			avs_address       : in  std_logic_vector(9 downto 0)  := (others => 'X'); -- address
+			avs_waitrequest   : out std_logic;                                        -- waitrequest_n
+			avs_write         : in  std_logic                     := 'X';             -- write_n
+			avs_read          : in  std_logic                     := 'X';             -- read_n
+			avs_byteenable    : in  std_logic_vector(7 downto 0)  := (others => 'X'); -- byteenable_n
+			avs_readdatavalid : out std_logic                                         -- readdatavalid_n
+		);
+	end component amm_bfm_slave;
+
