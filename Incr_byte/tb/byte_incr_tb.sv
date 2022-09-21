@@ -236,24 +236,24 @@ timeout_setting                = 0;
 @( posedge clk_i_tb );
 endtask
 
-task stop_rq();
-while( waitrequest_o_tb == 1'b1 )
-  begin
-    @( posedge clk_i_tb );
-    timeout_waiting++;
-    if( timeout_waiting >= 10*total_word )
-      break;
-  end
-if( timeout_waiting >= 20*total_word )
-  $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
-endtask
+// task stop_rq();
+// while( waitrequest_o_tb == 1'b1 )
+//   begin
+//     @( posedge clk_i_tb );
+//     timeout_waiting++;
+//     if( timeout_waiting >= 10*total_word )
+//       break;
+//   end
+// if( timeout_waiting >= 20*total_word )
+//   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
+// endtask
 
-task  setting_response( input int                       _delay,
-                              logic [DATA_WIDTH_TB-1:0] _random_word
-                     );
-amm_read_data.delay        = _delay;
-amm_read_data.random_word  = _random_word;
-endtask
+// task  setting_response( input int                       _delay,
+//                               logic [DATA_WIDTH_TB-1:0] _random_word
+//                      );
+// amm_read_data.delay        = _delay;
+// amm_read_data.random_word  = _random_word;
+// endtask
 
 ////////////////////////////////////////////////////////
 task slave_set_and_push_response_rd ( input logic [DATA_WIDTH_TB-1] data_rd,
@@ -334,33 +334,28 @@ endtask
 
 // endtask
 
-initial
+task wait_send_rq_done();
+
+timeout_setting = 0;
+while( waitrequest_o_tb == 1'b1 )
   begin
-    srst_i_tb <= 1'b1;
+    timeout_waiting++;
     @( posedge clk_i_tb );
-    srst_i_tb <= 1'b0;
-    gen_addr_length( 10'h10, 10'd20 );
-    // setting_response( 5, ( DATA_WIDTH_TB )'(0) );
-    setting();
-    // set_verbosity(`VERBOSITY);
-
-    `SLV_BFM_READ.init();   
-    `SLV_BFM_READ.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);
-
-
-    `SLV_BFM_WRITE.init();   
-    `SLV_BFM_WRITE.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);
-
   end
+
+repeat( 2 )
+  @( posedge clk_i_tb );
+
+endtask
 
 always_ff @( `SLV_BFM_READ.signal_command_received )
   begin
     slave_pop_and_get_command_rd( request_rd, address_rd, data_rd );
-    if (request_rd == REQ_READ)
+    if ( request_rd == REQ_READ )
       begin
         data_rd[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
         data_rd[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
-        slave_set_and_push_response_rd(data_rd, `READ_LATENCY);
+        slave_set_and_push_response_rd( data_rd, `READ_LATENCY );
       end
   end
 
@@ -371,22 +366,52 @@ always_ff @( `SLV_BFM_WRITE.signal_command_received )
     if( request_wr == REQ_WRITE )
       begin
         internal_mem[address_wr] = data_wr;
-        // $display("wr_data: %x", data_wr);
-        slave_set_and_push_response_wr(data_wr, 0);
+        slave_set_and_push_response_wr( data_wr, 0 );
       end
   end
 
-always_ff @( posedge clk_i_tb )
+initial
   begin
-    if( waitrequest_o_tb == 1'b1 )
-        timeout_waiting++;
-    else
-      if( timeout_waiting != 0 )
-        begin
-          timeout_waiting = 0;
-          $stop();
-        end
-  end 
+    srst_i_tb <= 1'b1;
+    @( posedge clk_i_tb );
+    srst_i_tb <= 1'b0;
+
+    gen_addr_length( 10'h10, 10'd20 );
+    setting();
+
+    // set_verbosity(`VERBOSITY);
+    `SLV_BFM_READ.init();   
+    `SLV_BFM_READ.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);
+
+    `SLV_BFM_WRITE.init();
+    `SLV_BFM_WRITE.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);
+
+    wait_send_rq_done();
+    gen_addr_length( 10'h3fc, 10'd45 );
+    setting();
+    
+    wait_send_rq_done();
+    gen_addr_length( 10'h10, 10'd4 );
+    setting();
+
+    wait_send_rq_done();
+    gen_addr_length( 10'h10, 10'd8 );
+    setting();
+
+    wait_send_rq_done();
+    gen_addr_length( 10'h10, 10'd16 );
+    setting();
+
+    wait_send_rq_done();
+    gen_addr_length( 10'h10, 10'd24 );
+    setting();
+
+    wait_send_rq_done();
+    $stop();
+
+
+  end
+
 
 // initial
 //   begin
