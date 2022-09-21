@@ -2,7 +2,7 @@
 # 
 preplace inst unsaved.mm_slave_bfm_0 -pg 1 -lvl 1 -y 30
 preplace inst unsaved -pg 1 -lvl 1 -y 40 -regy -20
-preplace netloc EXPORT<net_container>unsaved</net_container>(SLAVE)mm_slave_bfm_0.clk_reset,(SLAVE)unsaved.clk_reset) 1 0 1 NJ
+preplace netloc EXPORT<net_container>unsaved</net_container>(SLAVE)unsaved.clk_reset,(SLAVE)mm_slave_bfm_0.clk_reset) 1 0 1 NJ
 preplace netloc EXPORT<net_container>unsaved</net_container>(SLAVE)unsaved.clk,(SLAVE)mm_slave_bfm_0.clk) 1 0 1 NJ
 preplace netloc EXPORT<net_container>unsaved</net_container>(SLAVE)mm_slave_bfm_0.s0,(SLAVE)unsaved.s0) 1 0 1 NJ
 levelinfo -pg 1 0 70 240

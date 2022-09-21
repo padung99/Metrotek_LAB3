@@ -1459,7 +1459,7 @@ BFM will reset the wait cycles to 1");
             wait_negedge_enabled_clk();
          end
       end
-      
+
       for (int i=0; i<current_response.burst_count; i++) begin
          $sformat(message, "%m: current response %0d - latency = %0d", 
                   response_sequence_counter, current_response.response_latency[i]);

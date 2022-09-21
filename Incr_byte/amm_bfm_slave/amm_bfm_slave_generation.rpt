@@ -1,5 +1,5 @@
 Info: Starting: Create HDL design files for synthesis
-Info: qsys-generate E:\FPGAProject\Lab3_metrotek\Incr_byte\amm_bfm_slave\amm_bfm_slave.qsys --synthesis=VERILOG --output-directory=E:\FPGAProject\Lab3_metrotek\Incr_byte\amm_bfm_slave\synthesis --family="Cyclone V" --part=5CEBA2F17A7
+Info: qsys-generate E:\FPGAProject\Lab3_metrotek\Incr_byte\amm_bfm_slave\amm_bfm_slave.qsys --synthesis=VERILOG --output-directory=E:\FPGAProject\Lab3_metrotek\Incr_byte\amm_bfm_slave\synthesis --family="Cyclone V" --part=5CSEBA4U19C8
 Progress: Loading amm_bfm_slave/amm_bfm_slave.qsys
 Progress: Reading input file
 Progress: Adding mm_slave_bfm_0 [altera_avalon_mm_slave_bfm 18.1]

@@ -20,9 +20,9 @@
 }
 ]]></parameter>
  <parameter name="clockCrossingAdapter" value="HANDSHAKE" />
- <parameter name="device" value="5CEBA2F17A7" />
+ <parameter name="device" value="5CSEBA4U19C8" />
  <parameter name="deviceFamily" value="Cyclone V" />
- <parameter name="deviceSpeedGrade" value="7" />
+ <parameter name="deviceSpeedGrade" value="8" />
  <parameter name="fabricMode" value="QSYS" />
  <parameter name="generateLegacySim" value="false" />
  <parameter name="generationId" value="0" />
@@ -65,18 +65,18 @@
    enabled="1"
    autoexport="1">
   <parameter name="ADDRESS_UNITS" value="WORDS" />
-  <parameter name="ASSERT_HIGH_ARBITERLOCK" value="0" />
-  <parameter name="ASSERT_HIGH_BYTEENABLE" value="0" />
-  <parameter name="ASSERT_HIGH_LOCK" value="0" />
-  <parameter name="ASSERT_HIGH_READ" value="0" />
-  <parameter name="ASSERT_HIGH_READDATAVALID" value="0" />
+  <parameter name="ASSERT_HIGH_ARBITERLOCK" value="1" />
+  <parameter name="ASSERT_HIGH_BYTEENABLE" value="1" />
+  <parameter name="ASSERT_HIGH_LOCK" value="1" />
+  <parameter name="ASSERT_HIGH_READ" value="1" />
+  <parameter name="ASSERT_HIGH_READDATAVALID" value="1" />
   <parameter name="ASSERT_HIGH_RESET" value="1" />
-  <parameter name="ASSERT_HIGH_WAITREQUEST" value="0" />
-  <parameter name="ASSERT_HIGH_WRITE" value="0" />
+  <parameter name="ASSERT_HIGH_WAITREQUEST" value="1" />
+  <parameter name="ASSERT_HIGH_WRITE" value="1" />
   <parameter name="AV_ADDRESS_W" value="10" />
   <parameter name="AV_BURSTCOUNT_W" value="3" />
-  <parameter name="AV_BURST_BNDR_ONLY" value="0" />
-  <parameter name="AV_BURST_LINEWRAP" value="0" />
+  <parameter name="AV_BURST_BNDR_ONLY" value="1" />
+  <parameter name="AV_BURST_LINEWRAP" value="1" />
   <parameter name="AV_FIX_READ_LATENCY" value="0" />
   <parameter name="AV_MAX_PENDING_READS" value="1" />
   <parameter name="AV_MAX_PENDING_WRITES" value="0" />

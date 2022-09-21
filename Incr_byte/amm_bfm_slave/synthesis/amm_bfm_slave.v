@@ -4,76 +4,76 @@
 
 `timescale 1 ps / 1 ps
 module amm_bfm_slave (
-        input  wire        clk,               //       clk.clk
-        input  wire        reset,             // clk_reset.reset
-        input  wire [63:0] avs_writedata,     //        s0.writedata
-        output wire [63:0] avs_readdata,      //          .readdata
-        input  wire [9:0]  avs_address,       //          .address
-        output wire        avs_waitrequest,   //          .waitrequest_n
-        input  wire        avs_write,         //          .write_n
-        input  wire        avs_read,          //          .read_n
-        input  wire [7:0]  avs_byteenable,    //          .byteenable_n
-        output wire        avs_readdatavalid  //          .readdatavalid_n
-    );
+		input  wire        clk,               //       clk.clk
+		input  wire        reset,             // clk_reset.reset
+		input  wire [63:0] avs_writedata,     //        s0.writedata
+		output wire [63:0] avs_readdata,      //          .readdata
+		input  wire [9:0]  avs_address,       //          .address
+		output wire        avs_waitrequest,   //          .waitrequest
+		input  wire        avs_write,         //          .write
+		input  wire        avs_read,          //          .read
+		input  wire [7:0]  avs_byteenable,    //          .byteenable
+		output wire        avs_readdatavalid  //          .readdatavalid
+	);
 
-    altera_avalon_mm_slave_bfm #(
-        .AV_ADDRESS_W               (10),
-        .AV_SYMBOL_W                (8),
-        .AV_NUMSYMBOLS              (8),
-        .AV_BURSTCOUNT_W            (3),
-        .AV_READRESPONSE_W          (8),
-        .AV_WRITERESPONSE_W         (8),
-        .USE_READ                   (1),
-        .USE_WRITE                  (1),
-        .USE_ADDRESS                (1),
-        .USE_BYTE_ENABLE            (1),
-        .USE_BURSTCOUNT             (0),
-        .USE_READ_DATA              (1),
-        .USE_READ_DATA_VALID        (1),
-        .USE_WRITE_DATA             (1),
-        .USE_BEGIN_TRANSFER         (0),
-        .USE_BEGIN_BURST_TRANSFER   (0),
-        .USE_WAIT_REQUEST           (1),
-        .USE_TRANSACTIONID          (0),
-        .USE_WRITERESPONSE          (0),
-        .USE_READRESPONSE           (0),
-        .USE_CLKEN                  (0),
-        .AV_BURST_LINEWRAP          (0),
-        .AV_BURST_BNDR_ONLY         (0),
-        .AV_MAX_PENDING_READS       (1),
-        .AV_MAX_PENDING_WRITES      (0),
-        .AV_FIX_READ_LATENCY        (0),
-        .AV_READ_WAIT_TIME          (1),
-        .AV_WRITE_WAIT_TIME         (0),
-        .REGISTER_WAITREQUEST       (0),
-        .AV_REGISTERINCOMINGSIGNALS (0),
-        .VHDL_ID                    (0)
-    ) mm_slave_bfm_0 (
-        .clk                      (clk),               //       clk.clk
-        .reset                    (reset),             // clk_reset.reset
-        .avs_writedata            (avs_writedata),     //        s0.writedata
-        .avs_readdata             (avs_readdata),      //          .readdata
-        .avs_address              (avs_address),       //          .address
-        .avs_waitrequest          (avs_waitrequest),   //          .waitrequest_n
-        .avs_write                (avs_write),         //          .write_n
-        .avs_read                 (avs_read),          //          .read_n
-        .avs_byteenable           (avs_byteenable),    //          .byteenable_n
-        .avs_readdatavalid        (avs_readdatavalid), //          .readdatavalid_n
-        .avs_begintransfer        (1'b0),              // (terminated)
-        .avs_beginbursttransfer   (1'b0),              // (terminated)
-        .avs_burstcount           (3'b001),            // (terminated)
-        .avs_arbiterlock          (1'b0),              // (terminated)
-        .avs_lock                 (1'b0),              // (terminated)
-        .avs_debugaccess          (1'b0),              // (terminated)
-        .avs_transactionid        (8'b00000000),       // (terminated)
-        .avs_readid               (),                  // (terminated)
-        .avs_writeid              (),                  // (terminated)
-        .avs_clken                (1'b1),              // (terminated)
-        .avs_response             (),                  // (terminated)
-        .avs_writeresponserequest (1'b0),              // (terminated)
-        .avs_writeresponsevalid   (),                  // (terminated)
-        .avs_readresponse         (),                  // (terminated)
-        .avs_writeresponse        ()                   // (terminated)
-    );
+	altera_avalon_mm_slave_bfm #(
+		.AV_ADDRESS_W               (10),
+		.AV_SYMBOL_W                (8),
+		.AV_NUMSYMBOLS              (8),
+		.AV_BURSTCOUNT_W            (3),
+		.AV_READRESPONSE_W          (8),
+		.AV_WRITERESPONSE_W         (8),
+		.USE_READ                   (1),
+		.USE_WRITE                  (1),
+		.USE_ADDRESS                (1),
+		.USE_BYTE_ENABLE            (1),
+		.USE_BURSTCOUNT             (0),
+		.USE_READ_DATA              (1),
+		.USE_READ_DATA_VALID        (1),
+		.USE_WRITE_DATA             (1),
+		.USE_BEGIN_TRANSFER         (0),
+		.USE_BEGIN_BURST_TRANSFER   (0),
+		.USE_WAIT_REQUEST           (1),
+		.USE_TRANSACTIONID          (0),
+		.USE_WRITERESPONSE          (0),
+		.USE_READRESPONSE           (0),
+		.USE_CLKEN                  (0),
+		.AV_BURST_LINEWRAP          (1),
+		.AV_BURST_BNDR_ONLY         (1),
+		.AV_MAX_PENDING_READS       (1),
+		.AV_MAX_PENDING_WRITES      (0),
+		.AV_FIX_READ_LATENCY        (0),
+		.AV_READ_WAIT_TIME          (1),
+		.AV_WRITE_WAIT_TIME         (0),
+		.REGISTER_WAITREQUEST       (0),
+		.AV_REGISTERINCOMINGSIGNALS (0),
+		.VHDL_ID                    (0)
+	) mm_slave_bfm_0 (
+		.clk                      (clk),               //       clk.clk
+		.reset                    (reset),             // clk_reset.reset
+		.avs_writedata            (avs_writedata),     //        s0.writedata
+		.avs_readdata             (avs_readdata),      //          .readdata
+		.avs_address              (avs_address),       //          .address
+		.avs_waitrequest          (avs_waitrequest),   //          .waitrequest
+		.avs_write                (avs_write),         //          .write
+		.avs_read                 (avs_read),          //          .read
+		.avs_byteenable           (avs_byteenable),    //          .byteenable
+		.avs_readdatavalid        (avs_readdatavalid), //          .readdatavalid
+		.avs_begintransfer        (1'b0),              // (terminated)
+		.avs_beginbursttransfer   (1'b0),              // (terminated)
+		.avs_burstcount           (3'b001),            // (terminated)
+		.avs_arbiterlock          (1'b0),              // (terminated)
+		.avs_lock                 (1'b0),              // (terminated)
+		.avs_debugaccess          (1'b0),              // (terminated)
+		.avs_transactionid        (8'b00000000),       // (terminated)
+		.avs_readid               (),                  // (terminated)
+		.avs_writeid              (),                  // (terminated)
+		.avs_clken                (1'b1),              // (terminated)
+		.avs_response             (),                  // (terminated)
+		.avs_writeresponserequest (1'b0),              // (terminated)
+		.avs_writeresponsevalid   (),                  // (terminated)
+		.avs_readresponse         (),                  // (terminated)
+		.avs_writeresponse        ()                   // (terminated)
+	);
 
 endmodule

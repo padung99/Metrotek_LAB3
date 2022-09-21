@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EnsembleReport name="amm_bfm_slave" kind="amm_bfm_slave" version="1.0" fabric="QSYS">
  <!-- Format version 18.1 625 (Future versions may contain additional information.) -->
- <!-- 2022.09.19.19:16:25 -->
+ <!-- 2022.09.21.13:10:58 -->
  <!-- A collection of modules and connections -->
  <parameter name="AUTO_GENERATION_ID">
   <type>java.lang.Integer</type>
-  <value>1663600585</value>
+  <value>1663751458</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>false</visible>
@@ -32,7 +32,7 @@
  </parameter>
  <parameter name="AUTO_DEVICE">
   <type>java.lang.String</type>
-  <value>5CEBA2F17A7</value>
+  <value>5CSEBA4U19C8</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>false</visible>
@@ -41,7 +41,7 @@
  </parameter>
  <parameter name="AUTO_DEVICE_SPEEDGRADE">
   <type>java.lang.String</type>
-  <value>7</value>
+  <value>8</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>false</visible>
@@ -304,7 +304,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ASSERT_HIGH_WAITREQUEST">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -312,7 +312,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ASSERT_HIGH_READ">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -320,7 +320,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ASSERT_HIGH_WRITE">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -328,7 +328,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ASSERT_HIGH_BYTEENABLE">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -336,7 +336,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ASSERT_HIGH_READDATAVALID">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -344,7 +344,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ASSERT_HIGH_ARBITERLOCK">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -352,7 +352,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="ASSERT_HIGH_LOCK">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -360,7 +360,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="AV_BURST_LINEWRAP">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -368,7 +368,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="AV_BURST_BNDR_ONLY">
    <type>int</type>
-   <value>0</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -650,7 +650,7 @@ parameters are a RESULT of the module parameters. -->
    </parameter>
    <parameter name="burstOnBurstBoundariesOnly">
     <type>boolean</type>
-    <value>false</value>
+    <value>true</value>
     <derived>false</derived>
     <enabled>true</enabled>
     <visible>true</visible>
@@ -730,7 +730,7 @@ parameters are a RESULT of the module parameters. -->
    </parameter>
    <parameter name="linewrapBursts">
     <type>boolean</type>
-    <value>false</value>
+    <value>true</value>
     <derived>false</derived>
     <enabled>true</enabled>
     <visible>true</visible>
@@ -904,31 +904,31 @@ parameters are a RESULT of the module parameters. -->
     <name>avs_waitrequest</name>
     <direction>Output</direction>
     <width>1</width>
-    <role>waitrequest_n</role>
+    <role>waitrequest</role>
    </port>
    <port>
     <name>avs_write</name>
     <direction>Input</direction>
     <width>1</width>
-    <role>write_n</role>
+    <role>write</role>
    </port>
    <port>
     <name>avs_read</name>
     <direction>Input</direction>
     <width>1</width>
-    <role>read_n</role>
+    <role>read</role>
    </port>
    <port>
     <name>avs_byteenable</name>
     <direction>Input</direction>
     <width>8</width>
-    <role>byteenable_n</role>
+    <role>byteenable</role>
    </port>
    <port>
     <name>avs_readdatavalid</name>
     <direction>Output</direction>
     <width>1</width>
-    <role>readdatavalid_n</role>
+    <role>readdatavalid</role>
    </port>
   </interface>
  </module>
