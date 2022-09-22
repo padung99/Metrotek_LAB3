@@ -1,5 +1,3 @@
-import amm_pkg::*;
-
 `include "../amm_bfm_slave/synthesis/submodules/verbosity_pkg.sv"
 `include "../amm_bfm_slave/synthesis/submodules/avalon_mm_pkg.sv"
 `include "../amm_bfm_slave/synthesis/submodules/avalon_utilities_pkg.sv"
@@ -253,16 +251,16 @@ endtask;
 
 task slave_set_and_push_response_rd ( input logic [DATA_WIDTH_TB-1:0] _data_rd,
                                             int                     _latency_rd
-                                 );
+                                    );
 
 `SLV_BFM_READ.set_response_data ( _data_rd, `INDEX_ZERO );
 `SLV_BFM_READ.set_response_latency ( _latency_rd, `INDEX_ZERO );
-`SLV_BFM_READ.set_response_burst_size ( `BURST_COUNT);
+`SLV_BFM_READ.set_response_burst_size ( `BURST_COUNT );
 `SLV_BFM_READ.push_response();
 
 endtask
 
-task slave_pop_and_get_command_rd ( output Request_t request_rd,
+task slave_pop_and_get_command_rd ( output Request_t                 request_rd,
                                            logic [ADDR_WIDTH_TB-1:0] address_rd
                                   );
 
@@ -275,8 +273,8 @@ endtask
 
 task slave_set_and_push_response_wr ( input int  latency_wr );
 
-`SLV_BFM_WRITE.set_response_latency(latency_wr, `INDEX_ZERO);
-`SLV_BFM_WRITE.set_response_burst_size(`BURST_COUNT);
+`SLV_BFM_WRITE.set_response_latency( latency_wr, `INDEX_ZERO );
+`SLV_BFM_WRITE.set_response_burst_size( `BURST_COUNT );
 `SLV_BFM_WRITE.push_response();
 
 endtask
@@ -290,8 +288,8 @@ task slave_pop_and_get_command_wr ( output Request_t                 request_wr,
 `SLV_BFM_WRITE.pop_command();
 request_wr     = `SLV_BFM_WRITE.get_command_request();
 address_wr     = `SLV_BFM_WRITE.get_command_address();
-data_wr        = `SLV_BFM_WRITE.get_command_data(`INDEX_ZERO);
-byte_enable_wr = `SLV_BFM_WRITE.get_command_byte_enable(`INDEX_ZERO);
+data_wr        = `SLV_BFM_WRITE.get_command_data( `INDEX_ZERO );
+byte_enable_wr = `SLV_BFM_WRITE.get_command_byte_enable( `INDEX_ZERO );
 
 endtask
 
@@ -340,7 +338,7 @@ always_ff @( `SLV_BFM_WRITE.signal_command_received )
             //if this is a valid byte, push to fifo for testing
             if( byte_enable_wr[i] == 1'b1 )
               begin
-                wr_data_fifo.put(data_wr[7:0]);
+                wr_data_fifo.put( data_wr[7:0] );
                 data_wr = data_wr >> 8;
               end
           end
@@ -360,10 +358,10 @@ initial
 
     // set_verbosity(`VERBOSITY);
     `SLV_BFM_READ.init();   
-    `SLV_BFM_READ.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);
+    `SLV_BFM_READ.set_interface_wait_time( `WAIT_TIME, `INDEX_ZERO );
 
     `SLV_BFM_WRITE.init();
-    `SLV_BFM_WRITE.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);
+    `SLV_BFM_WRITE.set_interface_wait_time( `WAIT_TIME, `INDEX_ZERO );
     wait_send_rq_done();
     test_data( wr_data_fifo, rd_data_fifo );
     test_addr( wr_addr_fifo, rd_addr_fifo );
