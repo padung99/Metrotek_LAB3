@@ -1,4 +1,3 @@
-// import bfm_pkg::*;
 import amm_pkg::*;
 
 `include "../amm_bfm_slave/synthesis/submodules/verbosity_pkg.sv"
@@ -31,8 +30,9 @@ int                        timeout_waiting;
 int                        total_word;
 int                        int_part;
 int                        mod_part;
-bit                        setting_error;
 int                        timeout_setting;
+bit                        setting_error;
+bit                        random_word;
 
 
 initial
@@ -56,16 +56,6 @@ avalon_mm_if #(
 ) amm_write_if (
   .clk ( clk_i_tb )
 );
-amm_control #(
-  .DATA_W   ( DATA_WIDTH_TB ),
-  .ADDR_W   ( ADDR_WIDTH_TB ),
-  .BYTE_CNT ( BYTE_CNT_TB   )
-) amm_read_data;
-amm_control #(
-  .DATA_W   ( DATA_WIDTH_TB ),
-  .ADDR_W   ( ADDR_WIDTH_TB ),
-  .BYTE_CNT ( BYTE_CNT_TB   )
-) amm_write_data;
 
 byte_inc #(
   .DATA_WIDTH ( DATA_WIDTH_TB ),
@@ -123,20 +113,30 @@ amm_bfm_slave slave_wr (
 `define SLV_BFM_WRITE slave_wr.mm_slave_bfm_0
 
 `define VERBOSITY VERBOSITY_INFO
+
 // test bench parameters
-`define WAIT_TIME 1  //change to reflect the number of cycles for waitrequest to assert
+`define WAIT_TIME 1     //change to reflect the number of cycles for waitrequest to assert
 `define READ_LATENCY 1  //the read latency of the slave BFM
-`define INDEX_ZERO 0  //always refer to index zero for non-bursting transactions
-`define BURST_COUNT 1  //burst count is one for non-bursting transactions
+`define INDEX_ZERO 0    //always refer to index zero for non-bursting transactions
+`define BURST_COUNT 1   //burst count is one for non-bursting transactions
 
-logic [DATA_WIDTH_TB-1:0] internal_mem [2**ADDR_WIDTH_TB-1:0];
+// logic [DATA_WIDTH_TB-1:0] internal_mem [2**ADDR_WIDTH_TB-1:0];
 logic [DATA_WIDTH_TB-1:0] data_rd;
+logic [DATA_WIDTH_TB-1:0] tmp_data_rd;
 logic [ADDR_WIDTH_TB-1:0] address_rd;
-Request_t request_rd;
+Request_t                 request_rd;
 
-Request_t request_wr;
+Request_t                 request_wr;
 logic [DATA_WIDTH_TB-1:0] data_wr;
 logic [ADDR_WIDTH_TB-1:0] address_wr;
+logic [BYTE_CNT_TB-1:0]   byte_enable_wr;
+
+mailbox #( logic [7:0] ) wr_data_fifo  = new();
+mailbox #( logic [7:0] ) rd_data_fifo  = new();
+
+mailbox #( logic [ADDR_WIDTH_TB-1:0] ) wr_addr_fifo = new();
+mailbox #( logic [ADDR_WIDTH_TB-1:0] ) rd_addr_fifo = new();
+
 
 task setting();
 forever
@@ -177,40 +177,48 @@ base_addr = _base_addr;
 length    = _length;
 endtask
 
-task test_data();
+task test_data( mailbox #( logic [7:0] ) _wr_data_fifo,
+                mailbox #( logic [7:0] ) _rd_data_fifo
+              );
 logic [7:0] new_wr_pkt;
 logic [7:0] new_rd_pkt;
 int         byte_read;
 int         wr_byte_size;
-wr_byte_size = amm_write_data.write_data_fifo.num();
+
+wr_byte_size = wr_data_fifo.num();
 byte_read    = ( base_addr + length/BYTE_WORD > 10'h3ff ) ? ( 10'h3ff - base_addr + 1 )*BYTE_WORD : length;
 $display("#####Testing data begin#####");
-while( amm_write_data.write_data_fifo.num() != 0 )
+
+while( wr_data_fifo.num() != 0 )
   begin
-    amm_write_data.write_data_fifo.get( new_wr_pkt );
-    amm_read_data.read_data_fifo.get( new_rd_pkt );
+    wr_data_fifo.get( new_wr_pkt );
+    rd_data_fifo.get( new_rd_pkt );
     if( new_wr_pkt == ( new_rd_pkt + 1 ) )
       begin
-        $display("Byte %0d correct --- read: %x, write: %x", wr_byte_size -amm_write_data.write_data_fifo.num(),  new_rd_pkt, new_wr_pkt);
+        $display("Byte %0d correct --- read: %x, write: %x", wr_byte_size -wr_data_fifo.num(),  new_rd_pkt, new_wr_pkt);
       end
     else
       begin
-        $display("Byte %0d error --- read: %x, write: %x", wr_byte_size -amm_write_data.write_data_fifo.num(),  new_rd_pkt, new_wr_pkt);
+        $display("Byte %0d error --- read: %x, write: %x", wr_byte_size -wr_data_fifo.num(),  new_rd_pkt, new_wr_pkt);
       end
   end
+
 if( wr_byte_size != byte_read )
   $display("Error: %0d bytes have not been written to memory", byte_read - wr_byte_size );
+
 $display("\n");
 endtask
 
-task test_addr();
+task test_addr( mailbox #( logic [ADDR_WIDTH_TB-1:0] ) _wr_addr_fifo,
+                mailbox #( logic [ADDR_WIDTH_TB-1:0] ) _rd_addr_fifo
+              );
 logic  [ADDR_WIDTH_TB-1:0] wr_addr;
 logic  [ADDR_WIDTH_TB-1:0] cnt_addr;
 cnt_addr = {(ADDR_WIDTH_TB){1'b0}};
 $display("#####Testing addr begin#####");
-while( amm_write_data.write_addr_fifo.num() != 0 )
-  begin
-    amm_write_data.write_addr_fifo.get( wr_addr );
+while( wr_addr_fifo.num() != 0 )
+  begin 
+    wr_addr_fifo.get( wr_addr );
     if( wr_addr != ( base_addr + cnt_addr ) )
       $display("Addr %0d error: rd: %x, wr: %x", cnt_addr, base_addr + cnt_addr,wr_addr );
     else
@@ -219,120 +227,6 @@ while( amm_write_data.write_addr_fifo.num() != 0 )
   end
 $display("\n");
 endtask
-
-task reset();
-srst_i_tb <= 1'b1;
-@( posedge clk_i_tb );
-srst_i_tb                     <= 1'b0;
-// amm_read_if.readdatavalid     <= 1'b0;
-// amm_read_if.waitrequest       <= 1'b0;
-amm_write_data.write_data_fifo = new();
-amm_read_data.read_data_fifo   = new();
-amm_write_data.write_addr_fifo = new();
-amm_read_data.read_addr_fifo   = new();
-timeout_waiting                = 0;
-setting_error                  = 1'b0;
-timeout_setting                = 0;
-@( posedge clk_i_tb );
-endtask
-
-// task stop_rq();
-// while( waitrequest_o_tb == 1'b1 )
-//   begin
-//     @( posedge clk_i_tb );
-//     timeout_waiting++;
-//     if( timeout_waiting >= 10*total_word )
-//       break;
-//   end
-// if( timeout_waiting >= 20*total_word )
-//   $display(" !!!! Error Can't stop signal waitrequest_o !!!! ");
-// endtask
-
-// task  setting_response( input int                       _delay,
-//                               logic [DATA_WIDTH_TB-1:0] _random_word
-//                      );
-// amm_read_data.delay        = _delay;
-// amm_read_data.random_word  = _random_word;
-// endtask
-
-////////////////////////////////////////////////////////
-task slave_set_and_push_response_rd ( input logic [DATA_WIDTH_TB-1] data_rd,
-                                         int                     latency_rd
-                                 );
-
-`SLV_BFM_READ.set_response_data(data_rd, `INDEX_ZERO);
-`SLV_BFM_READ.set_response_latency(latency_rd, `INDEX_ZERO);
-`SLV_BFM_READ.set_response_burst_size(`BURST_COUNT);
-`SLV_BFM_READ.push_response();
-
-endtask
-
-task slave_pop_and_get_command_rd ( output Request_t request_rd,
-                                           logic [ADDR_WIDTH_TB-1:0] address_rd,
-                                           logic [DATA_WIDTH_TB-1:0] data_rd
-                                 );
-
-`SLV_BFM_READ.pop_command();
-request_rd = `SLV_BFM_READ.get_command_request();
-address_rd = `SLV_BFM_READ.get_command_address();
-data_rd    = `SLV_BFM_READ.get_command_data(`INDEX_ZERO);
-$display("data_rd :%x", data_rd);
-endtask
-
-///////////////////////////////////////////////////////////
-task slave_set_and_push_response_wr ( input logic [DATA_WIDTH_TB-1] data_wr,
-                                            int                     latency_wr
-                                    );
-
-`SLV_BFM_WRITE.set_response_data(data_wr, `INDEX_ZERO);
-`SLV_BFM_WRITE.set_response_latency(latency_wr, `INDEX_ZERO);
-`SLV_BFM_WRITE.set_response_burst_size(`BURST_COUNT);
-`SLV_BFM_WRITE.push_response();
-
-endtask
-
-task slave_pop_and_get_command_wr ( output Request_t request_wr,
-                                           logic [ADDR_WIDTH_TB-1:0] address_wr,
-                                           logic [DATA_WIDTH_TB-1:0] data_wr
-                               );
-
-`SLV_BFM_WRITE.pop_command();
-request_wr = `SLV_BFM_WRITE.get_command_request();
-address_wr = `SLV_BFM_WRITE.get_command_address();
-data_wr    = `SLV_BFM_WRITE.get_command_data(`INDEX_ZERO);
-$display("data_wr :%x", data_wr);
-endtask
-
-// task wait_master_rd();
-
-// @( `SLV_BFM_READ.signal_command_received )
-//   begin
-//     slave_pop_and_get_command_rd( request_rd, address_rd, data_rd );
-//     if (request_rd == REQ_READ)
-//       begin
-//         data_rd[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
-//         data_rd[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
-//         slave_set_and_push_response_rd(data_rd, `READ_LATENCY);
-//       end
-//   end
-
-// endtask
-
-// task wait_master_wr();
-
-// @( `SLV_BFM_WRITE.signal_command_received )
-//   begin
-//     slave_pop_and_get_command_wr( request_wr, address_wr, data_wr );
-
-//     if( request_wr == REQ_WRITE )
-//       begin
-//         internal_mem[address_wr] = data_wr;
-//         // $display("wr_data: %x", data_wr);
-//         slave_set_and_push_response_wr(data_wr, 0);
-//       end
-//   end
-
-// endtask
 
 task wait_send_rq_done();
 
@@ -348,25 +242,109 @@ repeat( 2 )
 
 endtask
 
+task reset_mailbox();
+
+wr_data_fifo = new();
+rd_data_fifo = new();
+wr_addr_fifo = new();
+rd_addr_fifo = new();
+
+endtask;
+
+task slave_set_and_push_response_rd ( input logic [DATA_WIDTH_TB-1:0] _data_rd,
+                                            int                     _latency_rd
+                                 );
+
+`SLV_BFM_READ.set_response_data ( _data_rd, `INDEX_ZERO );
+`SLV_BFM_READ.set_response_latency ( _latency_rd, `INDEX_ZERO );
+`SLV_BFM_READ.set_response_burst_size ( `BURST_COUNT);
+`SLV_BFM_READ.push_response();
+
+endtask
+
+task slave_pop_and_get_command_rd ( output Request_t request_rd,
+                                           logic [ADDR_WIDTH_TB-1:0] address_rd
+                                  );
+
+`SLV_BFM_READ.pop_command();
+request_rd = `SLV_BFM_READ.get_command_request();
+address_rd = `SLV_BFM_READ.get_command_address();
+
+endtask
+
+
+task slave_set_and_push_response_wr ( input int  latency_wr );
+
+`SLV_BFM_WRITE.set_response_latency(latency_wr, `INDEX_ZERO);
+`SLV_BFM_WRITE.set_response_burst_size(`BURST_COUNT);
+`SLV_BFM_WRITE.push_response();
+
+endtask
+
+task slave_pop_and_get_command_wr ( output Request_t                 request_wr,
+                                           logic [ADDR_WIDTH_TB-1:0] address_wr,
+                                           logic [DATA_WIDTH_TB-1:0] data_wr,
+                                           logic [BYTE_CNT_TB-1:0]   byte_enable_wr
+                                  );
+
+`SLV_BFM_WRITE.pop_command();
+request_wr     = `SLV_BFM_WRITE.get_command_request();
+address_wr     = `SLV_BFM_WRITE.get_command_address();
+data_wr        = `SLV_BFM_WRITE.get_command_data(`INDEX_ZERO);
+byte_enable_wr = `SLV_BFM_WRITE.get_command_byte_enable(`INDEX_ZERO);
+
+endtask
+
+
 always_ff @( `SLV_BFM_READ.signal_command_received )
   begin
-    slave_pop_and_get_command_rd( request_rd, address_rd, data_rd );
+    slave_pop_and_get_command_rd( request_rd, address_rd );
     if ( request_rd == REQ_READ )
       begin
-        data_rd[63:32] = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
-        data_rd[31:0]  = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
+        if( random_word == 1'b1 )
+          begin
+            for( int i = 0; i < BYTE_WORD; i++ )
+              begin
+                data_rd[31:0] = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
+                if( i != ( BYTE_WORD - 1 ) )
+                  data_rd = data_rd << 32;
+              end
+          end
+        else
+          data_rd = 64'h5624ff5863ff1f2e;
+
+        rd_addr_fifo.put( address_rd );
+        tmp_data_rd = data_rd;
+
+        for( int i = 0; i < BYTE_WORD; i++ )
+          begin
+            rd_data_fifo.put( tmp_data_rd[7:0] );
+            tmp_data_rd = tmp_data_rd >> 8;
+          end
+        
         slave_set_and_push_response_rd( data_rd, `READ_LATENCY );
       end
   end
 
 always_ff @( `SLV_BFM_WRITE.signal_command_received )
   begin
-    slave_pop_and_get_command_wr( request_wr, address_wr, data_wr );
+    slave_pop_and_get_command_wr( request_wr, address_wr, data_wr, byte_enable_wr  );
 
     if( request_wr == REQ_WRITE )
       begin
-        internal_mem[address_wr] = data_wr;
-        slave_set_and_push_response_wr( data_wr, 0 );
+        // internal_mem[address_wr] = data_wr;
+        wr_addr_fifo.put( address_wr );
+        for( int i = 0; i < BYTE_WORD; i++ )
+          begin
+            //Check if this is a valid byte( byteenable[i] == 1'b1 )
+            //if this is a valid byte, push to fifo for testing result
+            if( byte_enable_wr[i] == 1'b1 )
+              begin
+                wr_data_fifo.put(data_wr[7:0]);
+                data_wr = data_wr >> 8;
+              end
+          end
+        slave_set_and_push_response_wr( `READ_LATENCY );
       end
   end
 
@@ -375,7 +353,8 @@ initial
     srst_i_tb <= 1'b1;
     @( posedge clk_i_tb );
     srst_i_tb <= 1'b0;
-
+    random_word = 1'b1;
+    $display("----------Testcase 1: 20 bytes-----------");
     gen_addr_length( 10'h10, 10'd20 );
     setting();
 
@@ -385,165 +364,114 @@ initial
 
     `SLV_BFM_WRITE.init();
     `SLV_BFM_WRITE.set_interface_wait_time(`WAIT_TIME, `INDEX_ZERO);
-
     wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("----------Testcase 2: Write until max address-----------");
     gen_addr_length( 10'h3fc, 10'd45 );
     setting();
-    
     wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 3: 4 bytes-------------");
     gen_addr_length( 10'h10, 10'd4 );
     setting();
-
     wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 4: 8 bytes-------------");
     gen_addr_length( 10'h10, 10'd8 );
     setting();
-
     wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 5: 16 bytes-------------");
     gen_addr_length( 10'h10, 10'd16 );
     setting();
-
     wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 6: 24 bytes-------------");
     gen_addr_length( 10'h10, 10'd24 );
     setting();
+    wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 7: 30 bytes-------------");
+    gen_addr_length( 10'h10, 10'd30 );
+    setting();
+    wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 8: 1 bytes-------------");
+    gen_addr_length( 10'h10, 10'd1 );
+    setting();
+    wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 9: add bytes until maximum address ( 29 bytes )-------------");
+    gen_addr_length( 10'h3fc, 10'd29 );
+    setting();
+    wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes )-------------");
+    gen_addr_length( 10'h3fc, 10'd33 );
+    setting();
+    wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    random_word = 1'b0;
+    $display("---------Testcase 11: test overload byte ( 0xff + 0x01 = 0x00 )-------------");
+    gen_addr_length( 10'h10, 10'd7 );
+    setting();
+    wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
+
+
+    reset_mailbox();
+    random_word = 1'b1;
+    $display("---------Testcase 12: add bytes from addr 0 to max addr-------------");
+    gen_addr_length( 10'h10, 10'b1111111111 );
+    setting();
+    wait_send_rq_done();
+    test_data( wr_data_fifo, rd_data_fifo );
+    test_addr( wr_addr_fifo, rd_addr_fifo );
 
     wait_send_rq_done();
     $stop();
 
-
   end
 
-
-// initial
-//   begin
-//     amm_read_data  = new( amm_read_if  );
-//     amm_write_data = new( amm_write_if );
-
-//     reset();
-//     gen_addr_length( 10'h10, 10'd20 );
-//     setting_response( 5, ( DATA_WIDTH_TB )'(0) );
-//     setting();
-//     fork
-//       amm_write_data.send_rq(0);
-//       amm_read_data.send_rq(0);
-//       amm_read_data.response_rd_rq();
-
-//       stop_rq();
-//     join_any
-//     // // // ***********************Testcase 1*******************************
-//     $display("----------Testcase 1: 20 bytes-----------");
-//     test_data(); 
-//     test_addr();
-
-
-//     // // // // ***********************Testcase 2*******************************
-//     reset();
-//     $display("---------Testcase 2: Write until max address-------------");
-//     gen_addr_length( 10'h3fc, 10'd45 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-//     ##10;
-
-//     // // // // ***********************Testcase 3*******************************
-//     reset();
-//     $display("---------Testcase 3: 4 bytes-------------");
-//     gen_addr_length( 10'h10, 10'd4 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-
-//     // // // // ***********************Testcase 4*******************************
-//     reset();
-//     $display("---------Testcase 4: 8 bytes-------------");
-//     gen_addr_length( 10'h10, 10'd8 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-
-//     // // // // ***********************Testcase 5*******************************
-//     reset();
-//     $display("---------Testcase 5: 16 bytes-------------");
-//     gen_addr_length( 10'h10, 10'd16 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-//     // // // // ***********************Testcase 6*******************************
-//     reset();
-//     $display("---------Testcase 6: 24 bytes-------------");
-//     gen_addr_length( 10'h10, 10'd24 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-
-//     // // // // ***********************Testcase 7*******************************
-//     reset();
-//     $display("---------Testcase 7: 30 bytes-------------");
-//     gen_addr_length( 10'h10, 10'd30 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-
-//     // // // // ***********************Testcase 8*******************************
-//     reset();
-//     $display("---------Testcase 8: 1 byte-------------");
-//     gen_addr_length( 10'h10, 10'd1 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-
-//     // // // ***********************Testcase 9*******************************
-//     reset();
-//     $display("---------Testcase 9: add bytes until maximum address ( 29 bytes ) -------------");
-//     gen_addr_length( 10'h3fc, 10'd29 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-
-//     // // // // ***********************Testcase 10*******************************
-//     reset();
-//     $display("---------Testcase 10: add bytes exceeded the maximum address by 1 byte ( total 33 bytes ) -------------");
-//     gen_addr_length( 10'h3fc, 10'd33 );
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-//     // // // // ***********************Testcase 11*******************************
-//     reset();
-//     $display("---------Testcase 11: test overload byte ( 0xff + 0x01 = 0x00 )-------------");
-//     setting_response( 5, 64'h5624ff5863ff1f2e );
-//     gen_addr_length( 10'h10, 10'd7 );
-
-//     setting();
-//     stop_rq();
-//     test_data();
-//     test_addr();
-
-//     // // // // // ***********************Testcase 12*******************************
-//     // reset();
-//     // setting_response( 5, 0 );
-//     // $display("---------Testcase 12: add bytes from addr 0 to max addr ");
-//     // gen_addr_length( 10'h0, 10'b1111111111 );
-//     // setting();
-//     // stop_rq();
-//     // test_data();
-//     // test_addr();
-  
-//     $stop();
-//   end
 endmodule
