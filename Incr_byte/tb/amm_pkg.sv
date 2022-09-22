@@ -79,7 +79,7 @@ forever
             for( int i = 0; i < BYTE_WORD; i++ )
               begin
                 //Check if this is a valid byte( byteenable[i] == 1'b1 )
-                //if this is a valid byte, push to fifo for testing result
+                //if this is a valid byte, push to fifo for testing
                 if( amm_if.byteenable[i] == 1'b1 )
                   begin
                     write_data_fifo.put( new_data_wr[7:0] );
