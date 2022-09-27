@@ -39,7 +39,7 @@ Testcase 4: //
 
 Testcase 5: //
 [ base_addr =  0x10, length = 16 bytes -- amm_rd_waitrequest = random -- amm_wr_waitrequest = random -- readdatavalid = random ]
-- amm_wr_byteenable_o: 11295 ps, тут amm_wr_byteenable_o не должен быть = 0x00, а должен быть = 0xff, Эта ошибка приведет к неправильному приему данных в write_data fifo ==> потеряно 1 слово ( 8 bytes )
+- amm_wr_byteenable_o: 11300 ps, тут amm_wr_byteenable_o не должен быть = 0x00, а должен быть = 0xff, Эта ошибка приведет к неправильному приему данных в write_data fifo ==> потеряно 1 слово ( 8 bytes )
 
 Testcase 6: //
 [ base_addr =  0x10, length = 24 bytes -- amm_rd_waitrequest = random -- amm_wr_waitrequest = random -- readdatavalid = random ]
