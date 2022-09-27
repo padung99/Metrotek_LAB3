@@ -118,7 +118,7 @@ amm_bfm_slave slave_wr (
 `define INDEX_ZERO 0    //always refer to index zero for non-bursting transactions
 `define BURST_COUNT 1   //burst count is one for non-bursting transactions
 
-// logic [DATA_WIDTH_TB-1:0] internal_mem [2**ADDR_WIDTH_TB-1:0];
+
 logic [DATA_WIDTH_TB-1:0] data_rd;
 logic [DATA_WIDTH_TB-1:0] tmp_data_rd;
 logic [ADDR_WIDTH_TB-1:0] address_rd;
@@ -293,58 +293,66 @@ byte_enable_wr = `SLV_BFM_WRITE.get_command_byte_enable( `INDEX_ZERO );
 
 endtask
 
-
-always_ff @( `SLV_BFM_READ.signal_command_received )
+task send_rq_rd();
+forever
   begin
-    slave_pop_and_get_command_rd( request_rd, address_rd );
-    if ( request_rd == REQ_READ )
+    @( `SLV_BFM_READ.signal_command_received )
       begin
-        if( random_word == 1'b1 )
+        slave_pop_and_get_command_rd( request_rd, address_rd );
+        if ( request_rd == REQ_READ )
           begin
+            if( random_word == 1'b1 )
+              begin
+                for( int i = 0; i < BYTE_WORD; i++ )
+                  begin
+                    data_rd[31:0] = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
+                    if( i != ( BYTE_WORD - 1 ) )
+                      data_rd = data_rd << 32;
+                  end
+              end
+            else
+              data_rd = 64'h5624ff5863ff1f2e;
+
+            rd_addr_fifo.put( address_rd );
+            tmp_data_rd = data_rd;
+
             for( int i = 0; i < BYTE_WORD; i++ )
               begin
-                data_rd[31:0] = $urandom_range( 2**DATA_WIDTH_TB-1,0 );
-                if( i != ( BYTE_WORD - 1 ) )
-                  data_rd = data_rd << 32;
+                rd_data_fifo.put( tmp_data_rd[7:0] );
+                tmp_data_rd = tmp_data_rd >> 8;
               end
+            
+            slave_set_and_push_response_rd( data_rd, `READ_LATENCY );
           end
-        else
-          data_rd = 64'h5624ff5863ff1f2e;
-
-        rd_addr_fifo.put( address_rd );
-        tmp_data_rd = data_rd;
-
-        for( int i = 0; i < BYTE_WORD; i++ )
-          begin
-            rd_data_fifo.put( tmp_data_rd[7:0] );
-            tmp_data_rd = tmp_data_rd >> 8;
-          end
-        
-        slave_set_and_push_response_rd( data_rd, `READ_LATENCY );
       end
   end
+endtask
 
-always_ff @( `SLV_BFM_WRITE.signal_command_received )
+task send_rq_wr();
+forever
   begin
-    slave_pop_and_get_command_wr( request_wr, address_wr, data_wr, byte_enable_wr  );
-
-    if( request_wr == REQ_WRITE )
+    @( `SLV_BFM_WRITE.signal_command_received )
       begin
-        // internal_mem[address_wr] = data_wr;
-        wr_addr_fifo.put( address_wr );
-        for( int i = 0; i < BYTE_WORD; i++ )
+        slave_pop_and_get_command_wr( request_wr, address_wr, data_wr, byte_enable_wr  );
+
+        if( request_wr == REQ_WRITE )
           begin
-            //Check if this is a valid byte( byteenable[i] == 1'b1 )
-            //if this is a valid byte, push to fifo for testing
-            if( byte_enable_wr[i] == 1'b1 )
+            wr_addr_fifo.put( address_wr );
+            for( int i = 0; i < BYTE_WORD; i++ )
               begin
-                wr_data_fifo.put( data_wr[7:0] );
-                data_wr = data_wr >> 8;
+                //Check if this is a valid byte( byteenable[i] == 1'b1 )
+                //if this is a valid byte, push to fifo for testing
+                if( byte_enable_wr[i] == 1'b1 )
+                  begin
+                    wr_data_fifo.put( data_wr[7:0] );
+                    data_wr = data_wr >> 8;
+                  end
               end
+            slave_set_and_push_response_wr( `READ_LATENCY );
           end
-        slave_set_and_push_response_wr( `READ_LATENCY );
       end
   end
+endtask
 
 initial
   begin
@@ -352,6 +360,12 @@ initial
     @( posedge clk_i_tb );
     srst_i_tb <= 1'b0;
     random_word = 1'b1;
+
+    fork
+      send_rq_wr();
+      send_rq_rd();
+    join_none
+    
     $display("----------Testcase 1: 20 bytes-----------");
     gen_addr_length( 10'h10, 10'd20 );
     setting();
@@ -362,6 +376,8 @@ initial
 
     `SLV_BFM_WRITE.init();
     `SLV_BFM_WRITE.set_interface_wait_time( `WAIT_TIME, `INDEX_ZERO );
+
+
     wait_send_rq_done();
     test_data( wr_data_fifo, rd_data_fifo );
     test_addr( wr_addr_fifo, rd_addr_fifo );
@@ -454,9 +470,9 @@ initial
     gen_addr_length( 10'h10, 10'd7 );
     setting();
     wait_send_rq_done();
+
     test_data( wr_data_fifo, rd_data_fifo );
     test_addr( wr_addr_fifo, rd_addr_fifo );
-
 
     reset_mailbox();
     random_word = 1'b1;
